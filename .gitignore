@@ -35,3 +35,8 @@ Thumbs.db
 *.pem
 .idea/
 .vscode/
+
+# native folders do Expo prebuild sinh ra
+/android
+/ios
+

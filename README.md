@@ -77,14 +77,21 @@ cp .env.example .env
 ## 3. Chạy app
 
 > **Không chạy được trong Expo Go.** `@react-native-google-signin` là native module,
-> cần dev build.
+> cần dev build. Quét QR bằng Expo Go sẽ báo lỗi / tự thoát app.
 
 ```bash
 npx expo run:android    # build + cài lên máy/emulator (lần đầu sẽ lâu)
 npx expo start --dev-client
 ```
 
-Các lần sau chỉ cần `npx expo start --dev-client`.
+Các lần sau chỉ cần `npx expo start --dev-client` rồi mở app **AIBox** đã cài.
+
+Yêu cầu máy build (Windows):
+- JDK 17 (`JAVA_HOME` trỏ tới bản JDK 17)
+- Android SDK + `ANDROID_HOME` (ví dụ `C:\Users\<tên>\AppData\Local\Android\Sdk`)
+- Điện thoại bật **USB debugging** hoặc emulator đang chạy (`adb devices` phải thấy thiết bị)
+
+Thư mục `android/` do `expo prebuild` sinh ra (đã gitignore) — xoá đi vẫn build lại được.
 
 Nếu đổi `.env` → phải restart Metro (`npx expo start -c`) vì biến `EXPO_PUBLIC_*`
 được nhúng lúc bundle.
