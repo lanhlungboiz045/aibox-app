@@ -32,7 +32,7 @@ export function TraderProfileScreen({ route, navigation }) {
   const followers = 30 + (hash % 400);
 
   const config = myCopyTrades.find(item => item.leaderId === trader.id);
-  const isMe = state.user?.username === trader.username;
+  const isMe = state.user?.id === trader.id;
   const openMarkets = state.markets.filter(m => !m.resolved);
 
   // 3 kèo "đang quan tâm" — chọn theo hash để ổn định

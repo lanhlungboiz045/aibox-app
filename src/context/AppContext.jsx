@@ -1,27 +1,40 @@
 // context/AppContext.jsx — Global state cho AIBox (JavaScript, không TypeScript)
-// Quản lý: auth (mock), roles, token, AI calls, trading, transfer, daily reward,
-// quests, comments, notifications, store, copy trade, admin CMS, AsyncStorage
+// Quản lý: token, AI calls, trading, transfer, daily reward, quests, comments,
+// notifications, store, copy trade, admin CMS, AsyncStorage
 //
-// LƯU Ý BẢO MẬT: auth/role ở đây chạy hoàn toàn trên client nên CHỈ dùng để demo UI.
-// Hệ thống thật phải kiểm tra quyền ở server (xem README/ghi chú cuối file).
+// AUTH: Firebase Authentication (Google) — xem src/services/auth.js
+// USER INFO: Firestore users/{uid} (role/status/username/avatar) — xem src/services/users.js
+// Ví token / positions / quests vẫn lưu local theo uid để demo offline.
 
 import React, { createContext, useContext, useReducer, useEffect, useRef, useState, useCallback } from 'react';
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MARKETS, AI_MODELS, MOCK_AI_RESPONSES } from '../data/mockData';
-import { SEED_ACCOUNTS, AVATARS, createAccount, createWallet, ROLE_LABELS, PROVIDER_LABELS } from '../data/accounts';
+import { SEED_ACCOUNTS, createAccount, createWallet, ROLE_LABELS, pickAvatar } from '../data/accounts';
 import { STORE_ITEMS, getStoreItem } from '../data/storeItems';
-import { QUESTS, ensureQuestState, createQuestState, getQuestProgress } from '../data/quests';
+import { QUESTS, ensureQuestState, getQuestProgress } from '../data/quests';
 import { clamp, generateId, toDayKey, daysBetween } from '../utils/format';
 import { getDailyReward } from '../utils/rewards';
 import { buildMarketAnalysis } from '../utils/analyst';
-import { createSession, verifyPassword, isValidEmail, SESSION_REFRESH_THRESHOLD_MS } from '../auth';
+import {
+  subscribeAuth,
+  signInWithGoogle as googleSignIn,
+  signOutGoogle,
+  isGoogleSignInConfigured,
+} from '../services/auth';
+import {
+  ensureUserProfile,
+  subscribeUserProfile,
+  updateUserProfile,
+  updateUserRole,
+  updateUserStatus,
+  listUserProfiles,
+} from '../services/users';
 
 const STORAGE_KEY = '@aibox_state';
-// Key của format cũ (2 key, không version) — chỉ đọc 1 lần để migrate
-const LEGACY_USER_KEY = '@aibox_user_state';
+// Key của format cũ (2 key, không version) — chỉ đọc 1 lần để migrate markets
 const LEGACY_MARKETS_KEY = '@aibox_markets_state';
-const STORAGE_VERSION = 3;
+const STORAGE_VERSION = 4;
 const PERSIST_DEBOUNCE_MS = 400;
 // Giới hạn lịch sử để JSON.stringify không phình dần theo thời gian
 const MAX_TRANSACTIONS = 200;
@@ -56,7 +69,7 @@ function sanitizeAccount(raw) {
   };
 }
 
-// Luôn merge tài khoản seed để mật khẩu demo không bị mất sau khi migrate
+// Luôn merge tài khoản seed (trader nền) để không mất dữ liệu transfer/copy trade
 function sanitizeAccounts(raw) {
   const persisted = Array.isArray(raw) ? raw.map(sanitizeAccount).filter(Boolean) : [];
   const byId = new Map(persisted.map(account => [account.id, account]));
@@ -105,7 +118,12 @@ function sanitizeQuests(raw) {
 function createInitialState() {
   return {
     accounts: SEED_ACCOUNTS.map(account => ({ ...account })),
-    session: null,
+    // Auth do Firebase quản lý: firebaseUser = Firebase User đã rút gọn
+    firebaseUser: null,
+    // profile = document users/{uid} trên Firestore (role, status, username...)
+    profile: null,
+    profileSync: null,
+    authReady: false,
     authNotice: null,
     markets: MARKETS.map(m => ({ ...m })),
     aiModels: AI_MODELS,
@@ -126,7 +144,6 @@ async function loadPersistedState() {
       if (parsed && parsed.v === STORAGE_VERSION) {
         return {
           accounts: sanitizeAccounts(parsed.accounts),
-          session: parsed.session && parsed.session.userId ? parsed.session : null,
           markets: sanitizeMarkets(parsed.markets),
           comments: sanitizeComments(parsed.comments),
           notifications: sanitizeNotifications(parsed.notifications),
@@ -134,33 +151,14 @@ async function loadPersistedState() {
           quests: sanitizeQuests(parsed.quests),
         };
       }
-      // Version cũ (1/2): { user, markets } → gộp ví cũ vào tài khoản demo u20
-      if (parsed && parsed.user) {
-        const legacy = parsed.user;
-        const accounts = sanitizeAccounts(null).map(account =>
-          account.id === 'u20' ? sanitizeAccount({ ...account, ...legacy, id: 'u20', role: 'user', status: 'active' }) : account
-        );
-        return { accounts, session: null, markets: sanitizeMarkets(parsed.markets) };
-      }
+      // Version cũ (1/2/3) gắn với tài khoản mock có mật khẩu local.
+      // Sang Firebase, uid mới nên không map được → chỉ giữ lại markets.
+      return { markets: sanitizeMarkets(parsed && parsed.markets) };
     }
 
-    const [legacyUser, legacyMarkets] = await Promise.all([
-      AsyncStorage.getItem(LEGACY_USER_KEY),
-      AsyncStorage.getItem(LEGACY_MARKETS_KEY),
-    ]);
-    if (!legacyUser && !legacyMarkets) return null;
-
-    const legacy = legacyUser ? JSON.parse(legacyUser) : null;
-    const accounts = sanitizeAccounts(null).map(account =>
-      account.id === 'u20' && legacy
-        ? sanitizeAccount({ ...account, ...legacy, id: 'u20', role: 'user', status: 'active' })
-        : account
-    );
-    return {
-      accounts,
-      session: null,
-      markets: sanitizeMarkets(legacyMarkets ? JSON.parse(legacyMarkets) : null),
-    };
+    const legacyMarkets = await AsyncStorage.getItem(LEGACY_MARKETS_KEY);
+    if (!legacyMarkets) return null;
+    return { markets: sanitizeMarkets(JSON.parse(legacyMarkets)) };
   } catch (e) {
     if (__DEV__) console.warn('[AppContext] Không đọc được state đã lưu:', e);
     return null;
@@ -170,8 +168,20 @@ async function loadPersistedState() {
 // ============ HELPERS ============
 
 function getCurrentUser(state) {
-  if (!state.session) return null;
-  return state.accounts.find(account => account.id === state.session.userId) || null;
+  if (!state.firebaseUser) return null;
+  return state.accounts.find(account => account.id === state.firebaseUser.uid) || null;
+}
+
+// Username hiển thị không được trùng với trader nền / người dùng khác
+function ensureUniqueUsername(accounts, desired, uid) {
+  const base = String(desired || 'Người dùng').trim() || 'Người dùng';
+  let name = base;
+  let suffix = 1;
+  while (accounts.some(a => a.id !== uid && String(a.username || '').toLowerCase() === name.toLowerCase())) {
+    suffix += 1;
+    name = `${base} ${suffix}`;
+  }
+  return name;
 }
 
 // Thay account hiện tại trong danh sách (immutable)
@@ -256,7 +266,6 @@ function reducer(state, action) {
       return {
         ...state,
         accounts: payload.accounts || state.accounts,
-        session: payload.session || null,
         markets: payload.markets || state.markets,
         comments: payload.comments || {},
         notifications: payload.notifications || [],
@@ -266,37 +275,74 @@ function reducer(state, action) {
       };
     }
 
-    // ---------- AUTH ----------
-    case 'ACCOUNT_ADD':
-      return {
-        ...state,
-        accounts: [...state.accounts, action.payload.account],
-        session: action.payload.session,
-        authNotice: null,
-        quests: { ...state.quests, [action.payload.account.id]: createQuestState() },
+    // ---------- AUTH (Firebase) ----------
+
+    // Đăng nhập xong: tạo/ cập nhật player record local theo uid Firebase
+    case 'AUTH_SESSION': {
+      const { firebaseUser, profile, profileError } = action.payload;
+      const existing = state.accounts.find(a => a.id === firebaseUser.uid);
+      const username = ensureUniqueUsername(
+        state.accounts,
+        profile?.username || existing?.username || firebaseUser.displayName,
+        firebaseUser.uid
+      );
+
+      const hasProfilePhotoField = profile
+        && Object.prototype.hasOwnProperty.call(profile, 'photoURL');
+      const account = {
+        ...(existing || createAccount({ id: firebaseUser.uid })),
+        id: firebaseUser.uid,
+        email: firebaseUser.email,
+        username,
+        avatar: profile?.avatar || existing?.avatar || pickAvatar(firebaseUser.uid),
+        // profile.photoURL === null nghĩa là người dùng đã chọn avatar emoji → tôn trọng
+        photoURL: hasProfilePhotoField
+          ? (profile.photoURL || null)
+          : (firebaseUser.photoURL || existing?.photoURL || null),
+        role: profile?.role || 'user',
+        status: profile?.status || 'active',
+        provider: 'google',
       };
 
-    case 'SESSION_START': {
-      const account = state.accounts.find(a => a.id === action.payload.userId);
-      if (!account) return state;
-      if (account.status === 'banned') {
-        return { ...state, authNotice: 'Tài khoản của bạn đã bị khoá. Liên hệ admin@aibox.app.' };
-      }
+      const accounts = existing
+        ? state.accounts.map(a => (a.id === account.id ? account : a))
+        : [...state.accounts, account];
+
       return {
         ...state,
-        session: action.payload.session,
+        accounts,
+        firebaseUser,
+        profile: { ...(profile || {}), username },
+        profileSync: profileError || null,
+        authReady: true,
         authNotice: null,
         quests: { ...state.quests, [account.id]: ensureQuestState(state.quests[account.id]) },
       };
     }
 
-    case 'SESSION_REFRESH': {
-      if (!state.session) return state;
-      return { ...state, session: action.payload.session };
-    }
+    case 'AUTH_SIGNED_OUT':
+      return {
+        ...state,
+        firebaseUser: null,
+        profile: null,
+        authReady: true,
+        // Giữ notice cũ (ví dụ "bị khoá") nếu lần sign-out này không kèm lý do
+        authNotice: action.payload?.notice ?? state.authNotice,
+      };
 
-    case 'SESSION_END':
-      return { ...state, session: null, authNotice: action.payload?.notice || null };
+    // Firestore đổi role/status/username → mirror xuống account local
+    case 'PROFILE_PATCH': {
+      if (!state.firebaseUser) return state;
+      const patch = {};
+      Object.entries(action.payload.patch || {}).forEach(([key, value]) => {
+        if (value !== undefined) patch[key] = value;
+      });
+      return {
+        ...state,
+        profile: state.profile ? { ...state.profile, ...patch } : state.profile,
+        accounts: state.accounts.map(a => (a.id === state.firebaseUser.uid ? { ...a, ...patch } : a)),
+      };
+    }
 
     case 'AUTH_NOTICE':
       return { ...state, authNotice: action.payload };
@@ -905,8 +951,7 @@ function reducer(state, action) {
         role: user.role,
         status: user.status,
         provider: user.provider,
-        salt: user.salt,
-        passwordHash: user.passwordHash,
+        photoURL: user.photoURL,
         joinedDate: user.joinedDate,
         // giữ đồ đã mua + tiến trình quest trong ngày
         inventory: user.inventory,
@@ -950,13 +995,13 @@ export function AppProvider({ children }) {
   useEffect(() => { stateRef.current = state; }, [state]);
 
   // Ghi xuống storage: 1 key duy nhất, debounce, có bắt lỗi
+  // Auth/session do Firebase tự persist (AsyncStorage) nên không ghi ở đây.
   const persist = useCallback(() => {
     const current = stateRef.current;
     if (current.isLoading) return;
     const payload = JSON.stringify({
       v: STORAGE_VERSION,
       accounts: current.accounts,
-      session: current.session,
       markets: current.markets,
       comments: current.comments,
       notifications: current.notifications,
@@ -973,7 +1018,7 @@ export function AppProvider({ children }) {
     if (state.isLoading) return undefined;
     persistTimer.current = setTimeout(persist, PERSIST_DEBOUNCE_MS);
     return () => clearTimeout(persistTimer.current);
-  }, [state.accounts, state.session, state.markets, state.comments, state.notifications, state.copyTrades, state.quests, state.isLoading, persist]);
+  }, [state.accounts, state.markets, state.comments, state.notifications, state.copyTrades, state.quests, state.isLoading, persist]);
 
   // Flush khi app xuống background hoặc provider bị unmount → không mất thay đổi cuối
   useEffect(() => {
@@ -1008,116 +1053,147 @@ export function AppProvider({ children }) {
     return () => clearInterval(timer);
   }, []);
 
-  // ---------- AUTH ACTIONS ----------
+  // ---------- AUTH (FIREBASE) ----------
 
-  const signIn = useCallback((email, password) => {
-    const accounts = stateRef.current.accounts;
-    const normalized = String(email || '').trim().toLowerCase();
-    const account = accounts.find(a => a.email === normalized);
-    if (!account) return { ok: false, error: 'Email này chưa được đăng ký.' };
-    if (account.provider !== 'password') {
-      return { ok: false, error: `Tài khoản này đăng nhập bằng ${PROVIDER_LABELS[account.provider] || account.provider}.` };
-    }
-    if (account.status === 'banned') {
-      return { ok: false, error: 'Tài khoản đã bị khoá do vi phạm. Liên hệ admin@aibox.app.' };
-    }
-    if (!verifyPassword(password, account.salt, account.passwordHash)) {
-      return { ok: false, error: 'Sai mật khẩu.' };
-    }
-    dispatch({ type: 'SESSION_START', payload: { userId: account.id, session: createSession(account.id) } });
-    return { ok: true, account };
-  }, []);
+  // Kết quả auth đầu tiên từ Firebase: undefined = chưa biết, null = chưa đăng nhập
+  const [authUser, setAuthUser] = useState(undefined);
+  const banningRef = useRef(false);
 
-  const signInWithProvider = useCallback((provider) => {
-    const account = stateRef.current.accounts.find(a => a.provider === provider);
-    if (!account) return { ok: false, error: 'Chưa cấu hình tài khoản cho phương thức này.' };
-    if (account.status === 'banned') {
-      return { ok: false, error: 'Tài khoản đã bị khoá do vi phạm.' };
-    }
-    dispatch({ type: 'SESSION_START', payload: { userId: account.id, session: createSession(account.id) } });
-    return { ok: true, account };
-  }, []);
+  useEffect(() => subscribeAuth(setAuthUser), []);
 
-  const signUp = useCallback(({ username, email, password }) => {
-    const accounts = stateRef.current.accounts;
-    const cleanName = String(username || '').trim();
-    const cleanEmail = String(email || '').trim().toLowerCase();
+  // Chờ AsyncStorage load xong rồi mới tạo player record (tránh INIT ghi đè mất account)
+  useEffect(() => {
+    if (authUser === undefined || state.isLoading) return undefined;
 
-    if (cleanName.length < 3) return { ok: false, error: 'Tên hiển thị phải có ít nhất 3 ký tự.' };
-    if (!isValidEmail(cleanEmail)) return { ok: false, error: 'Email không hợp lệ.' };
-    if (String(password || '').length < 6) return { ok: false, error: 'Mật khẩu phải có ít nhất 6 ký tự.' };
-    if (accounts.some(a => a.email === cleanEmail)) return { ok: false, error: 'Email này đã được sử dụng.' };
-    if (accounts.some(a => a.username.toLowerCase() === cleanName.toLowerCase())) {
-      return { ok: false, error: 'Tên hiển thị đã có người dùng.' };
+    if (authUser === null) {
+      dispatch({ type: 'AUTH_SIGNED_OUT' });
+      return undefined;
     }
 
-    const account = createAccount({
-      email: cleanEmail,
-      username: cleanName,
-      password,
-      avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)],
+    let cancelled = false;
+    (async () => {
+      const { profile, syncError } = await ensureUserProfile(authUser);
+      if (cancelled) return;
+
+      if (profile.status === 'banned') {
+        await signOutGoogle();
+        if (!cancelled) {
+          dispatch({
+            type: 'AUTH_SIGNED_OUT',
+            payload: { notice: 'Tài khoản của bạn đã bị khoá bởi admin. Liên hệ admin@aibox.app.' },
+          });
+        }
+        return;
+      }
+
+      // Hồ sơ cũ thiếu username/avatar → chốt 1 lần rồi ghi lại Firestore để
+      // mọi thiết bị hiển thị giống nhau (không đổi tên mỗi lần đăng nhập).
+      const desiredName = ensureUniqueUsername(
+        stateRef.current.accounts,
+        profile.username || authUser.displayName,
+        authUser.uid
+      );
+      const desiredAvatar = profile.avatar || pickAvatar(authUser.uid);
+      const identityPatch = {};
+      if (profile.username !== desiredName) identityPatch.username = desiredName;
+      if (profile.avatar !== desiredAvatar) identityPatch.avatar = desiredAvatar;
+      if (Object.keys(identityPatch).length > 0) {
+        updateUserProfile(authUser.uid, identityPatch).catch((e) => {
+          if (__DEV__) console.warn('[AppContext] Không lưu được hồ sơ ban đầu:', e);
+        });
+      }
+
+      dispatch({
+        type: 'AUTH_SESSION',
+        payload: {
+          firebaseUser: authUser,
+          profile: { ...profile, ...identityPatch },
+          profileError: syncError,
+        },
+      });
+    })();
+
+    return () => { cancelled = true; };
+  }, [authUser, state.isLoading]);
+
+  // Theo dõi users/{uid} realtime: admin đổi role/ban là app cập nhật ngay
+  useEffect(() => {
+    const uid = state.firebaseUser?.uid;
+    if (!uid) return undefined;
+
+    return subscribeUserProfile(uid, ({ profile }) => {
+      if (!profile) return;
+
+      dispatch({
+        type: 'PROFILE_PATCH',
+        payload: {
+          patch: {
+            role: profile.role,
+            status: profile.status,
+            username: profile.username,
+            avatar: profile.avatar,
+            photoURL: profile.photoURL || null,
+          },
+        },
+      });
+
+      // Bị ban giữa phiên → đá ra ngay
+      if (profile.status === 'banned' && !banningRef.current) {
+        banningRef.current = true;
+        signOutGoogle().finally(() => {
+          banningRef.current = false;
+          dispatch({
+            type: 'AUTH_SIGNED_OUT',
+            payload: { notice: 'Tài khoản của bạn vừa bị khoá bởi admin. Mọi phiên đăng nhập đã bị huỷ.' },
+          });
+        });
+      }
     });
+  }, [state.firebaseUser?.uid]);
 
-    dispatch({
-      type: 'ACCOUNT_ADD',
-      payload: { account, session: createSession(account.id) },
-    });
-    return { ok: true, account };
-  }, []);
+  const signInWithGoogle = useCallback(() => googleSignIn(), []);
 
-  const signOut = useCallback((notice = null) => {
-    dispatch({ type: 'SESSION_END', payload: { notice } });
-  }, []);
-
-  // Demo: mô phỏng phiên hết hạn ngay lập tức
-  const expireSession = useCallback(() => {
-    dispatch({
-      type: 'SESSION_END',
-      payload: { notice: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.' },
-    });
-  }, []);
-
-  const refreshSession = useCallback(() => {
-    const session = stateRef.current.session;
-    if (!session) return;
-    dispatch({ type: 'SESSION_REFRESH', payload: { session: createSession(session.userId) } });
+  const signOut = useCallback(async () => {
+    await signOutGoogle();
+    dispatch({ type: 'AUTH_SIGNED_OUT' });
+    // Đăng xuất chủ động → không giữ thông báo cũ (ví dụ "bị khoá")
+    dispatch({ type: 'AUTH_NOTICE', payload: null });
   }, []);
 
   const clearAuthNotice = useCallback(() => {
     dispatch({ type: 'AUTH_NOTICE', payload: null });
   }, []);
 
-  // Watchdog phiên: hết hạn → tự đăng xuất, sắp hết hạn → tự refresh (mô phỏng refresh token)
-  useEffect(() => {
-    const check = () => {
-      const session = stateRef.current.session;
-      if (!session) return;
-      const left = session.expiresAt - Date.now();
-      if (left <= 0) {
-        dispatch({
-          type: 'SESSION_END',
-          payload: { notice: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.' },
-        });
-      } else if (left < SESSION_REFRESH_THRESHOLD_MS) {
-        dispatch({ type: 'SESSION_REFRESH', payload: { session: createSession(session.userId) } });
+  // Người dùng tự sửa hồ sơ: ghi Firestore + cập nhật local
+  const updateMyProfile = useCallback(async ({ username, avatar } = {}) => {
+    const current = stateRef.current;
+    const user = getCurrentUser(current);
+    if (!user) return { ok: false, error: 'Bạn cần đăng nhập.' };
+
+    const patch = {};
+    if (typeof username === 'string' && username.trim()) {
+      const clean = username.trim().slice(0, 24);
+      if (clean.toLowerCase() !== user.username.toLowerCase()) {
+        patch.username = ensureUniqueUsername(current.accounts, clean, user.id);
       }
-    };
-    check();
-    const timer = setInterval(check, 60000);
-    return () => clearInterval(timer);
+    }
+    if (typeof avatar === 'string' && avatar !== user.avatar) {
+      patch.avatar = avatar;
+      // Chọn avatar emoji → bỏ ảnh Google để avatar mới hiển thị
+      patch.photoURL = null;
+    }
+    if (Object.keys(patch).length === 0) return { ok: true };
+
+    dispatch({ type: 'PROFILE_PATCH', payload: { patch } });
+    // Firestore lỗi (rules/offline) vẫn giữ thay đổi local, chỉ báo syncError
+    const result = await updateUserProfile(user.id, patch);
+    return { ok: true, syncError: result.ok ? null : result.error };
   }, []);
 
-  const currentUser = getCurrentUser(state);
+  // Admin: danh sách người dùng lấy từ Firestore
+  const loadUserDirectory = useCallback(() => listUserProfiles(), []);
 
-  // Bị ban giữa phiên → đá ra ngay
-  useEffect(() => {
-    if (currentUser && currentUser.status === 'banned') {
-      dispatch({
-        type: 'SESSION_END',
-        payload: { notice: 'Tài khoản của bạn vừa bị khoá bởi admin. Mọi phiên đăng nhập đã bị huỷ.' },
-      });
-    }
-  }, [currentUser?.status, currentUser?.id]);
+  const currentUser = getCurrentUser(state);
 
   // ---------- APP ACTIONS ----------
 
@@ -1131,7 +1207,7 @@ export function AppProvider({ children }) {
 
   const resolveMarket = useCallback((marketId, outcome) => {
     const current = stateRef.current;
-    if (current.accounts.find(a => a.id === current.session?.userId)?.role !== 'admin') {
+    if (getCurrentUser(current)?.role !== 'admin') {
       return { ok: false, error: 'Chỉ System Admin mới được resolve market.' };
     }
     const market = current.markets.find(m => m.id === marketId);
@@ -1229,6 +1305,15 @@ export function AppProvider({ children }) {
     if (item.type === 'role' && user.role !== 'user') return { ok: false, error: 'Bạn đã có đặc quyền này.' };
     if (item.type !== 'role' && user.inventory.includes(item.id)) return { ok: false, error: 'Bạn đã sở hữu vật phẩm này.' };
     dispatch({ type: 'PURCHASE_ITEM', payload: { itemId } });
+
+    // Creator Pass: quyền lưu ở Firestore (users/{uid}.role) để máy khác cũng thấy
+    if (item.type === 'role') {
+      dispatch({ type: 'PROFILE_PATCH', payload: { patch: { role: 'creator' } } });
+      updateUserRole(user.id, 'creator').catch((e) => {
+        if (__DEV__) console.warn('[AppContext] Không cập nhật được role lên Firestore:', e);
+      });
+    }
+
     return { ok: true };
   }, []);
 
@@ -1249,12 +1334,19 @@ export function AppProvider({ children }) {
     return { ok: true, marketId };
   }, []);
 
-  const setUserStatus = useCallback((userId, status) => {
+  // Admin: cập nhật cả Firestore (nguồn sự thật) và local (UI phản hồi ngay)
+  const setUserStatus = useCallback(async (userId, status) => {
     dispatch({ type: 'ADMIN_SET_USER_STATUS', payload: { userId, status } });
+    const result = await updateUserStatus(userId, status);
+    if (!result.ok) return { ok: false, error: result.error };
+    return { ok: true };
   }, []);
 
-  const setUserRole = useCallback((userId, role) => {
+  const setUserRole = useCallback(async (userId, role) => {
     dispatch({ type: 'ADMIN_SET_USER_ROLE', payload: { userId, role } });
+    const result = await updateUserRole(userId, role);
+    if (!result.ok) return { ok: false, error: result.error };
+    return { ok: true };
   }, []);
 
   const setModelPrice = useCallback((modelId, tokenCost) => {
@@ -1314,14 +1406,13 @@ export function AppProvider({ children }) {
       value={{
         // state.user = account đang đăng nhập (null nếu chưa login)
         state: { ...state, user: currentUser },
-        // auth
-        signIn,
-        signInWithProvider,
-        signUp,
+        // auth (Firebase)
+        signInWithGoogle,
         signOut,
-        expireSession,
-        refreshSession,
         clearAuthNotice,
+        updateMyProfile,
+        loadUserDirectory,
+        isGoogleSignInConfigured: isGoogleSignInConfigured(),
         // derived
         canClaimDaily,
         nextStreak,

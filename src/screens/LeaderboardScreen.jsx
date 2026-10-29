@@ -11,10 +11,21 @@ export function LeaderboardScreen({ navigation }) {
   const insets = useSafeAreaInsets();
 
   // Lấy số dư live từ accounts (transfer/copy trade có thể đã thay đổi mock balance)
-  const rows = LEADERBOARD.map(row => {
+  const baseRows = LEADERBOARD.map(row => {
     const account = state.accounts.find(a => a.id === row.id || a.username === row.username);
     return account ? { ...row, tokenBalance: account.tokenBalance } : row;
   });
+
+  // Người đang đăng nhập (Firebase) không nằm trong mockData → ghép vào và xếp lại hạng
+  const me = state.user;
+  const hasMe = baseRows.some(row => row.id === me.id || row.username === me.username);
+  const withMe = hasMe
+    ? baseRows
+    : [...baseRows, { id: me.id, username: me.username, avatar: me.avatar, tokenBalance: me.tokenBalance, rank: 0 }];
+
+  const rows = [...withMe]
+    .sort((a, b) => b.tokenBalance - a.tokenBalance)
+    .map((row, index) => ({ ...row, rank: index + 1 }));
 
   const top3 = rows.slice(0, 3);
   const rest = rows.slice(3);
@@ -54,14 +65,14 @@ export function LeaderboardScreen({ navigation }) {
         {rest.map(user => (
           <TouchableOpacity
             key={user.id}
-            style={[styles.listItem, user.username === state.user.username && styles.listItemMe]}
+            style={[styles.listItem, user.id === state.user.id && styles.listItemMe]}
             onPress={() => openTrader(user)}
             activeOpacity={0.85}
           >
             <Text style={styles.rank}>#{user.rank}</Text>
             <Text style={styles.avatar}>{user.avatar}</Text>
             <Text style={styles.username}>{user.username}</Text>
-            {user.username === state.user.username && (
+            {user.id === state.user.id && (
               <View style={styles.youTag}><Text style={styles.youTagText}>Bạn</Text></View>
             )}
             <Text style={styles.tokenBalance}>{formatToken(user.tokenBalance)} {'\u{1F4B0}'}</Text>

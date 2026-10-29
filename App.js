@@ -19,13 +19,14 @@ const navTheme = {
   },
 };
 
-// Chờ load state từ AsyncStorage xong mới mount navigator:
-// tránh flash số dư mặc định (10,000) rồi mới nhảy sang số đã lưu
-// Chưa có session → chỉ render AuthScreen (gate ở client, chỉ phục vụ demo)
+// Chờ 2 việc xong mới mount navigator:
+//   1. state.isLoading  → AsyncStorage (ví, markets, quests...)
+//   2. state.authReady  → Firebase Auth đã restore phiên + đọc users/{uid}
+// Tránh flash màn login rồi nhảy vào app khi Firebase còn đang restore session.
 function Root() {
   const { state } = useApp();
 
-  if (state.isLoading) return <View style={styles.boot} />;
+  if (state.isLoading || !state.authReady) return <View style={styles.boot} />;
   if (!state.user) return <AuthScreen />;
 
   return (

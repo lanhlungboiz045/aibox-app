@@ -10,16 +10,18 @@ export function AdminHomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
 
   const accounts = state.accounts;
+  // Trader nền (provider system) chỉ để có dữ liệu transfer/copy trade, không phải người dùng thật
+  const realAccounts = accounts.filter(a => a.provider !== 'system');
   const totalSupply = accounts.reduce((sum, a) => sum + a.tokenBalance, 0);
   const totalVolume = state.markets.reduce((sum, m) => sum + (m.volume || 0), 0);
   const openMarkets = state.markets.filter(m => !m.resolved);
   const overdue = openMarkets.filter(m => new Date(m.endDate).getTime() < Date.now());
-  const banned = accounts.filter(a => a.status === 'banned');
+  const banned = realAccounts.filter(a => a.status === 'banned');
   const aiSpend = accounts.reduce((sum, a) => sum + (a.totalSpentOnAI || 0), 0);
   const storeSpend = accounts.reduce((sum, a) => sum + (a.totalSpentOnStore || 0), 0);
 
   const stats = [
-    { label: 'Người dùng', value: accounts.length, icon: '\u{1F465}', color: '#6C5CE7' },
+    { label: 'Người dùng', value: realAccounts.length, icon: '\u{1F465}', color: '#6C5CE7' },
     { label: 'Market mở', value: openMarkets.length, icon: '\u{1F4C8}', color: '#00CE7E' },
     { label: 'Token lưu hành', value: formatTokenShort(totalSupply), icon: '\u{1F4B0}', color: '#FFB74D' },
     { label: 'Volume (tất cả)', value: formatTokenShort(totalVolume), icon: '\u{1F4CA}', color: '#4285F4' },
@@ -30,7 +32,7 @@ export function AdminHomeScreen({ navigation }) {
   const links = [
     { label: 'Quản lý Markets', sub: `${openMarkets.length} đang mở · resolve thủ công`, icon: '\u{1F4C8}', screen: 'AdminMarkets' },
     { label: 'Giá AI Models', sub: `${state.aiModels.length} model · chỉnh giá & bảo trì`, icon: '\u{1F4B5}', screen: 'AdminAIModels' },
-    { label: 'Người dùng & phân quyền', sub: `${accounts.length} tài khoản · ${banned.length} bị khoá`, icon: '\u{1F465}', screen: 'AdminUsers' },
+    { label: 'Người dùng & phân quyền', sub: `${realAccounts.length} tài khoản · ${banned.length} bị khoá`, icon: '\u{1F465}', screen: 'AdminUsers' },
     { label: 'Rủi ro & dòng tiền', sub: 'Phát hiện rửa token qua Transfer', icon: '\u{1F6A8}', screen: 'AdminRisk' },
     { label: 'Tạo market mới', sub: 'Tạo với tư cách System Admin', icon: '\u{2795}', screen: 'CreateMarket' },
   ];
@@ -92,7 +94,8 @@ export function AdminHomeScreen({ navigation }) {
       )}
 
       <Text style={styles.footnote}>
-        Dữ liệu mô phỏng trên client. Trong hệ thống thật, mọi hành động trong CMS phải đi qua API có kiểm tra role + audit log.
+        Role và trạng thái người dùng ghi vào Firestore (users/{'{uid}'}) nên mọi thiết bị nhận thay đổi ngay.
+        Dữ liệu ví/trade vẫn là mô phỏng trên client — production nên thêm audit log ở server.
       </Text>
     </ScrollView>
   );

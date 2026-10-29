@@ -1,0 +1,66 @@
+rules_version = '2';
+
+// Firestore Security Rules cho AIBox
+// Deploy: Firebase Console → Firestore Database → Rules → dán file này → Publish
+//   hoặc: firebase deploy --only firestore:rules
+//
+// Nguyên tắc:
+//  - Chỉ người đã đăng nhập (Google) mới đọc được hồ sơ.
+//  - Người dùng tự sửa được username/avatar/displayName/photoURL của mình,
+//    KHÔNG được tự đổi role/status (tránh tự phong admin hoặc tự mở khoá).
+//  - Admin (email trong EXPO_PUBLIC_ADMIN_EMAILS) toàn quyền.
+//
+// LƯU Ý: danh sách admin phải khai báo lại ở đây — Rules chạy trên server nên
+// KHÔNG đọc được biến EXPO_PUBLIC_* trong app. Sửa ADMIN_EMAILS bên dưới cho khớp .env.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function adminEmails() {
+      return [
+        'admin@example.com'   // ← THAY bằng email admin thật (khớp EXPO_PUBLIC_ADMIN_EMAILS)
+      ];
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email in adminEmails();
+    }
+
+    match /users/{uid} {
+      // Đọc: chính mình hoặc admin
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+
+      // Tạo hồ sơ lần đầu: uid phải khớp, mặc định role 'user'.
+      // Chỉ email trong adminEmails() mới được tạo với role 'admin'.
+      allow create: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.status == 'active'
+        && (
+          request.resource.data.role == 'user'
+          || (request.resource.data.role == 'admin' && request.auth.token.email in adminEmails())
+        );
+
+      // Cập nhật: user chỉ sửa field hồ sơ, admin sửa mọi thứ
+      allow update: if isAdmin()
+        || (
+          isSignedIn()
+          && request.auth.uid == uid
+          && !request.resource.data.diff(resource.data).affectedKeys()
+               .hasAny(['role', 'status', 'uid', 'createdAt'])
+        );
+
+      // Không cho client xoá hồ sơ
+      allow delete: if isAdmin();
+    }
+
+    // Các collection khác (nếu sau này đưa dữ liệu game lên Firestore)
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

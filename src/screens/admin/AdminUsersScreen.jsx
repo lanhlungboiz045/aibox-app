@@ -1,10 +1,12 @@
 // screens/admin/AdminUsersScreen.jsx — Ban/unban + phân quyền
-import React, { useState } from 'react';
+// Nguồn dữ liệu: Firestore users/{uid} (xem src/services/users.js).
+// Ví token / số trade vẫn lấy từ player record local (AsyncStorage) để hiển thị.
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { ROLE_LABELS, ROLE_COLORS, PROVIDER_LABELS } from '../../data/accounts';
-import { formatToken, formatTokenShort } from '../../utils/format';
+import { formatTokenShort } from '../../utils/format';
 
 const ROLE_FILTERS = [
   { key: 'all', label: 'Tất cả' },
@@ -15,21 +17,69 @@ const ROLE_FILTERS = [
 ];
 
 export function AdminUsersScreen({ navigation }) {
-  const { state, setUserStatus, setUserRole } = useApp();
+  const { state, setUserStatus, setUserRole, loadUserDirectory } = useApp();
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const me = state.user;
 
-  const accounts = state.accounts.filter(account => {
+  // Đọc danh sách hồ sơ từ Firestore; lỗi rules/mạng → hiện banner, không chặn UI
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    const result = await loadUserDirectory();
+    setUsers(result.users || []);
+    setError(result.error || null);
+    setLoading(false);
+  }, [loadUserDirectory]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  // Ghép hồ sơ Firestore với player record local để có số dư/trade
+  const rows = users.map(profile => {
+    const local = state.accounts.find(a => a.id === profile.id) || null;
+    return {
+      id: profile.id,
+      email: profile.email || '',
+      username: profile.username || profile.displayName || 'Người dùng',
+      avatar: profile.avatar || local?.avatar || '\u{1F464}',
+      role: profile.role || 'user',
+      status: profile.status || 'active',
+      provider: profile.provider || 'google',
+      tokenBalance: local?.tokenBalance ?? 0,
+      transactions: local?.transactions || [],
+    };
+  });
+
+  const visible = rows.filter(row => {
+    const keyword = search.trim().toLowerCase();
     const matchSearch =
-      account.username.toLowerCase().includes(search.trim().toLowerCase()) ||
-      account.email.toLowerCase().includes(search.trim().toLowerCase());
+      row.username.toLowerCase().includes(keyword) || row.email.toLowerCase().includes(keyword);
     if (!matchSearch) return false;
     if (filter === 'all') return true;
-    if (filter === 'banned') return account.status === 'banned';
-    return account.role === filter && account.status !== 'banned';
+    if (filter === 'banned') return row.status === 'banned';
+    return row.role === filter && row.status !== 'banned';
   });
+
+  const applyRole = async (account, role) => {
+    const result = await setUserRole(account.id, role);
+    if (result.ok) {
+      setUsers(prev => prev.map(u => (u.id === account.id ? { ...u, role } : u)));
+    } else {
+      Alert.alert('Không cập nhật được', result.error);
+    }
+  };
+
+  const applyStatus = async (account, status) => {
+    const result = await setUserStatus(account.id, status);
+    if (result.ok) {
+      setUsers(prev => prev.map(u => (u.id === account.id ? { ...u, status } : u)));
+    } else {
+      Alert.alert('Không cập nhật được', result.error);
+    }
+  };
 
   const changeRole = (account) => {
     if (account.id === me.id) {
@@ -41,9 +91,9 @@ export function AdminUsersScreen({ navigation }) {
       `Hiện tại: ${ROLE_LABELS[account.role]}`,
       [
         { text: 'Hủy', style: 'cancel' },
-        { text: 'Standard User', onPress: () => setUserRole(account.id, 'user') },
-        { text: 'Market Creator', onPress: () => setUserRole(account.id, 'creator') },
-        { text: 'System Admin', onPress: () => setUserRole(account.id, 'admin') },
+        { text: 'Standard User', onPress: () => applyRole(account, 'user') },
+        { text: 'Market Creator', onPress: () => applyRole(account, 'creator') },
+        { text: 'System Admin', onPress: () => applyRole(account, 'admin') },
       ]
     );
   };
@@ -57,14 +107,14 @@ export function AdminUsersScreen({ navigation }) {
     Alert.alert(
       banning ? 'Khoá tài khoản' : 'Mở khoá tài khoản',
       banning
-        ? `${account.username} sẽ bị đăng xuất ngay và không thể đăng nhập lại.\n\nLý do nên ghi vào audit log khi lên production.`
+        ? `${account.username} sẽ bị đăng xuất ngay và không thể đăng nhập lại cho tới khi mở khoá.`
         : `${account.username} có thể đăng nhập lại bình thường.`,
       [
         { text: 'Hủy', style: 'cancel' },
         {
           text: banning ? 'Khoá' : 'Mở khoá',
           style: banning ? 'destructive' : 'default',
-          onPress: () => setUserStatus(account.id, banning ? 'banned' : 'active'),
+          onPress: () => applyStatus(account, banning ? 'banned' : 'active'),
         },
       ]
     );
@@ -78,7 +128,7 @@ export function AdminUsersScreen({ navigation }) {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <Text style={styles.title}>Người dùng</Text>
-        <View style={{ width: 50 }} />
+        <TouchableOpacity onPress={refresh}><Text style={styles.refreshBtn}>{'\u{21BB}'}</Text></TouchableOpacity>
       </View>
 
       <View style={styles.searchWrap}>
@@ -104,12 +154,23 @@ export function AdminUsersScreen({ navigation }) {
         ))}
       </ScrollView>
 
-      <Text style={styles.count}>{accounts.length} tài khoản</Text>
+      <Text style={styles.count}>
+        {loading ? 'Đang tải từ Firestore…' : `${visible.length}/${rows.length} tài khoản`}
+      </Text>
 
-      {accounts.map(account => {
+      {error && (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{'\u{26A0}'} {error}</Text>
+          <Text style={styles.errorHint}>
+            Danh sách này đọc từ Firestore — cần deploy firestore.rules và bật Firestore Database.
+          </Text>
+        </View>
+      )}
+
+      {visible.map(account => {
         const banned = account.status === 'banned';
         const isMe = account.id === me.id;
-        const trades = (account.transactions || []).filter(tx => ['BUY', 'SELL'].includes(tx.type)).length;
+        const trades = account.transactions.filter(tx => ['BUY', 'SELL'].includes(tx.type)).length;
 
         return (
           <View key={account.id} style={[styles.card, banned && styles.cardBanned]}>
@@ -150,10 +211,13 @@ export function AdminUsersScreen({ navigation }) {
         );
       })}
 
-      {accounts.length === 0 && <Text style={styles.empty}>Không tìm thấy tài khoản.</Text>}
+      {!loading && visible.length === 0 && !error && (
+        <Text style={styles.empty}>Chưa có người dùng nào đăng nhập bằng Google.</Text>
+      )}
 
       <Text style={styles.footnote}>
-        Ban ở client chỉ là đổi cờ trong AsyncStorage — người dùng am hiểu vẫn sửa được. Production phải chặn ở API.
+        Role và trạng thái lưu ở Firestore users/{'{uid}'} nên admin đổi là mọi máy cập nhật ngay.
+        Số dư token/trade là dữ liệu local của thiết bị này.
       </Text>
     </ScrollView>
   );
@@ -164,6 +228,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
   backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600', width: 50 },
   title: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  refreshBtn: { color: '#6C5CE7', fontSize: 18, fontWeight: '700', width: 50, textAlign: 'right' },
   searchWrap: { paddingHorizontal: 16, marginBottom: 10 },
   search: { backgroundColor: '#22262E', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', color: '#FFFFFF', fontSize: 14, paddingHorizontal: 14, paddingVertical: 10 },
   filterRow: { paddingHorizontal: 16, gap: 6, paddingBottom: 8 },
@@ -172,6 +237,9 @@ const styles = StyleSheet.create({
   filterText: { color: '#8E8E93', fontSize: 12, fontWeight: '600' },
   filterTextActive: { color: '#FFFFFF' },
   count: { color: '#5C5C5C', fontSize: 11, paddingHorizontal: 16, marginBottom: 8 },
+  errorBox: { backgroundColor: 'rgba(255, 107, 107, 0.08)', borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.3)', borderRadius: 10, marginHorizontal: 16, marginBottom: 10, padding: 12 },
+  errorText: { color: '#FF8A8A', fontSize: 12, lineHeight: 18 },
+  errorHint: { color: '#C98A8A', fontSize: 10, lineHeight: 15, marginTop: 6 },
   card: { backgroundColor: '#1A1D24', borderRadius: 12, marginHorizontal: 16, marginBottom: 6, padding: 12, borderWidth: 1, borderColor: '#2A2E36' },
   cardBanned: { borderColor: 'rgba(255, 107, 107, 0.35)', backgroundColor: 'rgba(255, 107, 107, 0.05)' },
   cardHead: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },

@@ -1,29 +1,43 @@
-// screens/ProfileScreen.jsx
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+// screens/ProfileScreen.jsx — Hồ sơ người dùng (Firebase Auth + Firestore)
+import React, { useState } from 'react';
+import {
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, TextInput, Image,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
-import { ROLE_LABELS, ROLE_COLORS, PROVIDER_LABELS } from '../data/accounts';
+import { ROLE_LABELS, ROLE_COLORS, PROVIDER_LABELS, AVATARS } from '../data/accounts';
 import { formatToken, formatDate } from '../utils/format';
 
-// Hiển thị thời gian còn lại của phiên (mock refresh token 7 ngày)
-function formatSessionLeft(expiresAt) {
-  if (!expiresAt) return '—';
-  const left = expiresAt - Date.now();
-  if (left <= 0) return 'đã hết hạn';
-  const days = Math.floor(left / (24 * 60 * 60 * 1000));
-  const hours = Math.floor((left % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-  if (days > 0) return `còn ${days} ngày ${hours}h`;
-  const minutes = Math.max(1, Math.floor((left % (60 * 60 * 1000)) / (60 * 1000)));
-  return `còn ${hours}h ${minutes}m`;
+// Ảnh Google có thể lỗi (mạng/không có ảnh) → fallback emoji avatar
+function UserAvatar({ user, size = 96 }) {
+  const [failed, setFailed] = useState(false);
+  const showPhoto = user.photoURL && !failed;
+  return (
+    <View style={[styles.avatarWrap, { width: size, height: size, borderRadius: size / 2 }]}>
+      {showPhoto ? (
+        <Image
+          source={{ uri: user.photoURL }}
+          style={{ width: size, height: size, borderRadius: size / 2 }}
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <Text style={{ fontSize: size * 0.55 }}>{user.avatar}</Text>
+      )}
+    </View>
+  );
 }
 
 export function ProfileScreen({ navigation }) {
   const {
     state, resetToken, canClaimDaily, claimDailyReward, nextDailyReward,
-    signOut, expireSession, unreadNotifications, myCopyTrades, questState,
+    signOut, updateMyProfile, unreadNotifications, myCopyTrades, questState,
   } = useApp();
   const insets = useSafeAreaInsets();
+  const [editing, setEditing] = useState(false);
+  const [draftName, setDraftName] = useState('');
+  const [draftAvatar, setDraftAvatar] = useState(null);
+  const [saving, setSaving] = useState(false);
+
   const user = state.user;
   if (!user) return null;
 
@@ -38,6 +52,34 @@ export function ProfileScreen({ navigation }) {
   const transfers = user.transactions.filter(t => t.type === 'TRANSFER_OUT').length;
 
   const claimedQuests = questState?.claimed?.length || 0;
+  const shortUid = user.id ? `${user.id.slice(0, 6)}…${user.id.slice(-4)}` : '—';
+
+  const startEdit = () => {
+    setDraftName(user.username);
+    setDraftAvatar(user.avatar);
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    if (saving) return;
+    const name = draftName.trim();
+    if (name.length < 3) {
+      Alert.alert('Tên không hợp lệ', 'Tên hiển thị phải có ít nhất 3 ký tự.');
+      return;
+    }
+    setSaving(true);
+    const result = await updateMyProfile({ username: name, avatar: draftAvatar });
+    setSaving(false);
+    setEditing(false);
+    if (result.ok) {
+      // Firestore lỗi thì thay đổi vẫn được giữ trên máy, chỉ cảnh báo đồng bộ
+      if (result.syncError) {
+        Alert.alert('Đã lưu trên máy', `Chưa đồng bộ được lên Firestore:\n${result.syncError}`);
+      }
+    } else {
+      Alert.alert('Không lưu được', result.error);
+    }
+  };
 
   const handleReset = () => {
     Alert.alert('Reset token', 'Bạn có chắc muốn reset về 10,000 token? Tất cả positions và transactions của tài khoản này sẽ bị xóa.',
@@ -51,17 +93,6 @@ export function ProfileScreen({ navigation }) {
       [
         { text: 'Hủy', style: 'cancel' },
         { text: 'Đăng xuất', style: 'destructive', onPress: () => signOut() },
-      ]
-    );
-  };
-
-  const handleExpireDemo = () => {
-    Alert.alert(
-      'Mô phỏng hết hạn phiên',
-      'Phiên hiện tại sẽ bị huỷ ngay như thể refresh token đã hết hạn. Bạn sẽ bị đưa về màn đăng nhập.',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        { text: 'Hết hạn ngay', style: 'destructive', onPress: () => expireSession() },
       ]
     );
   };
@@ -94,33 +125,88 @@ export function ProfileScreen({ navigation }) {
       </View>
 
       <View style={styles.profileCard}>
-        <Text style={styles.avatar}>{user.avatar}</Text>
-        <Text style={styles.username}>{user.username}</Text>
+        <UserAvatar user={editing ? { ...user, avatar: draftAvatar, photoURL: null } : user} />
 
-        <View style={styles.badgeRow}>
-          <Text style={[styles.roleBadge, { color: ROLE_COLORS[user.role], borderColor: ROLE_COLORS[user.role] + '66' }]}>
-            {ROLE_LABELS[user.role]}
-          </Text>
-          <Text style={styles.providerBadge}>{PROVIDER_LABELS[user.provider] || user.provider}</Text>
-        </View>
+        {editing ? (
+          <View style={styles.editBlock}>
+            <TextInput
+              style={styles.nameInput}
+              value={draftName}
+              onChangeText={setDraftName}
+              placeholder="Tên hiển thị"
+              placeholderTextColor="#5C5C5C"
+              maxLength={24}
+              autoCapitalize="none"
+            />
+            <Text style={styles.avatarPickerLabel}>Chọn avatar</Text>
+            <View style={styles.avatarPicker}>
+              {AVATARS.map(emoji => (
+                <TouchableOpacity
+                  key={emoji}
+                  style={[styles.avatarOption, draftAvatar === emoji && styles.avatarOptionActive]}
+                  onPress={() => setDraftAvatar(emoji)}
+                >
+                  <Text style={styles.avatarOptionText}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={styles.editActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditing(false)} disabled={saving}>
+                <Text style={styles.cancelBtnText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={saveEdit} disabled={saving}>
+                <Text style={styles.saveBtnText}>{saving ? 'Đang lưu…' : 'Lưu'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <>
+            <Text style={styles.username}>{user.username}</Text>
 
-        <Text style={styles.email} numberOfLines={1}>{user.email}</Text>
+            <View style={styles.badgeRow}>
+              <Text style={[styles.roleBadge, { color: ROLE_COLORS[user.role], borderColor: ROLE_COLORS[user.role] + '66' }]}>
+                {ROLE_LABELS[user.role]}
+              </Text>
+              <Text style={styles.providerBadge}>{PROVIDER_LABELS[user.provider] || user.provider}</Text>
+            </View>
 
-        <View style={styles.rankRow}>
-          <Text style={styles.rank}>{'\u{1F3C6}'} Rank #{user.rank}</Text>
-          <Text style={styles.joined}>Tham gia: {formatDate(user.joinedDate)}</Text>
-        </View>
+            <Text style={styles.email} numberOfLines={1}>{user.email}</Text>
 
-        <View style={styles.balanceRow}>
-          <Text style={styles.balanceLabel}>Token balance</Text>
-          <Text style={styles.balanceValue}>{formatToken(user.tokenBalance)} {'\u{1F4B0}'}</Text>
-        </View>
+            <TouchableOpacity style={styles.editBtn} onPress={startEdit}>
+              <Text style={styles.editBtnText}>{'\u{270F}'} Sửa hồ sơ</Text>
+            </TouchableOpacity>
 
-        <View style={styles.sessionRow}>
-          <Text style={styles.sessionLabel}>Phiên đăng nhập</Text>
-          <Text style={styles.sessionValue}>{formatSessionLeft(state.session?.expiresAt)}</Text>
-        </View>
+            <View style={styles.rankRow}>
+              <Text style={styles.rank}>{'\u{1F3C6}'} Rank #{user.rank}</Text>
+              <Text style={styles.joined}>Tham gia: {formatDate(user.joinedDate)}</Text>
+            </View>
+
+            <View style={styles.balanceRow}>
+              <Text style={styles.balanceLabel}>Token balance</Text>
+              <Text style={styles.balanceValue}>{formatToken(user.tokenBalance)} {'\u{1F4B0}'}</Text>
+            </View>
+
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>Firebase UID</Text>
+              <Text style={styles.metaValue}>{shortUid}</Text>
+            </View>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>Trạng thái</Text>
+              <Text style={[styles.metaValue, { color: user.status === 'banned' ? '#FF6B6B' : '#00CE7E' }]}>
+                {user.status === 'banned' ? 'Bị khoá' : 'Hoạt động'}
+              </Text>
+            </View>
+          </>
+        )}
       </View>
+
+      {state.profileSync && (
+        <View style={styles.syncWarn}>
+          <Text style={styles.syncWarnText}>
+            {'\u{26A0}'} Chưa đồng bộ được hồ sơ với Firestore: {state.profileSync}
+          </Text>
+        </View>
+      )}
 
       {canClaimDaily ? (
         <TouchableOpacity
@@ -172,8 +258,7 @@ export function ProfileScreen({ navigation }) {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{'\u{1F510}'} Tài khoản</Text>
-        {link('\u{1F6AA}', 'Đăng xuất', handleSignOut, { danger: true })}
-        {link('\u{23F1}', 'Mô phỏng phiên hết hạn', handleExpireDemo, { hint: 'Kiểm tra auto-logout khi refresh token hết hạn' })}
+        {link('\u{1F6AA}', 'Đăng xuất', handleSignOut, { danger: true, hint: 'Đăng xuất khỏi Google trên thiết bị này' })}
         {link('\u{1F504}', 'Reset token (demo)', handleReset, { danger: true, hint: 'Chỉ reset ví của tài khoản hiện tại' })}
       </View>
 
@@ -181,7 +266,8 @@ export function ProfileScreen({ navigation }) {
         <Text style={styles.disclaimerText}>{'\u{26A0}'} AIBox là nền tảng giải trí. Token là credit nội bộ, không có giá trị tiền tệ và không thể đổi tiền thật. Prediction market là game dự đoán, không phải cá cược.</Text>
       </View>
       <Text style={styles.mockNote}>
-        Auth trong bản demo chạy hoàn toàn ở client (AsyncStorage) — không phải bảo mật thật. Production phải xác thực ở server.
+        Đăng nhập bằng Google qua Firebase Authentication. Hồ sơ (tên, avatar, quyền) lưu ở Firestore;
+        ví token và dữ liệu game lưu trên thiết bị theo UID Firebase.
       </Text>
     </ScrollView>
   );
@@ -193,21 +279,37 @@ const styles = StyleSheet.create({
   backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600' },
   headerTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
   profileCard: { backgroundColor: '#1A1D24', borderRadius: 16, marginHorizontal: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36', marginBottom: 12 },
-  avatar: { fontSize: 56, marginBottom: 8 },
+  avatarWrap: { backgroundColor: '#22262E', alignItems: 'center', justifyContent: 'center', marginBottom: 10, overflow: 'hidden' },
   username: { color: '#FFFFFF', fontSize: 22, fontWeight: '700', marginBottom: 6 },
   badgeRow: { flexDirection: 'row', gap: 6, marginBottom: 6, flexWrap: 'wrap', justifyContent: 'center' },
   roleBadge: { fontSize: 10, fontWeight: '700', borderWidth: 1, borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2, overflow: 'hidden' },
   providerBadge: { color: '#8E8E93', fontSize: 10, fontWeight: '600', backgroundColor: '#22262E', borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2, overflow: 'hidden' },
   email: { color: '#8E8E93', fontSize: 12, marginBottom: 10, maxWidth: '90%' },
+  editBtn: { backgroundColor: '#22262E', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 14 },
+  editBtnText: { color: '#A78BFA', fontSize: 12, fontWeight: '600' },
+  editBlock: { width: '100%', marginTop: 4 },
+  nameInput: { backgroundColor: '#0F1115', borderWidth: 1, borderColor: '#2A2E36', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: '#FFFFFF', fontSize: 15, textAlign: 'center' },
+  avatarPickerLabel: { color: '#8E8E93', fontSize: 11, marginTop: 12, marginBottom: 6 },
+  avatarPicker: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
+  avatarOption: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#22262E', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'transparent' },
+  avatarOptionActive: { borderColor: '#6C5CE7', backgroundColor: 'rgba(108, 92, 231, 0.18)' },
+  avatarOptionText: { fontSize: 19 },
+  editActions: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  cancelBtn: { flex: 1, backgroundColor: '#22262E', borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
+  cancelBtnText: { color: '#8E8E93', fontSize: 13, fontWeight: '600' },
+  saveBtn: { flex: 1, backgroundColor: '#6C5CE7', borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
+  saveBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
   rankRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   rank: { color: '#FFB74D', fontSize: 13, fontWeight: '600' },
   joined: { color: '#5C5C5C', fontSize: 12 },
   balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#0F1115', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, width: '100%', justifyContent: 'center' },
   balanceLabel: { color: '#8E8E93', fontSize: 14 },
   balanceValue: { color: '#A78BFA', fontSize: 18, fontWeight: '700', fontFamily: 'monospace' },
-  sessionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#22262E' },
-  sessionLabel: { color: '#5C5C5C', fontSize: 11 },
-  sessionValue: { color: '#00CE7E', fontSize: 11, fontWeight: '600', fontFamily: 'monospace' },
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#22262E' },
+  metaLabel: { color: '#5C5C5C', fontSize: 11 },
+  metaValue: { color: '#8E8E93', fontSize: 11, fontWeight: '600', fontFamily: 'monospace' },
+  syncWarn: { backgroundColor: 'rgba(255, 183, 77, 0.08)', borderWidth: 1, borderColor: 'rgba(255, 183, 77, 0.25)', borderRadius: 10, marginHorizontal: 16, marginBottom: 12, padding: 12 },
+  syncWarnText: { color: '#FFB74D', fontSize: 11, lineHeight: 17 },
   dailyBtn: { backgroundColor: 'rgba(255, 183, 77, 0.15)', marginHorizontal: 16, marginBottom: 16, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255, 183, 77, 0.3)' },
   dailyBtnText: { color: '#FFB74D', fontSize: 14, fontWeight: '600' },
   dailyBtnDone: { backgroundColor: '#1A1D24', marginHorizontal: 16, marginBottom: 16, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
