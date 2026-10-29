@@ -41,7 +41,8 @@ export function ModelCatalogScreen({ navigation }) {
   }), [state.aiModels, search, provider, type]);
 
   const tryNow = (model) => {
-    navigation.navigate('AIHub', { modelId: model.id });
+    // ModelCatalog nằm trong root stack, AIHub nằm trong tab → phải navigate lồng
+    navigation.navigate('MainTabs', { screen: 'AIHub', params: { modelId: model.id, ts: Date.now() } });
   };
 
   const renderItem = ({ item }) => (

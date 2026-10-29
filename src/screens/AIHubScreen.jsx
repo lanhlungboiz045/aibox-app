@@ -28,7 +28,7 @@ export function AIHubScreen() {
       const m = state.aiModels.find(x => x.id === mid);
       if (m) { setSelectedModel(m); setMessages([]); }
     }
-  }, [route.params?.modelId]);
+  }, [route.params?.modelId, route.params?.ts]);
 
   const typeFilters = [
     { key: 'all', label: 'All', icon: '\u{2728}' },
