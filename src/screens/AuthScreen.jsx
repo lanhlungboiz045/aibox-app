@@ -12,13 +12,15 @@ import {
   missingFirebaseFields,
   GOOGLE_WEB_CLIENT_ID,
 } from '../config/firebase';
+import { isGoogleSignInNativeAvailable } from '../services/auth';
 
 export function AuthScreen() {
   const insets = useSafeAreaInsets();
   const { state, signInWithGoogle, clearAuthNotice, isGoogleSignInConfigured } = useApp();
   const [loading, setLoading] = useState(false);
+  const nativeAvailable = isGoogleSignInNativeAvailable();
   const firebaseReady = isFirebaseConfigured && Boolean(GOOGLE_WEB_CLIENT_ID);
-  const canSignIn = firebaseReady && isGoogleSignInConfigured;
+  const canSignIn = firebaseReady && nativeAvailable && isGoogleSignInConfigured;
 
   const handleGoogle = async () => {
     if (loading) return;
@@ -82,9 +84,9 @@ export function AuthScreen() {
         {!canSignIn && (
           <View style={styles.setupBox}>
             <Text style={styles.setupTitle}>
-              {missingFirebaseFields.length > 0
+              {missingFirebaseFields.length > 0 || !GOOGLE_WEB_CLIENT_ID
                 ? 'Chưa điền config Firebase (.env)'
-                : 'Chưa cấu hình Google Client ID'}
+                : 'Expo Go không hỗ trợ Google Sign-In'}
             </Text>
             {missingFirebaseFields.length > 0 ? (
               <>
@@ -97,12 +99,19 @@ export function AuthScreen() {
                   3. Restart Metro: npx expo start -c
                 </Text>
               </>
-            ) : (
+            ) : !GOOGLE_WEB_CLIENT_ID ? (
               <Text style={styles.setupText}>
                 1. Firebase Console → Authentication → bật provider Google{'\n'}
                 2. Copy "Web SDK configuration → Web client ID"{'\n'}
                 3. Thêm vào .env: EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=...{'\n'}
-                4. Restart bằng dev client: npx expo run:android
+                4. Restart Metro: npx expo start -c
+              </Text>
+            ) : (
+              <Text style={styles.setupText}>
+                Đang chạy trong Expo Go — app thiếu module native nên không đăng nhập được.
+                {'\n\n'}Build dev client (chỉ lần đầu, cần máy có Android SDK + điện thoại bật USB debugging):
+                {'\n'}  npx expo run:android
+                {'\n\n'}Sau đó mở app "AIBox" vừa cài trên điện thoại, đừng quét QR bằng Expo Go.
               </Text>
             )}
           </View>

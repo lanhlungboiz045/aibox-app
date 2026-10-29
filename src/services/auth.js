@@ -6,9 +6,10 @@
 //
 // Yêu cầu môi trường: phải build dev client (npx expo run:android) vì
 // @react-native-google-signin là native module — không chạy trong Expo Go.
+// Vì vậy module native được require LAZY: chạy trong Expo Go sẽ thấy thông báo
+// "cần dev build" thay vì crash ngay khi mở app.
 
-import { Platform } from 'react-native';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { Platform, TurboModuleRegistry } from 'react-native';
 import {
   GoogleAuthProvider,
   signInWithCredential,
@@ -17,15 +18,40 @@ import {
 } from 'firebase/auth';
 import {
   authInstance,
-  configureGoogleSignin,
   GOOGLE_WEB_CLIENT_ID,
   isFirebaseConfigured,
   missingFirebaseFields,
 } from '../config/firebase';
 
-// Cần đủ 2 thứ: config Firebase trong .env + Google Web Client ID
+// Module native có được nhúng vào app không? (Expo Go → không có)
+export function isGoogleSignInNativeAvailable() {
+  try {
+    return Boolean(TurboModuleRegistry.get('RNGoogleSignin'));
+  } catch (e) {
+    return false;
+  }
+}
+
+let cachedModule;
+// require lazy: TurboModuleRegistry.getEnforcing bên trong package sẽ throw nếu
+// không có native module, nên chỉ gọi khi thật sự cần.
+function loadGoogleSignin() {
+  if (cachedModule !== undefined) return cachedModule;
+  try {
+    cachedModule = require('@react-native-google-signin/google-signin');
+  } catch (e) {
+    cachedModule = null;
+  }
+  return cachedModule;
+}
+
+// Cần đủ 3 thứ: config Firebase + Google Web Client ID + native module (dev build)
 export function isGoogleSignInConfigured() {
-  return isFirebaseConfigured && Boolean(GOOGLE_WEB_CLIENT_ID);
+  return (
+    isFirebaseConfigured
+    && Boolean(GOOGLE_WEB_CLIENT_ID)
+    && isGoogleSignInNativeAvailable()
+  );
 }
 
 // Thông báo thiếu cấu hình, liệt kê đúng biến còn trống trong .env
@@ -48,7 +74,26 @@ export function getSetupError() {
       + '(Firebase Console → Authentication → Google → Web SDK configuration).'
     );
   }
+  if (!isGoogleSignInNativeAvailable()) {
+    return (
+      'Bạn đang chạy bằng Expo Go — Expo Go không chứa Google Sign-In native.\n\n'
+      + 'Cần build dev client:\n'
+      + '  npx expo run:android\n'
+      + 'Sau đó mở app AIBox vừa cài trên máy (không quét QR bằng Expo Go).'
+    );
+  }
   return null;
+}
+
+// Cấu hình GoogleSignin đúng 1 lần, trước khi gọi signIn()
+let googleConfigured = false;
+function configureGoogleSignin(GoogleSignin) {
+  if (googleConfigured) return;
+  GoogleSignin.configure({
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    offlineAccess: false,
+  });
+  googleConfigured = true;
 }
 
 // Rút gọn Firebase User thành object thuần để đưa vào React state
@@ -77,7 +122,10 @@ export async function signInWithGoogle() {
   const setupError = getSetupError();
   if (setupError) return { ok: false, error: setupError };
 
-  configureGoogleSignin();
+  const mod = loadGoogleSignin();
+  if (!mod) return { ok: false, error: getSetupError() || 'Không nạp được Google Sign-In native.' };
+  const { GoogleSignin, statusCodes } = mod;
+  configureGoogleSignin(GoogleSignin);
 
   try {
     if (Platform.OS === 'android') {
@@ -113,10 +161,13 @@ export async function signInWithGoogle() {
 
 // Đăng xuất cả Google (chọn lại tài khoản) và Firebase
 export async function signOutGoogle() {
-  try {
-    await GoogleSignin.signOut();
-  } catch (e) {
-    // Không đăng nhập bằng GoogleSignin (ví dụ phiên cũ) → bỏ qua
+  const mod = loadGoogleSignin();
+  if (mod) {
+    try {
+      await mod.GoogleSignin.signOut();
+    } catch (e) {
+      // Không đăng nhập bằng GoogleSignin (ví dụ phiên cũ / Expo Go) → bỏ qua
+    }
   }
   if (authInstance) await firebaseSignOut(authInstance);
 }

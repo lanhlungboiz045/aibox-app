@@ -19,7 +19,6 @@ import {
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const env = process.env;
 
@@ -91,17 +90,5 @@ if (isFirebaseConfigured) {
 export const firebaseApp = app;
 export const authInstance = auth;
 export const db = firestore;
-
-let googleConfigured = false;
-
-// Cấu hình GoogleSignin đúng 1 lần, trước khi gọi signIn()
-export function configureGoogleSignin() {
-  if (googleConfigured || !GOOGLE_WEB_CLIENT_ID) return;
-  GoogleSignin.configure({
-    webClientId: GOOGLE_WEB_CLIENT_ID,
-    offlineAccess: false,
-  });
-  googleConfigured = true;
-}
 
 export const googleAuthProvider = new GoogleAuthProvider();
