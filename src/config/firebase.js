@@ -1,11 +1,12 @@
 // config/firebase.js — Khởi tạo Firebase (Auth + Firestore) cho AIBox
 //
-// Config dưới đây là "web app config" của Firebase: các khoá này KHÔNG phải bí mật
-// (chúng nằm trong bundle web bình thường). Bảo mật thật nằm ở Firestore Rules.
-// Nếu muốn tách khỏi source code: chuyển sang process.env.EXPO_PUBLIC_FIREBASE_*
-// và khai báo trong file .env (xem .env.example).
+// Toàn bộ config đọc từ file .env (xem .env.example). Nhờ vậy đổi sang project
+// Firebase khác chỉ cần sửa .env + restart Metro, không phải sửa code.
 //
-// LƯU Ý: Google Sign-In cần thêm OAuth Web Client ID (không nằm trong config web ở trên).
+// Các khoá dưới đây là "web app config" — KHÔNG phải bí mật (chúng nằm trong
+// bundle web bình thường). Bảo mật thật nằm ở firestore.rules.
+//
+// LƯU Ý: Google Sign-In cần thêm OAuth Web Client ID (khác config web ở trên).
 // Lấy tại Firebase Console → Authentication → Sign-in method → Google → Web SDK configuration.
 // Android còn phải thêm SHA-1 của keystore vào app Android trong Firebase Console.
 
@@ -20,52 +21,76 @@ import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
+const env = process.env;
+
 export const firebaseConfig = {
-  apiKey: 'AIzaSyBzWi7orcyD-Cj05EmCLbJtf7QU8kB5eqM',
-  authDomain: 'bonus6-41a9b.firebaseapp.com',
-  projectId: 'bonus6-41a9b',
-  storageBucket: 'bonus6-41a9b.firebasestorage.app',
-  messagingSenderId: '767101615493',
-  appId: '1:767101615493:web:8bab4ab8caf4728fb018ec',
+  apiKey: env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
+  authDomain: env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
+  projectId: env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
+  storageBucket: env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
 };
 
+// 3 field này là tối thiểu để Firebase Auth/Firestore chạy được
+export const isFirebaseConfigured = Boolean(
+  firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId
+);
+
+// Danh sách field còn thiếu — hiển thị trong màn đăng nhập để dễ sửa .env
+export const missingFirebaseFields = [
+  ['EXPO_PUBLIC_FIREBASE_API_KEY', firebaseConfig.apiKey],
+  ['EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN', firebaseConfig.authDomain],
+  ['EXPO_PUBLIC_FIREBASE_PROJECT_ID', firebaseConfig.projectId],
+  ['EXPO_PUBLIC_FIREBASE_APP_ID', firebaseConfig.appId],
+].filter(([, value]) => !value).map(([name]) => name);
+
 // Web client ID của Google OAuth (bắt buộc để lấy idToken cho Firebase)
-export const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
+export const GOOGLE_WEB_CLIENT_ID = env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
 
 // Danh sách email được cấp role admin ngay lần đăng nhập đầu tiên
-export const ADMIN_EMAILS = String(process.env.EXPO_PUBLIC_ADMIN_EMAILS || '')
+// (nhớ khai báo lại y hệt trong firestore.rules → adminEmails())
+export const ADMIN_EMAILS = String(env.EXPO_PUBLIC_ADMIN_EMAILS || '')
   .split(',')
   .map(email => email.trim().toLowerCase())
   .filter(Boolean);
 
-// Chỉ khởi tạo 1 lần (Fast Refresh có thể chạy lại module này)
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+// Chỉ khởi tạo khi .env đã có config, tránh crash trắng màn hình ở lần chạy đầu
+let app = null;
+let auth = null;
+let firestore = null;
 
-// Auth + AsyncStorage: giữ đăng nhập qua các lần mở app.
-// initializeAuth ném lỗi nếu auth đã được khởi tạo (hot reload) → fallback getAuth.
-// getReactNativePersistence chỉ có trong build "react-native" của @firebase/auth;
-// nếu Metro resolve sai build thì hàm này undefined → cảnh báo rõ thay vì im lặng.
-let auth;
-if (typeof getReactNativePersistence === 'function') {
-  try {
-    auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage),
-    });
-  } catch (e) {
+if (isFirebaseConfigured) {
+  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
+  // Auth + AsyncStorage: giữ đăng nhập qua các lần mở app.
+  // initializeAuth ném lỗi nếu auth đã được khởi tạo (hot reload) → fallback getAuth.
+  // getReactNativePersistence chỉ có trong build "react-native" của @firebase/auth;
+  // nếu Metro resolve sai build thì hàm này undefined → cảnh báo rõ thay vì im lặng.
+  if (typeof getReactNativePersistence === 'function') {
+    try {
+      auth = initializeAuth(app, {
+        persistence: getReactNativePersistence(AsyncStorage),
+      });
+    } catch (e) {
+      auth = getAuth(app);
+    }
+  } else {
+    if (__DEV__) {
+      console.warn(
+        '[firebase] Không tìm thấy getReactNativePersistence — phiên đăng nhập sẽ không được lưu. '
+        + 'Kiểm tra version firebase (cần 10.14.x) và restart Metro với -c.'
+      );
+    }
     auth = getAuth(app);
   }
-} else {
-  if (__DEV__) {
-    console.warn(
-      '[firebase] Không tìm thấy getReactNativePersistence — phiên đăng nhập sẽ không được lưu. '
-      + 'Kiểm tra version firebase (cần 10.14.x) và restart Metro với -c.'
-    );
-  }
-  auth = getAuth(app);
+
+  firestore = getFirestore(app);
 }
 
+export const firebaseApp = app;
 export const authInstance = auth;
-export const db = getFirestore(app);
+export const db = firestore;
 
 let googleConfigured = false;
 

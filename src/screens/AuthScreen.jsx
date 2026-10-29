@@ -6,12 +6,19 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
-import { firebaseConfig } from '../config/firebase';
+import {
+  firebaseConfig,
+  isFirebaseConfigured,
+  missingFirebaseFields,
+  GOOGLE_WEB_CLIENT_ID,
+} from '../config/firebase';
 
 export function AuthScreen() {
   const insets = useSafeAreaInsets();
   const { state, signInWithGoogle, clearAuthNotice, isGoogleSignInConfigured } = useApp();
   const [loading, setLoading] = useState(false);
+  const firebaseReady = isFirebaseConfigured && Boolean(GOOGLE_WEB_CLIENT_ID);
+  const canSignIn = firebaseReady && isGoogleSignInConfigured;
 
   const handleGoogle = async () => {
     if (loading) return;
@@ -55,7 +62,7 @@ export function AuthScreen() {
         </Text>
 
         <TouchableOpacity
-          style={[styles.googleBtn, loading && styles.googleBtnDisabled]}
+          style={[styles.googleBtn, (loading || !canSignIn) && styles.googleBtnDisabled]}
           onPress={handleGoogle}
           activeOpacity={0.85}
           disabled={loading}
@@ -72,15 +79,32 @@ export function AuthScreen() {
           )}
         </TouchableOpacity>
 
-        {!isGoogleSignInConfigured && (
+        {!canSignIn && (
           <View style={styles.setupBox}>
-            <Text style={styles.setupTitle}>Chưa cấu hình Google Client ID</Text>
-            <Text style={styles.setupText}>
-              1. Firebase Console → Authentication → bật provider Google{'\n'}
-              2. Copy "Web SDK configuration → Web client ID"{'\n'}
-              3. Thêm vào .env: EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=...{'\n'}
-              4. Restart bằng dev client: npx expo run:android
+            <Text style={styles.setupTitle}>
+              {missingFirebaseFields.length > 0
+                ? 'Chưa điền config Firebase (.env)'
+                : 'Chưa cấu hình Google Client ID'}
             </Text>
+            {missingFirebaseFields.length > 0 ? (
+              <>
+                <Text style={styles.setupText}>
+                  Thiếu: {missingFirebaseFields.join(', ')}
+                </Text>
+                <Text style={styles.setupText}>
+                  1. Firebase Console → Project settings → Your apps → Web app{'\n'}
+                  2. Copy 6 giá trị firebaseConfig vào .env{'\n'}
+                  3. Restart Metro: npx expo start -c
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.setupText}>
+                1. Firebase Console → Authentication → bật provider Google{'\n'}
+                2. Copy "Web SDK configuration → Web client ID"{'\n'}
+                3. Thêm vào .env: EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=...{'\n'}
+                4. Restart bằng dev client: npx expo run:android
+              </Text>
+            )}
           </View>
         )}
 
@@ -91,7 +115,9 @@ export function AuthScreen() {
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Firebase project: {firebaseConfig.projectId}</Text>
+        <Text style={styles.footerText}>
+          Firebase project: {firebaseConfig.projectId || '(chưa điền .env)'}
+        </Text>
         <Text style={styles.footerHint}>
           Native Google Sign-In không chạy trong Expo Go — cần dev build.
         </Text>

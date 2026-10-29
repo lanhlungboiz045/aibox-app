@@ -17,34 +17,49 @@ Tạo file `.env` từ mẫu:
 cp .env.example .env
 ```
 
-Điền 2 biến:
+Điền các biến trong `.env`:
 
 | Biến | Ý nghĩa |
 | --- | --- |
-| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Web client ID của Google OAuth (bắt buộc) |
+| `EXPO_PUBLIC_FIREBASE_API_KEY` | `apiKey` trong firebaseConfig (Project settings → Your apps → Web app) |
+| `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | `authDomain` |
+| `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | `projectId` |
+| `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET` | `storageBucket` |
+| `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `messagingSenderId` |
+| `EXPO_PUBLIC_FIREBASE_APP_ID` | `appId` |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Web client ID của Google OAuth (bắt buộc để đăng nhập) |
 | `EXPO_PUBLIC_ADMIN_EMAILS` | Email được cấp role System Admin, cách nhau dấu phẩy |
+
+> Đổi sang project Firebase khác chỉ cần thay 6 giá trị `EXPO_PUBLIC_FIREBASE_*`
+> trong `.env` rồi restart Metro — không phải sửa code.
+> App vẫn mở được khi thiếu config: màn đăng nhập sẽ liệt kê đúng biến còn trống.
 
 ## 2. Cấu hình Firebase (bắt buộc, làm 1 lần)
 
-1. **Tạo/bật Authentication**
+1. **Tạo Firestore + lấy config web**
+   - Firebase Console → Project settings → **Your apps** → Add app → **Web** (`</>`).
+   - Copy 6 giá trị trong `firebaseConfig` vào `.env` (`EXPO_PUBLIC_FIREBASE_*`).
+
+2. **Tạo/bật Authentication**
    - Firebase Console → Authentication → Get started
    - Sign-in method → bật **Google** → chọn email hỗ trợ → Save
    - Mở Google provider → **Web SDK configuration** → copy **Web client ID**
-     (dạng `767101615493-xxxx.apps.googleusercontent.com`) → dán vào `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`.
+     (dạng `<project-number>-xxxx.apps.googleusercontent.com`) → dán vào `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`.
 
-2. **Bật Firestore Database**
+3. **Bật Firestore Database**
    - Firestore Database → Create database → chọn production mode → chọn region gần (asia-southeast1).
 
-3. **Deploy Security Rules**
+4. **Deploy Security Rules**
    - Firestore Database → Rules → dán nội dung `firestore.rules` → Publish.
    - ⚠️ Sửa danh sách `adminEmails()` trong `firestore.rules` cho khớp `.env`
      (Rules chạy trên server nên không đọc được biến `EXPO_PUBLIC_*`).
    - Chưa deploy rules thì app vẫn đăng nhập được nhưng sẽ hiện cảnh báo
      "Chưa đồng bộ được hồ sơ với Firestore" và mọi user đều là `user`.
 
-4. **Thêm app Android + SHA-1**
+5. **Thêm app Android + SHA-1**
    - Project settings → Your apps → Add app → Android
    - Package name: `com.aibox.app`
+   - Bỏ qua bước tải `google-services.json` và "Add Firebase SDK" (app dùng Firebase JS SDK).
    - Lấy SHA-1 của keystore:
      ```bash
      cd android && ./gradlew signingReport
@@ -53,7 +68,7 @@ cp .env.example .env
    - Dán SHA-1 vào app Android trong Firebase Console. Thiếu SHA-1 → Google trả về lỗi
      `DEVELOPER_ERROR` / không có `idToken`.
 
-5. **iOS (tuỳ chọn)**: thêm app iOS với bundle id `com.aibox.app`, tải `GoogleService-Info.plist`,
+6. **iOS (tuỳ chọn)**: thêm app iOS với bundle id `com.aibox.app`, tải `GoogleService-Info.plist`,
    rồi thêm `iosUrlScheme` vào plugin trong `app.json`:
    ```json
    ["@react-native-google-signin/google-signin", { "iosUrlScheme": "com.googleusercontent.apps.<REVERSED_CLIENT_ID>" }]

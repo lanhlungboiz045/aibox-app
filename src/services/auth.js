@@ -15,10 +15,40 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
 } from 'firebase/auth';
-import { authInstance, configureGoogleSignin, GOOGLE_WEB_CLIENT_ID } from '../config/firebase';
+import {
+  authInstance,
+  configureGoogleSignin,
+  GOOGLE_WEB_CLIENT_ID,
+  isFirebaseConfigured,
+  missingFirebaseFields,
+} from '../config/firebase';
 
+// Cần đủ 2 thứ: config Firebase trong .env + Google Web Client ID
 export function isGoogleSignInConfigured() {
-  return Boolean(GOOGLE_WEB_CLIENT_ID);
+  return isFirebaseConfigured && Boolean(GOOGLE_WEB_CLIENT_ID);
+}
+
+// Thông báo thiếu cấu hình, liệt kê đúng biến còn trống trong .env
+export function getSetupError() {
+  if (!isFirebaseConfigured) {
+    const list = missingFirebaseFields.length > 0
+      ? missingFirebaseFields.join(', ')
+      : 'EXPO_PUBLIC_FIREBASE_*';
+    return (
+      'Chưa cấu hình Firebase.\n\n'
+      + `Điền vào .env: ${list}\n`
+      + '(Firebase Console → Project settings → Your apps → SDK setup and configuration)\n'
+      + 'Sau đó restart Metro: npx expo start -c'
+    );
+  }
+  if (!GOOGLE_WEB_CLIENT_ID) {
+    return (
+      'Chưa cấu hình Google Web Client ID.\n\n'
+      + 'Thêm EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID vào file .env '
+      + '(Firebase Console → Authentication → Google → Web SDK configuration).'
+    );
+  }
+  return null;
 }
 
 // Rút gọn Firebase User thành object thuần để đưa vào React state
@@ -34,20 +64,18 @@ export function mapFirebaseUser(user) {
 
 // Lắng nghe trạng thái đăng nhập (Firebase tự restore phiên từ AsyncStorage)
 export function subscribeAuth(callback) {
+  // Chưa cấu hình Firebase → coi như chưa đăng nhập để app vẫn mở được màn login
+  if (!authInstance) {
+    callback(null);
+    return () => {};
+  }
   return onAuthStateChanged(authInstance, user => callback(mapFirebaseUser(user)));
 }
 
 // Đăng nhập bằng Google. Trả { ok, error?, cancelled? } — không throw ra UI.
 export async function signInWithGoogle() {
-  if (!isGoogleSignInConfigured()) {
-    return {
-      ok: false,
-      error:
-        'Chưa cấu hình Google Web Client ID.\n\n'
-        + 'Thêm EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID vào file .env '
-        + '(Firebase Console → Authentication → Google → Web SDK configuration).',
-    };
-  }
+  const setupError = getSetupError();
+  if (setupError) return { ok: false, error: setupError };
 
   configureGoogleSignin();
 
@@ -90,5 +118,5 @@ export async function signOutGoogle() {
   } catch (e) {
     // Không đăng nhập bằng GoogleSignin (ví dụ phiên cũ) → bỏ qua
   }
-  await firebaseSignOut(authInstance);
+  if (authInstance) await firebaseSignOut(authInstance);
 }

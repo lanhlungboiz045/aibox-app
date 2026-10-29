@@ -25,6 +25,9 @@ import { db, ADMIN_EMAILS } from '../config/firebase';
 const USERS_COLLECTION = 'users';
 const MAX_DIRECTORY = 100;
 
+// Chưa điền config Firebase trong .env → trả lỗi rõ ràng thay vì crash
+const NO_DB_ERROR = 'Chưa cấu hình Firebase trong .env (thiếu apiKey/projectId/appId).';
+
 // Email trong whitelist .env → admin ngay từ lần đầu đăng nhập
 export function defaultRoleFor(email) {
   const normalized = String(email || '').trim().toLowerCase();
@@ -71,6 +74,8 @@ export async function ensureUserProfile(fbUser) {
     lastLoginAt: new Date().toISOString(),
   };
 
+  if (!db) return { profile: fallback, syncError: NO_DB_ERROR };
+
   try {
     const ref = doc(db, USERS_COLLECTION, fbUser.uid);
     const snap = await getDoc(ref);
@@ -103,6 +108,7 @@ export async function ensureUserProfile(fbUser) {
 }
 
 export async function getUserProfile(uid) {
+  if (!db) return { profile: null, error: NO_DB_ERROR };
   try {
     const snap = await getDoc(doc(db, USERS_COLLECTION, uid));
     return { profile: snap.exists() ? snap.data() : null, error: null };
@@ -113,6 +119,10 @@ export async function getUserProfile(uid) {
 
 // Real-time: admin đổi role/ban ở máy khác thì app cập nhật ngay
 export function subscribeUserProfile(uid, callback) {
+  if (!db) {
+    callback({ profile: null, error: NO_DB_ERROR });
+    return () => {};
+  }
   return onSnapshot(
     doc(db, USERS_COLLECTION, uid),
     snap => callback({ profile: snap.exists() ? snap.data() : null, error: null }),
@@ -130,6 +140,7 @@ export async function updateUserProfile(uid, fields) {
   if (fields.photoURL === null) allowed.photoURL = null;
   if (typeof fields.photoURL === 'string') allowed.photoURL = fields.photoURL;
   if (Object.keys(allowed).length === 0) return { ok: true };
+  if (!db) return { ok: false, error: NO_DB_ERROR };
 
   try {
     await updateDoc(doc(db, USERS_COLLECTION, uid), allowed);
@@ -141,6 +152,7 @@ export async function updateUserProfile(uid, fields) {
 
 // Admin đổi quyền
 export async function updateUserRole(uid, role) {
+  if (!db) return { ok: false, error: NO_DB_ERROR };
   try {
     await updateDoc(doc(db, USERS_COLLECTION, uid), { role });
     return { ok: true };
@@ -151,6 +163,7 @@ export async function updateUserRole(uid, role) {
 
 // Admin ban / unban
 export async function updateUserStatus(uid, status) {
+  if (!db) return { ok: false, error: NO_DB_ERROR };
   try {
     await updateDoc(doc(db, USERS_COLLECTION, uid), { status });
     return { ok: true };
@@ -161,6 +174,7 @@ export async function updateUserStatus(uid, status) {
 
 // Danh sách người dùng cho Admin CMS
 export async function listUserProfiles() {
+  if (!db) return { users: [], error: NO_DB_ERROR };
   try {
     const snap = await getDocs(
       query(collection(db, USERS_COLLECTION), orderBy('email'), limit(MAX_DIRECTORY))
