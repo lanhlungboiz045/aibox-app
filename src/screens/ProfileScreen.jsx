@@ -200,6 +200,15 @@ export function ProfileScreen({ navigation }) {
         )}
       </View>
 
+      {state.demoMode && (
+        <View style={styles.demoBox}>
+          <Text style={styles.demoBoxText}>
+            {'\u{1F9EA}'} Chế độ demo (Expo Go): ví và dữ liệu chỉ lưu trên máy này,
+            không đồng bộ Firebase. Bấm đăng xuất để thoát, hoặc build dev client để đăng nhập Google thật.
+          </Text>
+        </View>
+      )}
+
       {state.profileSync && (
         <View style={styles.syncWarn}>
           <Text style={styles.syncWarnText}>
@@ -310,6 +319,8 @@ const styles = StyleSheet.create({
   metaValue: { color: '#8E8E93', fontSize: 11, fontWeight: '600', fontFamily: 'monospace' },
   syncWarn: { backgroundColor: 'rgba(255, 183, 77, 0.08)', borderWidth: 1, borderColor: 'rgba(255, 183, 77, 0.25)', borderRadius: 10, marginHorizontal: 16, marginBottom: 12, padding: 12 },
   syncWarnText: { color: '#FFB74D', fontSize: 11, lineHeight: 17 },
+  demoBox: { backgroundColor: 'rgba(142, 142, 147, 0.10)', borderWidth: 1, borderColor: '#2A2E36', borderRadius: 10, marginHorizontal: 16, marginBottom: 12, padding: 12 },
+  demoBoxText: { color: '#8E8E93', fontSize: 11, lineHeight: 17 },
   dailyBtn: { backgroundColor: 'rgba(255, 183, 77, 0.15)', marginHorizontal: 16, marginBottom: 16, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255, 183, 77, 0.3)' },
   dailyBtnText: { color: '#FFB74D', fontSize: 14, fontWeight: '600' },
   dailyBtnDone: { backgroundColor: '#1A1D24', marginHorizontal: 16, marginBottom: 16, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },

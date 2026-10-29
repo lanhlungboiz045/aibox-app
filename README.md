@@ -86,6 +86,17 @@ npx expo start --dev-client
 
 Các lần sau chỉ cần `npx expo start --dev-client` rồi mở app **AIBox** đã cài.
 
+### Test nhanh bằng Expo Go (không cần build)
+
+```bash
+npx expo start -c --go     # -g: mở ở chế độ Expo Go
+```
+
+Trong Expo Go, màn đăng nhập có nút **"Vào chế độ demo (chỉ dev)"**:
+nút này chỉ hiện khi `__DEV__` và máy không có Google Sign-In native, tạo ví local
+(uid `demo-expo-go`) để test toàn bộ UI/chức năng mà **không** đăng nhập Google.
+Đăng xuất sẽ xoá ví demo. Đây không phải login thật — bản build dev client mới có Google Sign-In.
+
 Yêu cầu máy build (Windows):
 - JDK 17 (`JAVA_HOME` trỏ tới bản JDK 17)
 - Android SDK + `ANDROID_HOME` (ví dụ `C:\Users\<tên>\AppData\Local\Android\Sdk`)

@@ -35,6 +35,8 @@ const STORAGE_KEY = '@aibox_state';
 // Key của format cũ (2 key, không version) — chỉ đọc 1 lần để migrate markets
 const LEGACY_MARKETS_KEY = '@aibox_markets_state';
 const STORAGE_VERSION = 4;
+// uid cố định cho chế độ demo (chỉ dev) — không trùng uid Firebase nào
+const DEMO_UID = 'demo-expo-go';
 const PERSIST_DEBOUNCE_MS = 400;
 // Giới hạn lịch sử để JSON.stringify không phình dần theo thời gian
 const MAX_TRANSACTIONS = 200;
@@ -125,6 +127,9 @@ function createInitialState() {
     profileSync: null,
     authReady: false,
     authNotice: null,
+    // Chế độ demo CHỈ dùng khi dev (Expo Go không có native Google Sign-In).
+    // Không tạo tài khoản Firebase, chỉ tạo ví local để test UI.
+    demoMode: false,
     markets: MARKETS.map(m => ({ ...m })),
     aiModels: AI_MODELS,
     comments: {},
@@ -323,12 +328,64 @@ function reducer(state, action) {
     case 'AUTH_SIGNED_OUT':
       return {
         ...state,
+        // Thoát chế độ demo → xoá luôn ví demo cho sạch danh sách tài khoản
+        accounts: action.payload?.removeDemo
+          ? state.accounts.filter(a => a.id !== DEMO_UID)
+          : state.accounts,
         firebaseUser: null,
         profile: null,
+        demoMode: false,
         authReady: true,
         // Giữ notice cũ (ví dụ "bị khoá") nếu lần sign-out này không kèm lý do
         authNotice: action.payload?.notice ?? state.authNotice,
       };
+
+    // Chế độ demo (chỉ dev): giả lập phiên đăng nhập bằng ví local để test UI
+    // trên Expo Go — nơi không có Google Sign-In native và không có Firestore.
+    case 'DEMO_SESSION': {
+      const existing = state.accounts.find(a => a.id === DEMO_UID);
+      const account = {
+        ...(existing || createAccount({
+          id: DEMO_UID,
+          email: 'demo@expo-go.local',
+          username: 'Demo Expo Go',
+          provider: 'demo',
+          // Cho xem luôn tab Admin để test CMS khi demo
+          role: 'admin',
+        })),
+        role: 'admin',
+        status: 'active',
+        provider: 'demo',
+      };
+      const accounts = existing
+        ? state.accounts.map(a => (a.id === DEMO_UID ? account : a))
+        : [...state.accounts, account];
+
+      return {
+        ...state,
+        accounts,
+        firebaseUser: {
+          uid: DEMO_UID,
+          email: account.email,
+          displayName: account.username,
+          photoURL: null,
+        },
+        profile: {
+          uid: DEMO_UID,
+          email: account.email,
+          username: account.username,
+          avatar: account.avatar,
+          role: 'admin',
+          status: 'active',
+          provider: 'demo',
+        },
+        profileSync: null,
+        demoMode: true,
+        authReady: true,
+        authNotice: null,
+        quests: { ...state.quests, [DEMO_UID]: ensureQuestState(state.quests[DEMO_UID]) },
+      };
+    }
 
     // Firestore đổi role/status/username → mirror xuống account local
     case 'PROFILE_PATCH': {
@@ -1066,7 +1123,8 @@ export function AppProvider({ children }) {
     if (authUser === undefined || state.isLoading) return undefined;
 
     if (authUser === null) {
-      dispatch({ type: 'AUTH_SIGNED_OUT' });
+      // Đang test bằng chế độ demo → không có phiên Firebase, đừng đá ra ngoài
+      if (!state.demoMode) dispatch({ type: 'AUTH_SIGNED_OUT' });
       return undefined;
     }
 
@@ -1114,12 +1172,13 @@ export function AppProvider({ children }) {
     })();
 
     return () => { cancelled = true; };
-  }, [authUser, state.isLoading]);
+  }, [authUser, state.isLoading, state.demoMode]);
 
   // Theo dõi users/{uid} realtime: admin đổi role/ban là app cập nhật ngay
   useEffect(() => {
     const uid = state.firebaseUser?.uid;
-    if (!uid) return undefined;
+    // Chế độ demo không có Firestore → không subscribe (tránh lỗi permission-denied)
+    if (!uid || state.demoMode) return undefined;
 
     return subscribeUserProfile(uid, ({ profile }) => {
       if (!profile) return;
@@ -1153,9 +1212,20 @@ export function AppProvider({ children }) {
 
   const signInWithGoogle = useCallback(() => googleSignIn(), []);
 
+  // CHỈ DEV: vào app bằng ví local khi đang chạy Expo Go (không có native module).
+  // Không tạo tài khoản Firebase, không đồng bộ Firestore.
+  const enterDemoMode = useCallback(() => {
+    if (!__DEV__) return;
+    dispatch({ type: 'DEMO_SESSION' });
+  }, []);
+
   const signOut = useCallback(async () => {
-    await signOutGoogle();
-    dispatch({ type: 'AUTH_SIGNED_OUT' });
+    const wasDemo = stateRef.current.demoMode;
+    if (!wasDemo) await signOutGoogle();
+    dispatch({
+      type: 'AUTH_SIGNED_OUT',
+      payload: wasDemo ? { removeDemo: true } : undefined,
+    });
     // Đăng xuất chủ động → không giữ thông báo cũ (ví dụ "bị khoá")
     dispatch({ type: 'AUTH_NOTICE', payload: null });
   }, []);
@@ -1185,6 +1255,8 @@ export function AppProvider({ children }) {
     if (Object.keys(patch).length === 0) return { ok: true };
 
     dispatch({ type: 'PROFILE_PATCH', payload: { patch } });
+    // Chế độ demo không có Firestore → chỉ lưu trên máy
+    if (current.demoMode) return { ok: true };
     // Firestore lỗi (rules/offline) vẫn giữ thay đổi local, chỉ báo syncError
     const result = await updateUserProfile(user.id, patch);
     return { ok: true, syncError: result.ok ? null : result.error };
@@ -1408,6 +1480,7 @@ export function AppProvider({ children }) {
         state: { ...state, user: currentUser },
         // auth (Firebase)
         signInWithGoogle,
+        enterDemoMode,
         signOut,
         clearAuthNotice,
         updateMyProfile,

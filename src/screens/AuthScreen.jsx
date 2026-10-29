@@ -16,7 +16,9 @@ import { isGoogleSignInNativeAvailable } from '../services/auth';
 
 export function AuthScreen() {
   const insets = useSafeAreaInsets();
-  const { state, signInWithGoogle, clearAuthNotice, isGoogleSignInConfigured } = useApp();
+  const {
+    state, signInWithGoogle, clearAuthNotice, isGoogleSignInConfigured, enterDemoMode,
+  } = useApp();
   const [loading, setLoading] = useState(false);
   const nativeAvailable = isGoogleSignInNativeAvailable();
   const firebaseReady = isFirebaseConfigured && Boolean(GOOGLE_WEB_CLIENT_ID);
@@ -109,12 +111,19 @@ export function AuthScreen() {
             ) : (
               <Text style={styles.setupText}>
                 Đang chạy trong Expo Go — app thiếu module native nên không đăng nhập được.
-                {'\n\n'}Build dev client (chỉ lần đầu, cần máy có Android SDK + điện thoại bật USB debugging):
+                {'\n\n'}Khi cần đăng nhập Google thật, build dev client:
                 {'\n'}  npx expo run:android
-                {'\n\n'}Sau đó mở app "AIBox" vừa cài trên điện thoại, đừng quét QR bằng Expo Go.
+                {'\n'}rồi mở app "AIBox" đã cài trên điện thoại.
               </Text>
             )}
           </View>
+        )}
+
+        {/* CHỈ DEV: Expo Go không có Google Sign-In native → cho test UI bằng ví local */}
+        {__DEV__ && !nativeAvailable && (
+          <TouchableOpacity style={styles.demoBtn} onPress={enterDemoMode} activeOpacity={0.85}>
+            <Text style={styles.demoBtnText}>{'\u{1F9EA}'} Vào chế độ demo (chỉ dev)</Text>
+          </TouchableOpacity>
         )}
 
         <Text style={styles.terms}>
@@ -181,6 +190,16 @@ const styles = StyleSheet.create({
   },
   googleIconText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
   googleBtnText: { color: '#1A1D24', fontSize: 15, fontWeight: '700' },
+  demoBtn: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#2A2E36',
+    backgroundColor: '#22262E',
+    borderRadius: 10,
+    paddingVertical: 11,
+    alignItems: 'center',
+  },
+  demoBtnText: { color: '#8E8E93', fontSize: 13, fontWeight: '600' },
   setupBox: {
     marginTop: 16,
     backgroundColor: 'rgba(255, 183, 77, 0.08)',
