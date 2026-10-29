@@ -7,6 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { AIHubScreen } from '../screens/AIHubScreen';
+import { ModelCatalogScreen } from '../screens/ModelCatalogScreen';
+import { UsageDashboardScreen } from '../screens/UsageDashboardScreen';
+import { CreditsTopupScreen } from '../screens/CreditsTopupScreen';
 import { MarketsScreen } from '../screens/MarketsScreen';
 import { MarketDetailScreen } from '../screens/MarketDetailScreen';
 import { PortfolioScreen } from '../screens/PortfolioScreen';
@@ -79,6 +82,9 @@ export function AppNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainTabNavigator} />
       <Stack.Screen name="MarketDetail" component={MarketDetailScreen} />
+      <Stack.Screen name="ModelCatalog" component={ModelCatalogScreen} />
+      <Stack.Screen name="UsageDashboard" component={UsageDashboardScreen} />
+      <Stack.Screen name="CreditsTopup" component={CreditsTopupScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Transfer" component={TransferScreen} />
       <Stack.Screen name="Store" component={StoreScreen} />

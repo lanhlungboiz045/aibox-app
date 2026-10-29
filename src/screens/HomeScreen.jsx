@@ -49,7 +49,24 @@ export function HomeScreen({ navigation }) {
         </View>
       </View>
 
-      {canClaimDaily && (
+      <View style={styles.quickRow}>
+        <TouchableOpacity style={styles.quickBtn} onPress={() => navigation.navigate('ModelCatalog')} activeOpacity={0.85}>
+          <Text style={styles.quickIcon}>{'\u{1F4DA}'}</Text>
+          <Text style={styles.quickLabel}>Catalog</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.quickBtn} onPress={() => navigation.navigate('UsageDashboard')} activeOpacity={0.85}>
+          <Text style={styles.quickIcon}>{'\u{1F4CA}'}</Text>
+          <Text style={styles.quickLabel}>Usage</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.quickBtn} onPress={() => navigation.navigate('CreditsTopup')} activeOpacity={0.85}>
+          <Text style={styles.quickIcon}>{'\u{1F4B3}'}</Text>
+          <Text style={styles.quickLabel}>Nạp token</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.quickBtn} onPress={() => navigation.navigate('AIHub')} activeOpacity={0.85}>
+          <Text style={styles.quickIcon}>{'\u{1F916}'}</Text>
+          <Text style={styles.quickLabel}>AI Hub</Text>
+        </TouchableOpacity>
+      </View>
         <TouchableOpacity style={styles.dailyCard} onPress={() => setShowDaily(true)} activeOpacity={0.8}>
           <Text style={styles.dailyIcon}>{'\u{1F381}'}</Text>
           <View style={styles.dailyContent}>
@@ -137,6 +154,10 @@ export function HomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0F1115' },
+  quickRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 12 },
+  quickBtn: { flex: 1, backgroundColor: '#1A1D24', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', paddingVertical: 10, alignItems: 'center' },
+  quickIcon: { fontSize: 18 },
+  quickLabel: { color: '#8E8E93', fontSize: 10, marginTop: 2, fontWeight: '600' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logo: { color: '#FFFFFF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },

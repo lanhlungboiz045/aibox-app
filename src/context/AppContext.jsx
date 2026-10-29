@@ -582,6 +582,24 @@ function reducer(state, action) {
       return bumpQuestCounters(withAccount(state, updated), user.id, 'aiCalls');
     }
 
+    // ---------- TOP-UP (nạp credit/token) ----------
+    case 'TOPUP': {
+      const user = getCurrentUser(state);
+      const { amount, label } = action.payload || {};
+      if (!user || !amount || amount <= 0) return state;
+      const updated = {
+        ...user,
+        tokenBalance: user.tokenBalance + amount,
+        totalEarned: (user.totalEarned || 0) + amount,
+        transactions: addTransaction(user, {
+          type: 'TOPUP',
+          description: `Nạp ${amount} token (${label || 'gói nạp'})`,
+          amount: +amount,
+        }),
+      };
+      return withAccount(state, updated);
+    }
+
     // ---------- TRANSFER ----------
     case 'TRANSFER': {
       const user = getCurrentUser(state);
@@ -1277,6 +1295,10 @@ export function AppProvider({ children }) {
     dispatch({ type: 'SELL_SHARES', payload: { marketId, side, shares } });
   }, []);
 
+  const topUpTokens = useCallback((amount, label) => {
+    dispatch({ type: 'TOPUP', payload: { amount, label } });
+  }, []);
+
   const resolveMarket = useCallback((marketId, outcome) => {
     const current = stateRef.current;
     if (getCurrentUser(current)?.role !== 'admin') {
@@ -1496,6 +1518,7 @@ export function AppProvider({ children }) {
         myCommentsCount,
         myCopyTrades,
         // app actions
+        topUpTokens,
         buyShares,
         sellShares,
         resolveMarket,

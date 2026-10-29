@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
+import { useRoute } from '@react-navigation/native';
 import { TokenBadge } from '../components/TokenBadge';
 import { AIModelCard } from '../components/AIModelCard';
 import { CategoryFilter } from '../components/CategoryFilter';
@@ -12,12 +13,22 @@ import { formatToken, generateId } from '../utils/format';
 export function AIHubScreen() {
   const { state, callAI } = useApp();
   const insets = useSafeAreaInsets();
+  const route = useRoute();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [selectedModel, setSelectedModel] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const listRef = useRef(null);
+
+  // Mở từ Model Catalog: tự chọn model theo param
+  React.useEffect(() => {
+    const mid = route.params?.modelId;
+    if (mid) {
+      const m = state.aiModels.find(x => x.id === mid);
+      if (m) { setSelectedModel(m); setMessages([]); }
+    }
+  }, [route.params?.modelId]);
 
   const typeFilters = [
     { key: 'all', label: 'All', icon: '\u{2728}' },
