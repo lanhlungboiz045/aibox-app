@@ -22,7 +22,7 @@ service cloud.firestore {
 
     function adminEmails() {
       return [
-        'admin@example.com'   // ← THAY bằng email admin thật (khớp EXPO_PUBLIC_ADMIN_EMAILS)
+        'doanduong236@gmail.com'   // khớp EXPO_PUBLIC_ADMIN_EMAILS trong .env
       ];
     }
 
