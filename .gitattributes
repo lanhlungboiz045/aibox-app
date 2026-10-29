@@ -1,0 +1,14 @@
+# Giữ line ending LF cho mọi file text (Windows đang có core.autocrlf=true)
+* text=auto eol=lf
+
+# binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.jar binary
+*.keystore binary

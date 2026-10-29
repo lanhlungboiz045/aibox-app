@@ -1,0 +1,73 @@
+// navigation/AppNavigator.jsx — Bottom tab + stack navigation (JavaScript)
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { HomeScreen } from '../screens/HomeScreen';
+import { AIHubScreen } from '../screens/AIHubScreen';
+import { MarketsScreen } from '../screens/MarketsScreen';
+import { MarketDetailScreen } from '../screens/MarketDetailScreen';
+import { PortfolioScreen } from '../screens/PortfolioScreen';
+import { LeaderboardScreen } from '../screens/LeaderboardScreen';
+import { ProfileScreen } from '../screens/ProfileScreen';
+import { TransferScreen } from '../screens/TransferScreen';
+
+const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+const tabIcons = {
+  Home: '\u{1F3E0}',
+  AIHub: '\u{1F916}',
+  Markets: '\u{1F4C8}',
+  Portfolio: '\u{1F4BC}',
+  Leaderboard: '\u{1F3C6}',
+};
+
+export function MainTabNavigator() {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: '#1A1D24',
+          borderTopColor: '#2A2E36',
+          borderTopWidth: 1,
+          // Tab bar là phần tử cuối màn hình nên phải tự chừa home indicator / nav bar
+          paddingBottom: Math.max(insets.bottom, 6),
+          paddingTop: 6,
+          height: 56 + Math.max(insets.bottom, 6),
+        },
+        tabBarActiveTintColor: '#6C5CE7',
+        tabBarInactiveTintColor: '#5C5C5C',
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
+        tabBarIcon: ({ focused }) => (
+          <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>
+            {tabIcons[route.name] || '\u{1F4B0}'}
+          </Text>
+        ),
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
+      <Tab.Screen name="AIHub" component={AIHubScreen} options={{ title: 'AI Hub' }} />
+      <Tab.Screen name="Markets" component={MarketsScreen} options={{ title: 'Markets' }} />
+      <Tab.Screen name="Portfolio" component={PortfolioScreen} options={{ title: 'Portfolio' }} />
+      <Tab.Screen name="Leaderboard" component={LeaderboardScreen} options={{ title: 'Xếp hạng' }} />
+    </Tab.Navigator>
+  );
+}
+
+// Root stack (tabs + modal screens like Profile, Transfer, MarketDetail)
+export function AppNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+      <Stack.Screen name="MarketDetail" component={MarketDetailScreen} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="Transfer" component={TransferScreen} />
+    </Stack.Navigator>
+  );
+}
