@@ -1,8 +1,9 @@
 // App.jsx — Entry point cho AIBox app (JavaScript)
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
-import { AppProvider } from './src/context/AppContext';
+import { AppProvider, useApp } from './src/context/AppContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
 const navTheme = {
@@ -17,15 +18,31 @@ const navTheme = {
   },
 };
 
+// Chờ load state từ AsyncStorage xong mới mount navigator:
+// tránh flash số dư mặc định (10,000) rồi mới nhảy sang số đã lưu
+function Root() {
+  const { state } = useApp();
+
+  if (state.isLoading) return <View style={styles.boot} />;
+
+  return (
+    <NavigationContainer theme={navTheme}>
+      <AppNavigator />
+    </NavigationContainer>
+  );
+}
+
 export default function App() {
   return (
     // initialMetrics: có sẵn insets ngay frame đầu, tránh content bị nhảy/che dưới notch
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <AppProvider>
-        <NavigationContainer theme={navTheme}>
-          <AppNavigator />
-        </NavigationContainer>
+        <Root />
       </AppProvider>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  boot: { flex: 1, backgroundColor: '#0F1115' },
+});

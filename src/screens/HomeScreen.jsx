@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
+import { formatToken } from '../utils/format';
 import { TokenBadge } from '../components/TokenBadge';
 import { MarketCard } from '../components/MarketCard';
 import { AIModelCard } from '../components/AIModelCard';
@@ -10,7 +11,7 @@ import { TransactionItem } from '../components/TransactionItem';
 import { DailyRewardModal } from '../components/DailyRewardModal';
 
 export function HomeScreen({ navigation }) {
-  const { state, canClaimDaily } = useApp();
+  const { state, canClaimDaily, nextDailyReward } = useApp();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [showDaily, setShowDaily] = useState(false);
@@ -37,7 +38,7 @@ export function HomeScreen({ navigation }) {
         <TouchableOpacity style={styles.dailyCard} onPress={() => setShowDaily(true)} activeOpacity={0.8}>
           <Text style={styles.dailyIcon}>{'\u{1F381}'}</Text>
           <View style={styles.dailyContent}>
-            <Text style={styles.dailyTitle}>Nhận 2,000 token miễn phí!</Text>
+            <Text style={styles.dailyTitle}>Nhận {formatToken(nextDailyReward)} token miễn phí!</Text>
             <Text style={styles.dailySub}>Streak hiện tại: {state.user.dailyStreak} ngày</Text>
           </View>
           <Text style={styles.dailyArrow}>{'\u{276F}'}</Text>

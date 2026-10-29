@@ -57,7 +57,7 @@ export function MarketDetailScreen({ route, navigation }) {
 
       <View style={styles.chartSection}>
         <Text style={styles.chartTitle}>{'\u{1F4C8}'} Giá YES (7 ngày qua)</Text>
-        <PriceChart data={market.priceHistory} width={340} height={140} />
+        <PriceChart data={market.priceHistory} height={140} />
       </View>
 
       <View style={styles.infoSection}>

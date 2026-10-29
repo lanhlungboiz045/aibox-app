@@ -3,9 +3,11 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
+import { formatToken } from '../utils/format';
+import { DAILY_REWARD_STREAK_BONUS, DAILY_REWARD_BONUS_AT_STREAK } from '../utils/rewards';
 
 export function DailyRewardModal({ visible, onClose }) {
-  const { state, claimDailyReward, canClaimDaily } = useApp();
+  const { state, claimDailyReward, canClaimDaily, nextStreak, nextDailyReward } = useApp();
   const insets = useSafeAreaInsets();
 
   const handleClaim = () => {
@@ -14,7 +16,8 @@ export function DailyRewardModal({ visible, onClose }) {
   };
 
   const todayClaimed = !canClaimDaily;
-  const reward = 2000 + (state.user.dailyStreak >= 6 ? 1000 : 0);
+  // Số thưởng lấy từ context (cùng công thức với reducer) thay vì tự tính lại
+  const reward = nextDailyReward;
 
   return (
     <Modal visible={visible} animationType="fade" transparent={true} onRequestClose={onClose}>
@@ -24,12 +27,12 @@ export function DailyRewardModal({ visible, onClose }) {
           <Text style={styles.title}>Thưởng hàng ngày!</Text>
           {!todayClaimed ? (
             <>
-              <Text style={styles.amount}>{reward.toLocaleString()} token miễn phí</Text>
-              {state.user.dailyStreak > 0 && (
-                <Text style={styles.streak}>{'\u{1F525}'} Streak {state.user.dailyStreak} ngày</Text>
+              <Text style={styles.amount}>{formatToken(reward)} token miễn phí</Text>
+              {nextStreak > 1 && (
+                <Text style={styles.streak}>{'\u{1F525}'} Streak {nextStreak} ngày</Text>
               )}
-              {state.user.dailyStreak >= 6 && (
-                <Text style={styles.bonus}>(+1000 bonus streak 7 ngày!)</Text>
+              {nextStreak >= DAILY_REWARD_BONUS_AT_STREAK && (
+                <Text style={styles.bonus}>(+{formatToken(DAILY_REWARD_STREAK_BONUS)} bonus streak {DAILY_REWARD_BONUS_AT_STREAK} ngày!)</Text>
               )}
               <Text style={styles.hint}>Quay lại mỗi ngày để nhận thưởng và giữ streak!</Text>
               <TouchableOpacity style={styles.claimBtn} onPress={handleClaim}>

@@ -32,6 +32,8 @@ export function MainTabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        // Ẩn tab bar khi mở bàn phím để input chat không bị tab bar + keyboard chồng lên
+        tabBarHideOnKeyboard: true,
         tabBarStyle: {
           backgroundColor: '#1A1D24',
           borderTopColor: '#2A2E36',

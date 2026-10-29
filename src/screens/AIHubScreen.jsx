@@ -1,5 +1,5 @@
 // screens/AIHubScreen.jsx — Marketplace AI models + chat interface
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
@@ -17,6 +17,7 @@ export function AIHubScreen() {
   const [selectedModel, setSelectedModel] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const listRef = useRef(null);
 
   const typeFilters = [
     { key: 'all', label: 'All', icon: '\u{2728}' },
@@ -50,7 +51,6 @@ export function AIHubScreen() {
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
       >
         <View style={[styles.chatHeader, { paddingTop: insets.top + 12 }]}>
           <TouchableOpacity onPress={() => { setSelectedModel(null); setMessages([]); }}>
@@ -65,8 +65,10 @@ export function AIHubScreen() {
           </View>
         </View>
 
-        <FlatList data={messages} keyExtractor={item => item.id} renderItem={({ item }) => <ChatBubble message={item} />}
-          contentContainerStyle={styles.messagesList} showsVerticalScrollIndicator={false} />
+        <FlatList ref={listRef} data={messages} keyExtractor={item => item.id} renderItem={({ item }) => <ChatBubble message={item} />}
+          contentContainerStyle={styles.messagesList} showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })} />
 
         {selectedModel.type === 'image' && messages.length > 0 && (
           <View style={styles.imagePlaceholder}>

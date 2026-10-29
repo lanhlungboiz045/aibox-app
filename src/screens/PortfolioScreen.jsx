@@ -65,8 +65,8 @@ export function PortfolioScreen() {
           </View>
         ) : (
           <View style={styles.positionsList}>
-            {positionsWithMarket.map((p, i) => (
-              <View key={i} style={styles.positionCard}>
+            {positionsWithMarket.map((p) => (
+              <View key={`${p.marketId}-${p.side}`} style={styles.positionCard}>
                 <View style={styles.positionTop}>
                   <Text style={styles.positionQuestion} numberOfLines={2}>{p.market?.question || 'Unknown'}</Text>
                   <View style={[styles.positionSideTag, p.side === 'YES' ? styles.tagYes : styles.tagNo]}><Text style={styles.tagText}>{p.side}</Text></View>

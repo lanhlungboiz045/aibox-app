@@ -46,6 +46,30 @@ export function formatRelativeTime(timestamp) {
   return 'Vừa xong';
 }
 
+// Ngày theo giờ LOCAL dạng "YYYY-MM-DD".
+// Không dùng toISOString(): đó là ngày UTC, ở VN (UTC+7) sẽ reset lúc 07:00 sáng.
+export function toDayKey(date = new Date()) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return null;
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
+// Số ngày lệch giữa 2 day-key (to - from). Dùng Date.UTC để không lệch vì DST.
+export function daysBetween(fromKey, toKey) {
+  if (!fromKey || !toKey) return null;
+  const toUtc = (key) => {
+    const [y, m, d] = String(key).split('-').map(Number);
+    if (!y || !m || !d) return NaN;
+    return Date.UTC(y, m - 1, d);
+  };
+  const from = toUtc(fromKey);
+  const to = toUtc(toKey);
+  if (Number.isNaN(from) || Number.isNaN(to)) return null;
+  return Math.round((to - from) / 86400000);
+}
+
 // Clamp số trong range [min, max]
 export function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));

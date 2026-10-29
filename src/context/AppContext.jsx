@@ -1,13 +1,21 @@
 // context/AppContext.jsx — Global state cho AIBox (JavaScript, không TypeScript)
 // Quản lý: user state, token, AI calls, trading, transfer, daily reward, AsyncStorage
 
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useRef, useState, useCallback } from 'react';
+import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MARKETS, AI_MODELS, MOCK_AI_RESPONSES } from '../data/mockData';
-import { clamp, generateId } from '../utils/format';
+import { clamp, generateId, toDayKey, daysBetween } from '../utils/format';
+import { getDailyReward } from '../utils/rewards';
 
-const STORAGE_KEY = '@aibox_user_state';
-const MARKETS_KEY = '@aibox_markets_state';
+const STORAGE_KEY = '@aibox_state';
+// Key của format cũ (2 key, không version) — chỉ đọc 1 lần để migrate
+const LEGACY_USER_KEY = '@aibox_user_state';
+const LEGACY_MARKETS_KEY = '@aibox_markets_state';
+const STORAGE_VERSION = 1;
+const PERSIST_DEBOUNCE_MS = 400;
+// Giới hạn lịch sử để JSON.stringify không phình dần theo thời gian
+const MAX_TRANSACTIONS = 200;
 
 // Default user
 function createDefaultUser() {
@@ -27,14 +35,78 @@ function createDefaultUser() {
   };
 }
 
-// Helper: thêm transaction mới
+// Chuẩn hoá user đọc từ storage: thiếu field nào thì dùng default.
+// Tránh crash khi schema thay đổi (vd: dữ liệu cũ không có `positions`).
+function sanitizeUser(raw) {
+  const base = createDefaultUser();
+  if (!raw || typeof raw !== 'object') return base;
+  const num = (value, fallback) => (Number.isFinite(value) ? value : fallback);
+  return {
+    ...base,
+    ...raw,
+    tokenBalance: num(raw.tokenBalance, base.tokenBalance),
+    totalEarned: num(raw.totalEarned, base.totalEarned),
+    totalSpentOnAI: num(raw.totalSpentOnAI, base.totalSpentOnAI),
+    rank: num(raw.rank, base.rank),
+    dailyStreak: num(raw.dailyStreak, base.dailyStreak),
+    positions: Array.isArray(raw.positions) ? raw.positions : [],
+    transactions: Array.isArray(raw.transactions) ? raw.transactions : [],
+  };
+}
+
+// Markets: giữ giá/trạng thái đã lưu nhưng vẫn nhận market mới thêm trong mockData
+function sanitizeMarkets(raw) {
+  const defaults = MARKETS.map(m => ({ ...m }));
+  if (!Array.isArray(raw) || raw.length === 0) return defaults;
+  const persisted = new Map(raw.filter(m => m && m.id).map(m => [m.id, m]));
+  return defaults.map(m => ({ ...m, ...(persisted.get(m.id) || {}) }));
+}
+
+function createInitialState() {
+  return {
+    user: createDefaultUser(),
+    markets: MARKETS.map(m => ({ ...m })),
+    aiModels: AI_MODELS,
+    isLoading: true,
+  };
+}
+
+// Đọc state đã lưu: ưu tiên format mới (có version), fallback migrate format cũ
+async function loadPersistedState() {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.v === STORAGE_VERSION) {
+        return { user: sanitizeUser(parsed.user), markets: sanitizeMarkets(parsed.markets) };
+      }
+    }
+
+    const [legacyUser, legacyMarkets] = await Promise.all([
+      AsyncStorage.getItem(LEGACY_USER_KEY),
+      AsyncStorage.getItem(LEGACY_MARKETS_KEY),
+    ]);
+    if (!legacyUser && !legacyMarkets) return null;
+
+    return {
+      user: sanitizeUser(legacyUser ? JSON.parse(legacyUser) : null),
+      markets: sanitizeMarkets(legacyMarkets ? JSON.parse(legacyMarkets) : null),
+    };
+  } catch (e) {
+    if (__DEV__) console.warn('[AppContext] Không đọc được state đã lưu:', e);
+    return null;
+  }
+}
+
+// Helper: thêm transaction mới (giữ tối đa MAX_TRANSACTIONS bản ghi)
 function addTransaction(user, tx) {
   const newTx = {
     ...tx,
     id: generateId(),
     timestamp: new Date().toISOString(),
   };
-  return [newTx, ...user.transactions];
+  const transactions = [newTx, ...user.transactions];
+  return transactions.length > MAX_TRANSACTIONS ? transactions.slice(0, MAX_TRANSACTIONS) : transactions;
 }
 
 // Reducer
@@ -213,12 +285,13 @@ function reducer(state, action) {
     }
 
     case 'DAILY_REWARD': {
-      const today = new Date().toISOString().split('T')[0];
+      // Ngày theo giờ local (UTC+7 reset lúc 00:00, không phải 07:00)
+      const today = toDayKey();
       if (state.user.lastDailyClaim === today) return state;
 
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-      const newStreak = state.user.lastDailyClaim === yesterday ? state.user.dailyStreak + 1 : 1;
-      const reward = 2000 + (newStreak >= 7 ? 1000 : 0);
+      // Streak chỉ nối tiếp khi lần nhận trước đúng 1 ngày; bỏ lỡ là reset về 1
+      const newStreak = daysBetween(state.user.lastDailyClaim, today) === 1 ? state.user.dailyStreak + 1 : 1;
+      const reward = getDailyReward(newStreak);
 
       const newUser = {
         ...state.user,
@@ -258,41 +331,85 @@ const AppContext = createContext(undefined);
 
 // Provider
 export function AppProvider({ children }) {
-  const initialState = {
-    user: createDefaultUser(),
-    markets: MARKETS.map(m => ({ ...m })),
-    aiModels: AI_MODELS,
-    isLoading: true,
-  };
-
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, undefined, createInitialState);
+  const stateRef = useRef(state);
+  const persistTimer = useRef(null);
 
   // Load state từ AsyncStorage khi app start
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      try {
-        const userJson = await AsyncStorage.getItem(STORAGE_KEY);
-        const marketsJson = await AsyncStorage.getItem(MARKETS_KEY);
-        const user = userJson ? JSON.parse(userJson) : createDefaultUser();
-        const markets = marketsJson ? JSON.parse(marketsJson) : MARKETS.map(m => ({ ...m }));
-        dispatch({ type: 'INIT', payload: { user, markets } });
-      } catch (e) {
-        dispatch({ type: 'INIT', payload: { user: createDefaultUser(), markets: MARKETS.map(m => ({ ...m })) } });
-      }
+      const persisted = await loadPersistedState();
+      if (cancelled) return;
+      dispatch({
+        type: 'INIT',
+        payload: persisted
+          ? { user: persisted.user, markets: persisted.markets }
+          : { user: createDefaultUser(), markets: MARKETS.map(m => ({ ...m })) },
+      });
     })();
+    return () => { cancelled = true; };
   }, []);
 
-  // Persist state khi user thay đổi
-  useEffect(() => {
-    if (!state.isLoading) {
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state.user));
-      AsyncStorage.setItem(MARKETS_KEY, JSON.stringify(state.markets));
-    }
-  }, [state.user, state.markets, state.isLoading]);
+  // Giữ tham chiếu state mới nhất để callback persist không đọc giá trị cũ
+  useEffect(() => { stateRef.current = state; }, [state]);
 
-  // Check daily reward
-  const today = new Date().toISOString().split('T')[0];
-  const canClaimDaily = state.user.lastDailyClaim !== today;
+  // Ghi xuống storage: 1 key duy nhất, debounce, có bắt lỗi
+  const persist = useCallback(() => {
+    const current = stateRef.current;
+    if (current.isLoading) return;
+    const payload = JSON.stringify({ v: STORAGE_VERSION, user: current.user, markets: current.markets });
+    AsyncStorage.setItem(STORAGE_KEY, payload).catch((e) => {
+      if (__DEV__) console.warn('[AppContext] Không ghi được state:', e);
+    });
+  }, []);
+
+  // Debounce: mua/bán/chat liên tục không ghi storage liên tục
+  useEffect(() => {
+    if (state.isLoading) return undefined;
+    persistTimer.current = setTimeout(persist, PERSIST_DEBOUNCE_MS);
+    return () => clearTimeout(persistTimer.current);
+  }, [state.user, state.markets, state.isLoading, persist]);
+
+  // Flush khi app xuống background hoặc provider bị unmount → không mất thay đổi cuối
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'background' || next === 'inactive') {
+        clearTimeout(persistTimer.current);
+        persist();
+      }
+    });
+    return () => {
+      sub.remove();
+      clearTimeout(persistTimer.current);
+      persist();
+    };
+  }, [persist]);
+
+  // Ngày local, làm mới khi app được mở lại → qua ngày mới là nhận thưởng được
+  const [dayKey, setDayKey] = useState(() => toDayKey());
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') setDayKey(toDayKey());
+    });
+    return () => sub.remove();
+  }, []);
+
+  // App để mở qua nửa đêm: tự cập nhật dayKey để nhận thưởng được ngay, không cần tắt app
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const current = toDayKey();
+      setDayKey(prev => (prev === current ? prev : current));
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Check daily reward + thưởng thực nhận nếu claim hôm nay (1 nguồn duy nhất)
+  const canClaimDaily = state.user.lastDailyClaim !== dayKey;
+  const nextStreak = !canClaimDaily
+    ? state.user.dailyStreak
+    : (daysBetween(state.user.lastDailyClaim, dayKey) === 1 ? state.user.dailyStreak + 1 : 1);
+  const nextDailyReward = getDailyReward(nextStreak);
 
   // Actions
   const buyShares = useCallback((marketId, side, shares) => {
@@ -344,6 +461,8 @@ export function AppProvider({ children }) {
         claimDailyReward,
         resetToken,
         canClaimDaily,
+        nextStreak,
+        nextDailyReward,
       }}
     >
       {children}
