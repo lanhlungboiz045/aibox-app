@@ -4,6 +4,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatToken } from '../utils/format';
+import { QUESTS, QUEST_TOTAL_REWARD } from '../data/quests';
 import { TokenBadge } from '../components/TokenBadge';
 import { MarketCard } from '../components/MarketCard';
 import { AIModelCard } from '../components/AIModelCard';
@@ -11,7 +12,7 @@ import { TransactionItem } from '../components/TransactionItem';
 import { DailyRewardModal } from '../components/DailyRewardModal';
 
 export function HomeScreen({ navigation }) {
-  const { state, canClaimDaily, nextDailyReward } = useApp();
+  const { state, canClaimDaily, nextDailyReward, unreadNotifications, questState } = useApp();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [showDaily, setShowDaily] = useState(false);
@@ -19,6 +20,7 @@ export function HomeScreen({ navigation }) {
   const trendingMarkets = [...state.markets].sort((a, b) => b.volume - a.volume).slice(0, 4);
   const popularModels = [...state.aiModels].sort((a, b) => b.popularity - a.popularity).slice(0, 4);
   const recentTxs = state.user.transactions.slice(0, 5);
+  const claimedQuests = questState?.claimed?.length || 0;
 
   const onRefresh = () => { setRefreshing(true); setTimeout(() => setRefreshing(false), 1000); };
 
@@ -31,7 +33,20 @@ export function HomeScreen({ navigation }) {
     >
       <View style={styles.header}>
         <Text style={styles.logo}>AIBox</Text>
-        <TokenBadge size="medium" />
+        <View style={styles.headerRight}>
+          <TokenBadge size="medium" />
+          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Notifications')}>
+            <Text style={styles.iconBtnText}>{'\u{1F514}'}</Text>
+            {unreadNotifications > 0 && (
+              <View style={styles.bellBadge}>
+                <Text style={styles.bellBadgeText}>{unreadNotifications > 9 ? '9+' : unreadNotifications}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.avatarBtn} onPress={() => navigation.navigate('Profile')}>
+            <Text style={styles.avatarText}>{state.user.avatar}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {canClaimDaily && (
@@ -44,6 +59,17 @@ export function HomeScreen({ navigation }) {
           <Text style={styles.dailyArrow}>{'\u{276F}'}</Text>
         </TouchableOpacity>
       )}
+
+      <TouchableOpacity style={styles.questCard} onPress={() => navigation.navigate('Quests')} activeOpacity={0.8}>
+        <Text style={styles.questIcon}>{'\u{1F3AF}'}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.questTitle}>Nhiệm vụ ngày · {claimedQuests}/{QUESTS.length}</Text>
+          <Text style={styles.questSub}>
+            Làm quest để nhận tối đa {formatToken(QUEST_TOTAL_REWARD)} token mỗi ngày
+          </Text>
+        </View>
+        <Text style={styles.questArrow}>{'\u{276F}'}</Text>
+      </TouchableOpacity>
 
       <View style={styles.quickGrid}>
         <TouchableOpacity style={[styles.quickCard, { borderColor: 'rgba(16, 163, 127, 0.3)' }]} onPress={() => navigation.navigate('AIHub')}>
@@ -112,13 +138,25 @@ export function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0F1115' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logo: { color: '#FFFFFF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
+  iconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#1A1D24', borderWidth: 1, borderColor: '#2A2E36', alignItems: 'center', justifyContent: 'center' },
+  iconBtnText: { fontSize: 17 },
+  bellBadge: { position: 'absolute', top: -2, right: -2, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: '#FF6B6B', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+  bellBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '800' },
+  avatarBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#22262E', borderWidth: 1, borderColor: '#2A2E36', alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontSize: 18 },
   dailyCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 183, 77, 0.12)', marginHorizontal: 16, marginBottom: 12, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(255, 183, 77, 0.3)', gap: 12 },
   dailyIcon: { fontSize: 28 },
   dailyContent: { flex: 1 },
   dailyTitle: { color: '#FFB74D', fontSize: 14, fontWeight: '600' },
   dailySub: { color: '#8E8E93', fontSize: 12, marginTop: 2 },
   dailyArrow: { color: '#FFB74D', fontSize: 16 },
+  questCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1D24', marginHorizontal: 16, marginBottom: 12, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(108, 92, 231, 0.35)', gap: 12 },
+  questIcon: { fontSize: 26 },
+  questTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  questSub: { color: '#8E8E93', fontSize: 11, marginTop: 2 },
+  questArrow: { color: '#6C5CE7', fontSize: 16 },
   quickGrid: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 16 },
   quickCard: { flex: 1, backgroundColor: '#22262E', borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
   quickIcon: { fontSize: 28, marginBottom: 6 },

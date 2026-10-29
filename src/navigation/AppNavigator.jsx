@@ -13,6 +13,17 @@ import { PortfolioScreen } from '../screens/PortfolioScreen';
 import { LeaderboardScreen } from '../screens/LeaderboardScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { TransferScreen } from '../screens/TransferScreen';
+import { StoreScreen } from '../screens/StoreScreen';
+import { QuestsScreen } from '../screens/QuestsScreen';
+import { NotificationsScreen } from '../screens/NotificationsScreen';
+import { CreateMarketScreen } from '../screens/CreateMarketScreen';
+import { TraderProfileScreen } from '../screens/TraderProfileScreen';
+import { CopyTradeScreen } from '../screens/CopyTradeScreen';
+import { AdminHomeScreen } from '../screens/admin/AdminHomeScreen';
+import { AdminMarketsScreen } from '../screens/admin/AdminMarketsScreen';
+import { AdminAIModelsScreen } from '../screens/admin/AdminAIModelsScreen';
+import { AdminUsersScreen } from '../screens/admin/AdminUsersScreen';
+import { AdminRiskScreen } from '../screens/admin/AdminRiskScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -70,6 +81,18 @@ export function AppNavigator() {
       <Stack.Screen name="MarketDetail" component={MarketDetailScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Transfer" component={TransferScreen} />
+      <Stack.Screen name="Store" component={StoreScreen} />
+      <Stack.Screen name="Quests" component={QuestsScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="CreateMarket" component={CreateMarketScreen} />
+      <Stack.Screen name="TraderProfile" component={TraderProfileScreen} />
+      <Stack.Screen name="CopyTrade" component={CopyTradeScreen} />
+      {/* Admin CMS — vẫn nằm trong app vì đây là bản demo; production nên tách web CMS */}
+      <Stack.Screen name="AdminHome" component={AdminHomeScreen} />
+      <Stack.Screen name="AdminMarkets" component={AdminMarketsScreen} />
+      <Stack.Screen name="AdminAIModels" component={AdminAIModelsScreen} />
+      <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
+      <Stack.Screen name="AdminRisk" component={AdminRiskScreen} />
     </Stack.Navigator>
   );
 }

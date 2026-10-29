@@ -5,6 +5,7 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { AppProvider, useApp } from './src/context/AppContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
+import { AuthScreen } from './src/screens/AuthScreen';
 
 const navTheme = {
   ...DarkTheme,
@@ -20,10 +21,12 @@ const navTheme = {
 
 // Chờ load state từ AsyncStorage xong mới mount navigator:
 // tránh flash số dư mặc định (10,000) rồi mới nhảy sang số đã lưu
+// Chưa có session → chỉ render AuthScreen (gate ở client, chỉ phục vụ demo)
 function Root() {
   const { state } = useApp();
 
   if (state.isLoading) return <View style={styles.boot} />;
+  if (!state.user) return <AuthScreen />;
 
   return (
     <NavigationContainer theme={navTheme}>

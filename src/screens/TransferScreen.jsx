@@ -4,7 +4,6 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { TokenBadge } from '../components/TokenBadge';
-import { MOCK_FRIENDS } from '../data/mockData';
 import { formatToken } from '../utils/format';
 
 export function TransferScreen({ navigation }) {
@@ -17,13 +16,19 @@ export function TransferScreen({ navigation }) {
   const amountNum = parseInt(amount) || 0;
   const canTransfer = amountNum > 0 && amountNum <= state.user.tokenBalance && recipient.trim().length > 0 && recipient !== state.user.username;
 
+  // Danh sách gợi ý lấy từ tài khoản thật trong hệ thống (bỏ chính mình, ưu tiên người có thể đăng nhập)
+  const friends = state.accounts
+    .filter(a => a.id !== state.user.id)
+    .sort((a, b) => (a.provider === 'system' ? 1 : 0) - (b.provider === 'system' ? 1 : 0))
+    .slice(0, 10);
+
   const handleTransfer = () => {
     if (!canTransfer) { Alert.alert('Lỗi', 'Kiểm tra lại số token và người nhận'); return; }
-    const success = transfer(recipient.trim(), amountNum, note.trim() || undefined);
-    if (success) {
-      Alert.alert('Thành công', `Đã chuyển ${formatToken(amountNum)} token cho ${recipient}`);
-      setRecipient(''); setAmount(''); setNote('');
-    }
+    // transfer() trả { ok, error } — không còn trả boolean
+    const result = transfer(recipient.trim(), amountNum, note.trim() || undefined);
+    if (!result.ok) { Alert.alert('Không chuyển được', result.error); return; }
+    Alert.alert('Thành công', `Đã chuyển ${formatToken(amountNum)} token cho ${recipient}`);
+    setRecipient(''); setAmount(''); setNote('');
   };
 
   const recentTransfers = state.user.transactions.filter(t => t.type === 'TRANSFER_OUT').slice(0, 5);
@@ -49,7 +54,7 @@ export function TransferScreen({ navigation }) {
         <TextInput style={styles.input} value={recipient} onChangeText={setRecipient} placeholder="Nhập username..." placeholderTextColor="#5C5C5C" autoCapitalize="none" />
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.friendsRow}>
-          {MOCK_FRIENDS.map(f => (
+          {friends.map(f => (
             <TouchableOpacity key={f.id} style={[styles.friendChip, recipient === f.username && styles.friendChipActive]} onPress={() => setRecipient(f.username)}>
               <Text style={styles.friendAvatar}>{f.avatar}</Text>
               <Text style={styles.friendName}>{f.username}</Text>

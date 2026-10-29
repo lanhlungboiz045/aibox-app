@@ -6,6 +6,8 @@ import { useApp } from '../context/AppContext';
 import { PriceChart } from '../components/PriceChart';
 import { TradeSheet } from '../components/TradeSheet';
 import { TokenBadge } from '../components/TokenBadge';
+import { MarketAnalystModal } from '../components/MarketAnalystModal';
+import { CommentSection } from '../components/CommentSection';
 import { formatToken, formatTokenShort, formatTimeLeft, formatDate } from '../utils/format';
 
 export function MarketDetailScreen({ route, navigation }) {
@@ -16,13 +18,14 @@ export function MarketDetailScreen({ route, navigation }) {
   const market = state.markets.find(m => m.id === marketId);
 
   const [showTrade, setShowTrade] = useState(false);
+  const [showAnalyst, setShowAnalyst] = useState(false);
   const [tradeSide, setTradeSide] = useState(initialSide);
 
   if (!market) {
     return (<View style={styles.container}><Text style={styles.error}>Market không tồn tại</Text></View>);
   }
 
-  const userPosition = state.user.positions.find(p => p.marketId === market.id);
+  const userPosition = state.user?.positions.find(p => p.marketId === market.id);
   const categoryColors = { sports: '#00CE7E', crypto: '#F7931A', tech: '#4285F4', entertainment: '#FF6B6B', life: '#FFB74D', politics: '#9333EA' };
   const accent = categoryColors[market.category] || '#6C5CE7';
 
@@ -47,6 +50,9 @@ export function MarketDetailScreen({ route, navigation }) {
         <Text style={styles.question}>{market.question}</Text>
         <Text style={styles.description}>{market.description}</Text>
         <Text style={styles.endDate}>Kết thúc: {formatDate(market.endDate)}</Text>
+        {market.creatorName ? (
+          <Text style={styles.creator}>{'\u{1F451}'} Tạo bởi {market.creatorName} · creator fee 2% volume</Text>
+        ) : null}
       </View>
 
       {market.resolved && (
@@ -66,6 +72,23 @@ export function MarketDetailScreen({ route, navigation }) {
         <View style={styles.infoRow}><Text style={styles.infoLabel}>YES price</Text><Text style={[styles.infoValue, { color: '#00CE7E' }]}>{market.yesPrice} {'\u{1F4B0}'}</Text></View>
         <View style={styles.infoRow}><Text style={styles.infoLabel}>NO price</Text><Text style={[styles.infoValue, { color: '#FF6B6B' }]}>{market.noPrice} {'\u{1F4B0}'}</Text></View>
       </View>
+
+      <TouchableOpacity
+        style={[styles.analystCard, market.resolved && styles.analystCardMuted]}
+        onPress={() => setShowAnalyst(true)}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.analystIcon}>{'\u{1F916}'}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.analystTitle}>Hỏi AI về kèo này</Text>
+          <Text style={styles.analystSub}>
+            {market.resolved
+              ? `Kèo đã kết thúc (${market.outcome}) — xem lại AI phân tích gì`
+              : 'AI đọc giá, volume, thời hạn và đưa ra góc nhìn + quản trị vốn'}
+          </Text>
+        </View>
+        <Text style={styles.analystArrow}>{'\u{276F}'}</Text>
+      </TouchableOpacity>
 
       {userPosition && (
         <View style={styles.positionSection}>
@@ -96,7 +119,10 @@ export function MarketDetailScreen({ route, navigation }) {
         <Text style={styles.shareBtnText}>{'\u{1F4E4}'} Share dự đoán</Text>
       </TouchableOpacity>
 
+      <CommentSection marketId={market.id} />
+
       <TradeSheet visible={showTrade} market={market} initialSide={tradeSide} onClose={() => setShowTrade(false)} />
+      <MarketAnalystModal visible={showAnalyst} market={market} onClose={() => setShowAnalyst(false)} />
     </ScrollView>
   );
 }
@@ -113,6 +139,7 @@ const styles = StyleSheet.create({
   question: { color: '#FFFFFF', fontSize: 20, fontWeight: '700', lineHeight: 26, marginBottom: 8 },
   description: { color: '#8E8E93', fontSize: 14, lineHeight: 20, marginBottom: 8 },
   endDate: { color: '#5C5C5C', fontSize: 12 },
+  creator: { color: '#FFB74D', fontSize: 11, marginTop: 6 },
   resolvedBanner: { marginHorizontal: 16, borderRadius: 10, padding: 12, marginBottom: 16, alignItems: 'center' },
   resolvedYes: { backgroundColor: 'rgba(0, 206, 126, 0.15)', borderWidth: 1, borderColor: 'rgba(0, 206, 126, 0.3)' },
   resolvedNo: { backgroundColor: 'rgba(255, 107, 107, 0.15)', borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.3)' },
@@ -123,6 +150,12 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   infoLabel: { color: '#8E8E93', fontSize: 13 },
   infoValue: { color: '#FFFFFF', fontSize: 14, fontWeight: '600', fontFamily: 'monospace' },
+  analystCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 16, marginBottom: 16, padding: 14, borderRadius: 12, backgroundColor: 'rgba(108, 92, 231, 0.1)', borderWidth: 1, borderColor: 'rgba(108, 92, 231, 0.35)' },
+  analystCardMuted: { backgroundColor: '#1A1D24', borderColor: '#2A2E36' },
+  analystIcon: { fontSize: 26 },
+  analystTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  analystSub: { color: '#8E8E93', fontSize: 11, marginTop: 2, lineHeight: 16 },
+  analystArrow: { color: '#6C5CE7', fontSize: 14 },
   positionSection: { marginHorizontal: 16, marginBottom: 16 },
   positionTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '600', marginBottom: 8 },
   positionCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#1A1D24', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#2A2E36' },
