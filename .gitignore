@@ -40,3 +40,12 @@ Thumbs.db
 /android
 /ios
 
+# Impeccable (skill thiet ke): engine 19.5MB tai lai bang `npx impeccable install`
+.opencode/skills/impeccable/scripts/bin/
+
+# Impeccable: chi commit design.json / surfaces / critique; bo screenshot + cache
+.impeccable/screenshots/
+.impeccable/cache/
+.impeccable/runtime/
+.impeccable/live/
+

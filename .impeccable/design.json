@@ -1,0 +1,525 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-30T00:00:00.000Z",
+  "title": "Design System: AIBox",
+  "extensions": {
+    "colorMeta": {
+      "tim-neon-dem": {
+        "role": "primary",
+        "displayName": "Tím neon đêm",
+        "canonical": "oklch(60.6% 0.219 292.7)",
+        "tonalRamp": [
+          "#17003A",
+          "#370078",
+          "#5915B6",
+          "#7946DF",
+          "#8B5CF6",
+          "#BAA8FF",
+          "#D8D0FF",
+          "#F2F0FF"
+        ]
+      },
+      "tim-khoi": {
+        "role": "primary",
+        "displayName": "Tím khói",
+        "canonical": "oklch(70.9% 0.159 293.5)",
+        "tonalRamp": [
+          "#160433",
+          "#341569",
+          "#543299",
+          "#7557C1",
+          "#A78BFA",
+          "#BBA8FD",
+          "#D9D0FF",
+          "#F2EFFF"
+        ]
+      },
+      "tim-muc": {
+        "role": "primary",
+        "displayName": "Tím mực",
+        "canonical": "oklch(54.1% 0.247 293.0)",
+        "tonalRamp": [
+          "#17003A",
+          "#370078",
+          "#5B00BD",
+          "#7C3AED",
+          "#9A73FF",
+          "#BAA8FF",
+          "#D8D0FF",
+          "#F2F0FF"
+        ]
+      },
+      "than-dem": {
+        "role": "neutral",
+        "displayName": "Than đêm",
+        "canonical": "oklch(17.7% 0.009 264.3)",
+        "tonalRamp": [
+          "#0F1115",
+          "#2C2E32",
+          "#4B4D52",
+          "#6C6F74",
+          "#8F9297",
+          "#B5B7BC",
+          "#D6D7DA",
+          "#F1F2F3"
+        ]
+      },
+      "muc-xanh": {
+        "role": "neutral",
+        "displayName": "Mực xanh",
+        "canonical": "oklch(20.1% 0.021 267.6)",
+        "tonalRamp": [
+          "#121620",
+          "#2A2E37",
+          "#484D59",
+          "#696F7B",
+          "#8D929F",
+          "#B3B7C2",
+          "#D5D7DE",
+          "#F0F2F5"
+        ]
+      },
+      "than-noi": {
+        "role": "neutral",
+        "displayName": "Than nổi",
+        "canonical": "oklch(22.3% 0.022 269.0)",
+        "tonalRamp": [
+          "#171B26",
+          "#2A2E38",
+          "#484D5A",
+          "#696E7C",
+          "#8D92A0",
+          "#B3B7C3",
+          "#D5D7DE",
+          "#F0F2F5"
+        ]
+      },
+      "khoi-thep": {
+        "role": "neutral",
+        "displayName": "Khối thép",
+        "canonical": "oklch(25.9% 0.031 270.7)",
+        "tonalRamp": [
+          "#0F1119",
+          "#1E2333",
+          "#474C5F",
+          "#686E81",
+          "#8B92A5",
+          "#B2B7C7",
+          "#D4D7E1",
+          "#F0F2F6"
+        ]
+      },
+      "chi-mo": {
+        "role": "neutral",
+        "displayName": "Chì mờ",
+        "canonical": "oklch(24.6% 0.031 270.6)",
+        "tonalRamp": [
+          "#0F1119",
+          "#1B2030",
+          "#464C5F",
+          "#686E82",
+          "#8B92A5",
+          "#B1B7C7",
+          "#D4D7E1",
+          "#F0F2F6"
+        ]
+      },
+      "chi-sang": {
+        "role": "neutral",
+        "displayName": "Chì sáng",
+        "canonical": "oklch(29.2% 0.034 270.0)",
+        "tonalRamp": [
+          "#0E111A",
+          "#252B3D",
+          "#464C60",
+          "#676E83",
+          "#8A92A7",
+          "#B1B7C8",
+          "#D3D7E2",
+          "#F0F2F7"
+        ]
+      },
+      "suong-trang": {
+        "role": "neutral",
+        "displayName": "Sương trắng",
+        "canonical": "oklch(93.8% 0.011 274.9)",
+        "tonalRamp": [
+          "#111114",
+          "#2C2E33",
+          "#4B4D53",
+          "#6D6E75",
+          "#909299",
+          "#B6B7BD",
+          "#D6D7DB",
+          "#E8EAF2"
+        ]
+      },
+      "bac-xam": {
+        "role": "neutral",
+        "displayName": "Bạc xám",
+        "canonical": "oklch(79.0% 0.025 270.3)",
+        "tonalRamp": [
+          "#0F1118",
+          "#2A2D39",
+          "#484D5B",
+          "#696E7E",
+          "#8C92A1",
+          "#B4BACB",
+          "#D4D7DF",
+          "#F0F2F5"
+        ]
+      },
+      "khoi-bac": {
+        "role": "neutral",
+        "displayName": "Khói bạc",
+        "canonical": "oklch(71.1% 0.036 272.6)",
+        "tonalRamp": [
+          "#0F111A",
+          "#282D3D",
+          "#464C61",
+          "#676E84",
+          "#9AA1B9",
+          "#B1B7C9",
+          "#D4D7E2",
+          "#F0F2F7"
+        ]
+      },
+      "bac-ha-tin-hieu": {
+        "role": "secondary",
+        "displayName": "Bạc hà tín hiệu",
+        "canonical": "oklch(77.3% 0.153 163.2)",
+        "tonalRamp": [
+          "#00170C",
+          "#003824",
+          "#005C3F",
+          "#00835B",
+          "#00AD79",
+          "#34D399",
+          "#AEE6CB",
+          "#E0F9EC"
+        ]
+      },
+      "ho-phach-canh-bao": {
+        "role": "secondary",
+        "displayName": "Hổ phách cảnh báo",
+        "canonical": "oklch(82.9% 0.145 73.5)",
+        "tonalRamp": [
+          "#1D0E00",
+          "#412800",
+          "#6A4400",
+          "#966200",
+          "#C4830B",
+          "#FFB74D",
+          "#F2D2A8",
+          "#FEEFDD"
+        ]
+      },
+      "san-ho-rui-ro": {
+        "role": "secondary",
+        "displayName": "San hô rủi ro",
+        "canonical": "oklch(76.1% 0.142 20.9)",
+        "tonalRamp": [
+          "#2B0003",
+          "#5C0011",
+          "#8A1F29",
+          "#B2454A",
+          "#D86D6E",
+          "#FF8A8A",
+          "#FFC8C6",
+          "#FFEDEC"
+        ]
+      },
+      "xanh-thong-tin": {
+        "role": "secondary",
+        "displayName": "Xanh thông tin",
+        "canonical": "oklch(82.8% 0.101 230.3)",
+        "tonalRamp": [
+          "#001420",
+          "#003347",
+          "#005572",
+          "#17799E",
+          "#4C9DC2",
+          "#7DD3FC",
+          "#BADEF0",
+          "#E5F5FD"
+        ]
+      },
+      "dong-co": {
+        "role": "secondary",
+        "displayName": "Đồng cổ",
+        "canonical": "oklch(74.3% 0.087 79.9)",
+        "tonalRamp": [
+          "#1B0F00",
+          "#3E2900",
+          "#664700",
+          "#89692D",
+          "#AD8D56",
+          "#C9A66B",
+          "#E5D5BB",
+          "#F8F1E5"
+        ]
+      },
+      "do-nguy-hiem": {
+        "role": "secondary",
+        "displayName": "Đỏ nghiêm trọng",
+        "canonical": "oklch(57.7% 0.215 27.3)",
+        "tonalRamp": [
+          "#2C0000",
+          "#5D0003",
+          "#95000A",
+          "#DC2626",
+          "#F64F46",
+          "#FF968A",
+          "#FFC8C1",
+          "#FFEDEB"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Số dư token ở đầu màn Credits/Portfolio; mỗi màn tối đa một lần."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Tiêu đề màn hình và số token lớn trong card."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Tiêu đề section trong một màn cuộn."
+      },
+      "subtitle": {
+        "displayName": "Subtitle",
+        "purpose": "Tên card, nhãn nút lớn, chữ trong input."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Nội dung, hàng danh sách, mô tả luật game."
+      },
+      "body-strong": {
+        "displayName": "Body strong",
+        "purpose": "Nhấn trong đoạn văn, nhãn của hàng danh sách."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Caption, metadata, nhãn phụ. Không bao giờ nhỏ hơn 12px."
+      },
+      "label-strong": {
+        "displayName": "Label strong",
+        "purpose": "Nhãn chip, badge, chữ trong control nhỏ."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Mọi con số token/tiền/điểm, mã đơn, tổng xúc xắc."
+      }
+    },
+    "shadows": [
+      {
+        "name": "floating",
+        "value": "0 6px 12px rgba(0, 0, 0, 0.35)",
+        "purpose": "Toast và menu nổi trên nội dung (React Native: shadowOpacity 0.35, shadowRadius 12, elevation 8)."
+      },
+      {
+        "name": "card-elevated-planned",
+        "value": "0 10px 24px rgba(0, 0, 0, 0.45)",
+        "purpose": "Hướng 'khối nổi, bóng đậm' người dùng đã chọn nhưng CHƯA triển khai; khi làm phải thêm token shadow vào theme/tokens.js cho cả hai theme."
+      }
+    ],
+    "motion": [
+      {
+        "name": "press-scale",
+        "value": "scale(0.97) — spring speed 40, bounciness 0",
+        "purpose": "Mọi nút và control bấm được khi nhấn xuống, kèm haptic; tắt khi hệ thống bật giảm chuyển động."
+      },
+      {
+        "name": "fast",
+        "value": "120ms",
+        "purpose": "Đổi màu/viền của trạng thái focus, pressed, selected."
+      },
+      {
+        "name": "base",
+        "value": "200ms",
+        "purpose": "Xuất hiện/ẩn của toast, sheet và fade-in nội dung."
+      },
+      {
+        "name": "toast-hold",
+        "value": "2600ms",
+        "purpose": "Thời gian toast thường tự ẩn."
+      },
+      {
+        "name": "undo-hold",
+        "value": "5000ms",
+        "purpose": "Snackbar 'Hoàn tác' sau khi xoá API key."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact",
+        "value": "<600px — điện thoại dọc, một cột, lề ngang 16px"
+      },
+      {
+        "name": "medium",
+        "value": ">=600px — tablet nhỏ, nội dung vẫn một cột nhưng canh giữa"
+      },
+      {
+        "name": "expanded",
+        "value": ">=720px — nội dung dừng ở maxWidth 720px (centeredContent)"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Hành động chính của màn (gửi tin, đặt cược, nạp token): nền Tím mực, chữ trắng, cao 48px.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Nạp token</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; background: #7C3AED; color: #FFFFFF; border: 1px solid #7C3AED; border-radius: 12px; font-family: Roboto, system-ui, sans-serif; font-size: 14px; line-height: 20px; font-weight: 600; cursor: pointer; transition: background 120ms ease, transform 120ms ease, box-shadow 120ms ease; } .ds-btn-primary:hover { background: #6D28D9; border-color: #6D28D9; } .ds-btn-primary:active { transform: scale(0.97); } .ds-btn-primary:focus-visible { outline: 2px solid #A78BFA; outline-offset: 2px; } .ds-btn-primary[disabled] { opacity: 0.45; cursor: not-allowed; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Hành động phụ cùng cấp với primary (Huỷ, Xem thêm): nền Than nổi, viền Chì sáng.",
+      "html": "<button class=\"ds-btn-secondary\" type=\"button\">Để sau</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; background: #171B26; color: #E8EAF2; border: 1px solid #252B3D; border-radius: 12px; font-family: Roboto, system-ui, sans-serif; font-size: 14px; line-height: 20px; font-weight: 600; cursor: pointer; transition: background 120ms ease, transform 120ms ease; } .ds-btn-secondary:hover { background: #1E2333; } .ds-btn-secondary:active { transform: scale(0.97); } .ds-btn-secondary:focus-visible { outline: 2px solid #A78BFA; outline-offset: 2px; } .ds-btn-secondary[disabled] { opacity: 0.45; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Hành động phụ trong card hoặc cạnh tiêu đề; chỉ chữ Tím khói, không nền.",
+      "html": "<button class=\"ds-btn-ghost\" type=\"button\">Xem tất cả</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; background: transparent; color: #A78BFA; border: 1px solid transparent; border-radius: 12px; font-family: Roboto, system-ui, sans-serif; font-size: 14px; line-height: 20px; font-weight: 600; cursor: pointer; transition: background 120ms ease, transform 120ms ease; } .ds-btn-ghost:hover { background: rgba(139, 92, 246, 0.12); } .ds-btn-ghost:active { transform: scale(0.97); } .ds-btn-ghost:focus-visible { outline: 2px solid #A78BFA; outline-offset: 2px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Chỉ cho hành động phá huỷ (xoá API key, đăng xuất): nền Đỏ nghiêm trọng, chữ trắng.",
+      "html": "<button class=\"ds-btn-danger\" type=\"button\">Xoá API key</button>",
+      "css": ".ds-btn-danger { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; background: #DC2626; color: #FFFFFF; border: 1px solid #DC2626; border-radius: 12px; font-family: Roboto, system-ui, sans-serif; font-size: 14px; line-height: 20px; font-weight: 600; cursor: pointer; transition: background 120ms ease, transform 120ms ease; } .ds-btn-danger:hover { background: #B91C1C; border-color: #B91C1C; } .ds-btn-danger:active { transform: scale(0.97); } .ds-btn-danger:focus-visible { outline: 2px solid #FF8A8A; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Ô nhập một dòng: nền Mực xanh, viền 1.5px; focus tím, lỗi san hô kèm dòng giải thích ngay dưới.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">API key</span><input class=\"ds-input\" type=\"text\" placeholder=\"aibox_sk_...\" value=\"\" /><span class=\"ds-field-helper\">Key chỉ lưu trên thiết bị của bạn.</span></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 8px; font-family: Roboto, system-ui, sans-serif; } .ds-field-label { color: #B4BACB; font-size: 12px; line-height: 16px; font-weight: 600; } .ds-input { box-sizing: border-box; width: 100%; min-height: 48px; padding: 0 12px; background: #121620; color: #E8EAF2; border: 1.5px solid #1B2030; border-radius: 12px; font-family: inherit; font-size: 16px; line-height: 22px; transition: border-color 120ms ease, box-shadow 120ms ease; } .ds-input::placeholder { color: #9AA1B9; } .ds-input:hover { border-color: #252B3D; } .ds-input:focus-visible { outline: none; border-color: #A78BFA; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18); } .ds-field-helper { color: #9AA1B9; font-size: 12px; line-height: 16px; } .ds-field-error .ds-input { border-color: #FF8A8A; } .ds-field-error .ds-field-helper { color: #FF8A8A; }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip-default",
+      "description": "Chip lọc và chip số liệu: pill cao 32px; đang chọn thì nền Tím mờ + viền Tím viền + chữ Tím khói.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-chip-active\" type=\"button\">Tài xỉu</button><button class=\"ds-chip\" type=\"button\">Cổ phiếu</button><span class=\"ds-chip ds-chip-static\">💰 12.500</span></div>",
+      "css": ".ds-chips { display: flex; gap: 8px; flex-wrap: wrap; font-family: Roboto, system-ui, sans-serif; } .ds-chip { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 12px; background: #121620; color: #B4BACB; border: 1px solid #1B2030; border-radius: 999px; font-size: 12px; line-height: 16px; font-weight: 600; cursor: pointer; transition: background 120ms ease, border-color 120ms ease, color 120ms ease; } .ds-chip:hover { border-color: #252B3D; color: #E8EAF2; } .ds-chip:focus-visible { outline: 2px solid #A78BFA; outline-offset: 2px; } .ds-chip-active { background: rgba(139, 92, 246, 0.12); border-color: rgba(139, 92, 246, 0.45); color: #A78BFA; } .ds-chip-static { cursor: default; }"
+    },
+    {
+      "name": "Surface Card",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Khối nội dung chính: nền Mực xanh, viền 1px, bo 16px, padding 16px; bản đang chọn đổi sang Tím mờ.",
+      "html": "<section class=\"ds-card\"><div class=\"ds-card-kicker\">Số dư khả dụng</div><div class=\"ds-card-value\">12.500 💰</div><div class=\"ds-card-meta\">≈ 16–25 câu hỏi AI</div><button class=\"ds-card-action\" type=\"button\">Nạp thêm</button></section>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 8px; padding: 16px; background: #121620; border: 1px solid #1B2030; border-radius: 16px; font-family: Roboto, system-ui, sans-serif; } .ds-card-kicker { color: #9AA1B9; font-size: 12px; line-height: 16px; } .ds-card-value { color: #E8EAF2; font-family: ui-monospace, 'Roboto Mono', monospace; font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.4px; } .ds-card-meta { color: #B4BACB; font-size: 14px; line-height: 20px; } .ds-card-action { align-self: flex-start; margin-top: 4px; min-height: 32px; padding: 0 12px; background: transparent; color: #A78BFA; border: 1px solid transparent; border-radius: 10px; font-family: inherit; font-size: 12px; line-height: 16px; font-weight: 600; cursor: pointer; } .ds-card-action:hover { background: rgba(139, 92, 246, 0.12); } .ds-card-selected { background: rgba(139, 92, 246, 0.12); border: 1.5px solid rgba(139, 92, 246, 0.45); }"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Phản hồi sau hành động, nằm trên đáy màn: nền Khối thép, icon trạng thái, chữ 14px, bóng đổ mềm; biến thể 'Hoàn tác' giữ 5 giây.",
+      "html": "<div class=\"ds-toast\"><span class=\"ds-toast-icon\">✓</span><span class=\"ds-toast-text\">Đã nạp 10.000 token</span><button class=\"ds-toast-action\" type=\"button\">Hoàn tác</button></div>",
+      "css": ".ds-toast { display: flex; align-items: center; gap: 12px; max-width: 420px; padding: 12px 16px; background: #1E2333; color: #E8EAF2; border: 1px solid #252B3D; border-radius: 12px; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35); font-family: Roboto, system-ui, sans-serif; font-size: 14px; line-height: 20px; font-weight: 600; } .ds-toast-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 999px; background: rgba(52, 211, 153, 0.14); color: #34D399; font-size: 12px; line-height: 16px; } .ds-toast-text { flex: 1; } .ds-toast-action { min-height: 32px; padding: 0 8px; background: transparent; color: #A78BFA; border: none; border-radius: 8px; font-family: inherit; font-size: 12px; line-height: 16px; font-weight: 700; cursor: pointer; } .ds-toast-action:hover { background: rgba(139, 92, 246, 0.12); } .ds-toast-action:focus-visible { outline: 2px solid #A78BFA; outline-offset: 2px; }"
+    },
+    {
+      "name": "Token Badge",
+      "kind": "custom",
+      "description": "Pill số dư token luôn nằm ở header màn chính, bấm được để sang Credits: nền Tím mờ, viền Tím viền, số mono.",
+      "html": "<button class=\"ds-token-badge\" type=\"button\" aria-label=\"Số dư 12.500 token\"><span class=\"ds-token-badge-emoji\">💰</span><span class=\"ds-token-badge-value\">12.500</span></button>",
+      "css": ".ds-token-badge { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 4px 12px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.45); border-radius: 999px; cursor: pointer; transition: background 120ms ease, transform 120ms ease; } .ds-token-badge:hover { background: rgba(139, 92, 246, 0.2); } .ds-token-badge:active { transform: scale(0.97); } .ds-token-badge:focus-visible { outline: 2px solid #A78BFA; outline-offset: 2px; } .ds-token-badge-emoji { font-size: 14px; line-height: 1; } .ds-token-badge-value { color: #A78BFA; font-family: ui-monospace, 'Roboto Mono', monospace; font-size: 14px; line-height: 20px; font-weight: 700; }"
+    },
+    {
+      "name": "Die",
+      "kind": "custom",
+      "description": "Mặt xúc xắc của game Tài xỉu: khối 56px bo 12px, chấm trắng xếp lưới 3x3; thắng đổi viền/nền sang Bạc hà, thua sang San hô.",
+      "html": "<div class=\"ds-die ds-die-win\" role=\"img\" aria-label=\"Xúc xắc 5\"><div class=\"ds-die-grid\"><i></i><i class=\"ds-pip\"></i><i></i><i class=\"ds-pip\"></i><i></i><i class=\"ds-pip\"></i><i></i><i class=\"ds-pip\"></i><i></i></div></div>",
+      "css": ".ds-die { display: inline-flex; width: 56px; height: 56px; padding: 4px; background: #1E2333; border: 1.5px solid #252B3D; border-radius: 12px; } .ds-die-win { background: rgba(52, 211, 153, 0.14); border-color: rgba(52, 211, 153, 0.35); } .ds-die-lose { background: rgba(255, 107, 107, 0.14); border-color: rgba(255, 107, 107, 0.35); } .ds-die-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); width: 100%; height: 100%; } .ds-die-grid i { display: flex; align-items: center; justify-content: center; } .ds-die-grid i::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: transparent; } .ds-die-grid i.ds-pip::after { background: #E8EAF2; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Bàn giao dịch ban đêm",
+    "overview": "AIBox là một bàn giao dịch kê trong phòng tối: nền than, một luồng tím neon đánh dấu chỗ đáng nhìn, số liệu hiện bằng chữ mono như trên bảng điện tử. Nhưng người ngồi vào bàn là sinh viên, không phải trader chuyên nghiệp — nên luật chơi luôn được viết ra, mỗi token đều quy ra được \"bao nhiêu câu hỏi AI\", và game Tài xỉu được phép vui. Sự nghiêm túc nằm ở dữ liệu; sự thân thiện nằm ở lời lẽ và phản hồi.\n\nBố cục dày vừa phải: mỗi màn là một chồng card trên cùng một nền, phân tầng bằng màu surface và viền 1px thay vì đổ bóng khắp nơi. Màu trạng thái (xanh bạc hà, hổ phách, san hô) chỉ xuất hiện khi có tin để báo — thắng, thua, cảnh báo, lỗi. Tím neon không bao giờ là màu nền lớn; nó là đèn báo.\n\nMọi thứ phải \"chắc tay\": vùng chạm ≥44px, nút nhún nhẹ 0.97 kèm haptic, chữ không nhỏ hơn 12px, và mọi hành động tốn token đều nói trước giá. Giao diện thân thiện nhưng không giả vờ rằng tiền là giả.",
+    "keyCharacteristics": [
+      "Nền than xanh (#0F1115) với 4 mức surface tăng dần; viền mảnh thay bóng.",
+      "Một accent duy nhất: Tím neon đêm, xuất hiện như đèn báo chứ không như nền.",
+      "Số liệu (token, giá, tổng điểm) luôn dùng font mono; nhãn dùng system font.",
+      "Phản hồi giác quan: scale 0.97 + haptic khi nhấn, toast cho kết quả, tôn trọng giảm chuyển động.",
+      "Emoji chỉ dùng cho tiền tệ và game (💰 🎲), không dùng làm icon điều hướng."
+    ],
+    "rules": [
+      {
+        "name": "The One Neon Rule",
+        "body": "Tím neon chiếm ≤10% diện tích một màn hình. Nó đánh dấu hành động chính và trạng thái đang chọn; nếu một màn có hai vùng tím lớn, một vùng phải bỏ.",
+        "section": "colors"
+      },
+      {
+        "name": "The Status-Only Rule",
+        "body": "Xanh/hổ phách/san hô chỉ xuất hiện khi có sự kiện (thắng, cảnh báo, lỗi), không dùng trang trí. Màu không bao giờ là tín hiệu duy nhất — luôn kèm chữ hoặc icon.",
+        "section": "colors"
+      },
+      {
+        "name": "The 12px Floor Rule",
+        "body": "Không chữ nào dưới 12px, kể cả caption hay badge. Thiếu chỗ thì bỏ chữ, không thu nhỏ.",
+        "section": "typography"
+      },
+      {
+        "name": "The Money Is Monospace Rule",
+        "body": "Mọi số token/tiền/điểm dùng mono và formatToken(); số dư giao dịch không viết tắt (1.000, không phải 1K). Số lớn được adjustsFontSizeToFit thay vì cắt.",
+        "section": "typography"
+      },
+      {
+        "name": "The System-Scale Rule",
+        "body": "Chỉ dùng 8 bậc chữ trong token; không tự đặt fontSize trong màn hình. Người dùng tăng cỡ chữ hệ thống thì layout phải chịu được tới 1.6× (input 1.8×) trước khi cắt.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Column Rule",
+        "body": "Không chia cột nội dung trên điện thoại; chỉ số liệu ngắn mới nằm cạnh nhau trong một hàng (2–4 ô).",
+        "section": "layout"
+      },
+      {
+        "name": "The Thumb-First Rule",
+        "body": "Hành động chính nằm ở nửa dưới màn hoặc trong tầm ngón cái; header chỉ chứa điều hướng và ngữ cảnh.",
+        "section": "layout"
+      },
+      {
+        "name": "The Floating-Only Rule",
+        "body": "Bóng chỉ dành cho thứ thật sự nổi trên nội dung (toast, menu, sheet). Card trong luồng phân tầng bằng màu và viền.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Pill-for-Filters Rule",
+        "body": "Chip lọc và badge dùng pill; nút hành động dùng 12px. Không trộn hai hình thức này trong cùng một hàng.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do lấy mọi màu từ src/theme/palettes.js và mọi kích thước từ src/theme/tokens.js.",
+      "Do dùng formatToken() + font mono cho mọi con số token; quy đổi token → câu hỏi AI khi người dùng sắp tiêu token.",
+      "Do giữ vùng chạm ≥44px và khoảng cách ≥8px giữa hai nút kề nhau.",
+      "Do dùng PressableScale/Animated + haptic cho phản hồi nhấn, và tôn trọng useReduceMotion().",
+      "Do viết nhãn tiếng Việt ngắn, động từ rõ (\"Nạp token\", \"Đặt cược\", \"Dừng\"), kèm đơn vị.",
+      "Do dùng EmptyState/ErrorState có hành động tiếp theo thay vì màn trắng."
+    ],
+    "donts": [
+      "Don't hard-code hex, fontSize, padding hay shadow trong màn hình — thêm token trước.",
+      "Don't dùng tím neon làm nền diện rộng hoặc gradient tím-xanh mặc định của AI slop.",
+      "Don't đặt chữ xám trên nền accent/trạng thái; chữ trên nền màu phải là onAccent/onBright.",
+      "Don't dùng màu làm tín hiệu duy nhất cho thắng/thua/lỗi; luôn kèm chữ hoặc icon.",
+      "Don't thêm bottom tab bar; điều hướng chính là drawer + header.",
+      "Don't tạo màn hình mới bằng cách copy style rời — dùng UI kit (src/components/ui).",
+      "Don't hứa lợi nhuận, bịa số liệu người dùng, hoặc trình bày token như tiền thật."
+    ]
+  }
+}
