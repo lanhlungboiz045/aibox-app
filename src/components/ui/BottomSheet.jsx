@@ -1,45 +1,94 @@
-// components/ui/BottomSheet.jsx — Bottom sheet dùng chung cho "Lọc" và form tạo/sửa
-// Không cần thư viện ngoài: Modal + overlay, kéo/không kéo đều được (bấm nền để đóng).
+// components/ui/BottomSheet.jsx — Bottom sheet dùng chung: bộ lọc, form, xác nhận
+// Modal + overlay, đóng bằng nút 44px / bấm nền / phím Back Android.
+// `keyboardAware` để form trong sheet không bị bàn phím che.
 import React from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, radius, spacing } from '../../theme/tokens';
+import { AppIcon } from './AppIcon';
+import { colors, radius, spacing, touch, type } from '../../theme/tokens';
 
-export function BottomSheet({ visible, onClose, title, subtitle, children, footer, maxHeight = '85%' }) {
+export function BottomSheet({
+  visible, onClose, title, subtitle, children, footer,
+  maxHeight = '85%', keyboardAware = false, scroll = true, style,
+}) {
   const insets = useSafeAreaInsets();
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
-        <View style={[styles.sheet, { maxHeight, paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
-          <View style={styles.handle} />
-          {title ? (
-            <View style={styles.header}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.title}>{title}</Text>
-                {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-              </View>
-              <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Text style={styles.close}>{'\u{2715}'}</Text>
-              </TouchableOpacity>
-            </View>
-          ) : null}
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.content}
+
+  const body = scroll ? (
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={styles.content}
+    >
+      {children}
+    </ScrollView>
+  ) : (
+    <View style={styles.content}>{children}</View>
+  );
+
+  const sheet = (
+    <View
+      style={[
+        styles.sheet,
+        { maxHeight, paddingBottom: Math.max(insets.bottom, spacing.lg) },
+        style,
+      ]}
+      accessibilityViewIsModal
+      onAccessibilityEscape={onClose}
+    >
+      <View style={styles.handle} />
+      {title ? (
+        <View style={styles.header}>
+          <View style={styles.headerBody}>
+            <Text style={styles.title} maxFontSizeMultiplier={1.3}>{title}</Text>
+            {subtitle ? (
+              <Text style={styles.subtitle} maxFontSizeMultiplier={1.3}>{subtitle}</Text>
+            ) : null}
+          </View>
+          <TouchableOpacity
+            style={styles.close}
+            onPress={onClose}
+            hitSlop={touch.hitSlop}
+            accessibilityRole="button"
+            accessibilityLabel="Đóng"
           >
-            {children}
-          </ScrollView>
-          {footer ? <View style={styles.footer}>{footer}</View> : null}
+            <AppIcon name="x" size={20} color={colors.textDim} />
+          </TouchableOpacity>
         </View>
+      ) : null}
+      {body}
+      {footer ? <View style={styles.footer}>{footer}</View> : null}
+    </View>
+  );
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+      <View style={styles.backdrop}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Đóng bảng"
+        />
+        {keyboardAware ? (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.keyboardWrap}
+          >
+            {sheet}
+          </KeyboardAvoidingView>
+        ) : sheet}
       </View>
     </Modal>
   );
 }
 
+// Alias theo tên trong spec UI kit
+export const Sheet = BottomSheet;
+
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.65)', justifyContent: 'flex-end' },
+  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
+  keyboardWrap: { justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: colors.surface,
     borderTopLeftRadius: radius.xl,
@@ -57,10 +106,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     marginBottom: spacing.md,
   },
-  header: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.md },
-  title: { color: colors.text, fontSize: 16, fontWeight: '700' },
-  subtitle: { color: colors.textFaint, fontSize: 11, marginTop: 3 },
-  close: { color: colors.textDim, fontSize: 15, fontWeight: '700' },
+  header: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.md, gap: spacing.sm },
+  headerBody: { flex: 1, gap: 2 },
+  title: { ...type.subtitle, color: colors.text, fontWeight: '700' },
+  subtitle: { ...type.small, color: colors.textFaint },
+  close: { width: touch.min, height: touch.min, alignItems: 'center', justifyContent: 'center', marginTop: -spacing.sm, marginRight: -spacing.sm },
   content: { paddingBottom: spacing.sm },
-  footer: { paddingTop: spacing.md },
+  footer: { paddingTop: spacing.md, gap: spacing.sm },
 });

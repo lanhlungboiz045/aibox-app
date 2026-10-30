@@ -1,15 +1,21 @@
-// components/ui/SectionHeader.jsx — Tiêu đề khối: chữ 18 đậm + link "Xem tất cả" tím
+// components/ui/SectionHeader.jsx — Tiêu đề khối: chữ 18 đậm + link "Xem tất cả" tím (đạt AA)
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors, spacing, type } from '../../theme/tokens';
+import { colors, spacing, touch, type } from '../../theme/tokens';
 
 export function SectionHeader({ title, actionLabel = 'Xem tất cả', onAction, style }) {
   return (
     <View style={[styles.row, style]}>
-      <Text style={styles.title} numberOfLines={1}>{title}</Text>
+      <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.3}>{title}</Text>
       {onAction ? (
-        <TouchableOpacity onPress={onAction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.action}>{actionLabel}</Text>
+        <TouchableOpacity
+          onPress={onAction}
+          hitSlop={touch.hitSlop}
+          style={styles.actionBtn}
+          accessibilityRole="button"
+          accessibilityLabel={actionLabel}
+        >
+          <Text style={styles.action} numberOfLines={1} maxFontSizeMultiplier={1.3}>{actionLabel}</Text>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -22,7 +28,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.md,
+    minHeight: touch.min,
   },
   title: { ...type.section, color: colors.text, flexShrink: 1 },
-  action: { color: colors.accent, fontSize: 13, fontWeight: '600', marginLeft: spacing.md },
+  actionBtn: { minHeight: touch.min, justifyContent: 'center', paddingLeft: spacing.md },
+  // accentSoft thay accent để đạt 4.5:1 với chữ 12-13px
+  action: { ...type.smallStrong, color: colors.accentSoft },
 });

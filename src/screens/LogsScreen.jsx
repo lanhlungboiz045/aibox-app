@@ -1,12 +1,12 @@
-// screens/LogsScreen.jsx — TẠM (Phần 3): danh sách request AI dạng hàng gọn để Home có đích đến.
-// Phần 5 sẽ bổ sung chip tổng hợp (Spend/RPM/TPM), nút "Lọc" mở bottom sheet và phân trang.
+// screens/LogsScreen.jsx — TẠM (Bước 2): danh sách request AI dạng hàng gọn.
+// Bước 3 sẽ bổ sung chip tổng hợp, nút "Lọc" mở bottom sheet và phân trang.
 import React, { useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatToken, formatRelativeTime } from '../utils/format';
-import { AppIcon, ListRow } from '../components/ui';
-import { colors, layout, radius, spacing } from '../theme/tokens';
+import { ListRow, EmptyState, IconButton } from '../components/ui';
+import { colors, layout, spacing, type } from '../theme/tokens';
 
 export function LogsScreen({ navigation }) {
   const { state } = useApp();
@@ -25,15 +25,9 @@ export function LogsScreen({ navigation }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <AppIcon name="chevron-left" size={22} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Logs</Text>
-        <Text style={styles.headerMeta}>{logs.length} request</Text>
+        <IconButton icon="chevron-left" label="Quay lại" onPress={() => navigation.goBack()} />
+        <Text style={styles.title} maxFontSizeMultiplier={1.3}>Logs</Text>
+        <Text style={styles.headerMeta} maxFontSizeMultiplier={1.2}>{logs.length} request</Text>
       </View>
 
       <FlatList
@@ -41,16 +35,18 @@ export function LogsScreen({ navigation }) {
         keyExtractor={item => item.id}
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing.xl }]}
         ListHeaderComponent={logs.length ? (
-          <Text style={styles.summary}>
+          <Text style={styles.summary} maxFontSizeMultiplier={1.3}>
             Tổng {formatToken(totalTokens)} {'\u{1F4B0}'} · {logs.length} request
           </Text>
         ) : null}
         ListEmptyComponent={(
-          <View style={styles.empty}>
-            <AppIcon name="activity" size={22} color={colors.textFaint} />
-            <Text style={styles.emptyTitle}>Chưa có request nào</Text>
-            <Text style={styles.emptyText}>Gọi AI trong tab Chat, request sẽ hiện ở đây.</Text>
-          </View>
+          <EmptyState
+            icon="activity"
+            title="Chưa có request nào"
+            message="Gọi AI trong tab Chat, request đầu tiên sẽ hiện ở đây."
+            actionLabel="Mở Chat"
+            onAction={() => navigation.navigate('AIHub')}
+          />
         )}
         ItemSeparatorComponent={() => <View style={styles.divider} />}
         renderItem={({ item }) => {
@@ -60,7 +56,7 @@ export function LogsScreen({ navigation }) {
               icon="zap"
               title={model?.name || 'AI model'}
               subtitle={`${formatRelativeTime(item.timestamp)} · ${formatToken(Math.abs(item.amount))} token`}
-              right={<Text style={styles.amount}>-{formatToken(Math.abs(item.amount))}</Text>}
+              right={<Text style={styles.amount}>{`-${formatToken(Math.abs(item.amount))}`}</Text>}
               chevron={false}
             />
           );
@@ -77,20 +73,16 @@ const styles = StyleSheet.create({
     height: layout.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: layout.gutter,
-    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    gap: spacing.xs,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  title: { flex: 1, color: colors.text, fontSize: 16, fontWeight: '700' },
-  headerMeta: { color: colors.textFaint, fontSize: 11 },
+  title: { ...type.subtitle, color: colors.text, fontWeight: '700', flex: 1 },
+  headerMeta: { ...type.small, color: colors.textFaint, paddingRight: spacing.md },
   listBody: { flex: 1 },
-  list: { paddingHorizontal: layout.gutter, paddingTop: spacing.lg },
-  summary: { color: colors.textDim, fontSize: 12, marginBottom: spacing.md },
-  divider: { height: 1, backgroundColor: colors.border, marginLeft: layout.gutter },
-  amount: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
-  empty: { alignItems: 'center', paddingTop: 72, gap: spacing.sm },
-  emptyTitle: { color: colors.text, fontSize: 14, fontWeight: '600' },
-  emptyText: { color: colors.textFaint, fontSize: 12 },
+  list: { paddingTop: spacing.lg },
+  summary: { ...type.small, color: colors.textDim, paddingHorizontal: layout.gutter, marginBottom: spacing.md },
+  divider: { height: 1, backgroundColor: colors.border, marginLeft: layout.gutter + 44 },
+  amount: { ...type.smallStrong, color: colors.textDim },
 });

@@ -2,11 +2,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AppIcon } from './AppIcon';
-import { colors, radius, spacing } from '../../theme/tokens';
+import { colors, radius, spacing, type } from '../../theme/tokens';
 
 export function ListRow({
   icon, iconColor = colors.accentSoft, title, subtitle,
   right, onPress, chevron = true, compact = false, style,
+  accessibilityLabel, accessibilityHint,
 }) {
   const Container = onPress ? TouchableOpacity : View;
   return (
@@ -14,6 +15,9 @@ export function ListRow({
       style={[styles.row, compact && styles.rowCompact, style]}
       onPress={onPress}
       activeOpacity={0.8}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={accessibilityLabel || [title, subtitle].filter(Boolean).join(', ')}
+      accessibilityHint={accessibilityHint}
     >
       {icon ? (
         <View style={styles.iconWrap}>
@@ -21,8 +25,10 @@ export function ListRow({
         </View>
       ) : null}
       <View style={styles.body}>
-        <Text style={styles.title} numberOfLines={1}>{title}</Text>
-        {subtitle ? <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
+        <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.3}>{title}</Text>
+        {subtitle ? (
+          <Text style={styles.subtitle} numberOfLines={1} maxFontSizeMultiplier={1.3}>{subtitle}</Text>
+        ) : null}
       </View>
       {right ? <View style={styles.right}>{right}</View> : null}
       {chevron && onPress ? <AppIcon name="chevron-right" size={16} color={colors.textFaint} /> : null}
@@ -48,7 +54,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   body: { flex: 1, gap: 2 },
-  title: { color: colors.text, fontSize: 13, fontWeight: '600' },
-  subtitle: { color: colors.textFaint, fontSize: 11 },
+  title: { ...type.bodyStrong, color: colors.text },
+  subtitle: { ...type.small, color: colors.textFaint },
   right: { alignItems: 'flex-end' },
 });

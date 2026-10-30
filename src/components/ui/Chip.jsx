@@ -1,22 +1,49 @@
-// components/ui/Chip.jsx — Chip nhỏ, dùng cho hàng số liệu tổng hợp (Spend/RPM/TPM) và chip cuộn ngang
+// components/ui/Chip.jsx — Chip nhỏ cho hàng số liệu (cuộn ngang) và chip lọc
+// Vùng chạm: cao 32 + hitSlop 6 = 44. Chip lọc có accessibilityState.selected.
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AppIcon } from './AppIcon';
-import { colors, radius, spacing } from '../../theme/tokens';
+import { colors, radius, spacing, type } from '../../theme/tokens';
 
-export function Chip({ icon, label, value, onPress, active = false, tone }) {
-  const color = tone ? tone : active ? colors.accentSoft : colors.textDim;
+export function Chip({
+  icon, label, value, onPress, active = false, tone, onRemove, style,
+}) {
+  const color = tone || (active ? colors.accentSoft : colors.textDim);
   const content = (
     <>
       {icon ? <AppIcon name={icon} size={12} color={color} /> : null}
-      {value ? <Text style={[styles.value, { color }]}>{value}</Text> : null}
-      {label ? <Text style={[styles.label, { color: value ? colors.textFaint : color }]}>{label}</Text> : null}
+      {value ? <Text style={[styles.value, { color }]} maxFontSizeMultiplier={1.3}>{value}</Text> : null}
+      {label ? (
+        <Text
+          style={[styles.label, { color: value ? colors.textFaint : color }]}
+          numberOfLines={1}
+          maxFontSizeMultiplier={1.3}
+        >
+          {label}
+        </Text>
+      ) : null}
+      {onRemove ? (
+        <View style={styles.remove}>
+          <AppIcon name="x" size={12} color={colors.textDim} />
+        </View>
+      ) : null}
     </>
   );
-  const style = [styles.chip, active && styles.chipActive];
-  if (!onPress) return <View style={style}>{content}</View>;
+
+  const chipStyle = [styles.chip, active && styles.chipActive, style];
+
+  if (!onPress) return <View style={chipStyle}>{content}</View>;
+
   return (
-    <TouchableOpacity style={style} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity
+      style={chipStyle}
+      onPress={onPress}
+      activeOpacity={0.8}
+      hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
+      accessibilityRole="button"
+      accessibilityLabel={[value, label].filter(Boolean).join(' ')}
+      accessibilityState={{ selected: active }}
+    >
       {content}
     </TouchableOpacity>
   );
@@ -26,15 +53,17 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: spacing.sm,
+    minHeight: 32,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
-    paddingVertical: 7,
+    paddingVertical: spacing.sm,
   },
-  chipActive: { borderColor: 'rgba(139, 92, 246, 0.5)', backgroundColor: colors.accentDim },
-  value: { fontSize: 12, fontWeight: '700' },
-  label: { fontSize: 11 },
+  chipActive: { borderColor: colors.accentBorder, backgroundColor: colors.accentDim },
+  value: { ...type.smallStrong, fontWeight: '700' },
+  label: { ...type.small },
+  remove: { marginLeft: spacing.xs },
 });

@@ -1,15 +1,15 @@
-// components/ui/MiniBanner.jsx — Banner mỏng 1 dòng (cao ~64px), viền tím, có mũi tên ›
+// components/ui/MiniBanner.jsx — Banner mỏng 1 dòng (cao 64), viền màu theo tone, có mũi tên ›
 // Không truyền `text` → tự ẩn (đúng spec: không có cảnh báo thì không hiện).
 import React from 'react';
 import { Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AppIcon } from './AppIcon';
-import { colors, radius, spacing } from '../../theme/tokens';
+import { colors, radius, spacing, touch, type } from '../../theme/tokens';
 
 const TONES = {
-  accent: { border: 'rgba(139, 92, 246, 0.4)', bg: 'rgba(139, 92, 246, 0.08)', fg: colors.accentSoft },
-  warning: { border: 'rgba(255, 183, 77, 0.35)', bg: colors.warningDim, fg: colors.warning },
-  success: { border: 'rgba(34, 197, 94, 0.35)', bg: colors.successDim, fg: colors.success },
-  danger: { border: 'rgba(255, 107, 107, 0.35)', bg: colors.dangerDim, fg: colors.danger },
+  accent: { border: colors.accentBorder, bg: colors.accentDim, fg: colors.accentSoft },
+  warning: { border: colors.warningBorder, bg: colors.warningDim, fg: colors.warning },
+  success: { border: colors.successBorder, bg: colors.successDim, fg: colors.success },
+  danger: { border: colors.dangerBorder, bg: colors.dangerDim, fg: colors.danger },
 };
 
 export function MiniBanner({ icon = 'info', text, onPress, tone = 'accent' }) {
@@ -20,9 +20,12 @@ export function MiniBanner({ icon = 'info', text, onPress, tone = 'accent' }) {
       style={[styles.banner, { backgroundColor: t.bg, borderColor: t.border }]}
       onPress={onPress}
       activeOpacity={0.85}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={text}
+      hitSlop={{ top: 4, bottom: 4 }}
     >
       <AppIcon name={icon} size={16} color={t.fg} />
-      <Text style={[styles.text, { color: t.fg }]} numberOfLines={1}>{text}</Text>
+      <Text style={[styles.text, { color: t.fg }]} numberOfLines={1} maxFontSizeMultiplier={1.3}>{text}</Text>
       <AppIcon name="chevron-right" size={16} color={t.fg} />
     </TouchableOpacity>
   );
@@ -37,6 +40,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    // Đảm bảo vùng chạm luôn >= 44 kể cả khi text ngắn
+    minWidth: touch.min,
   },
-  text: { flex: 1, fontSize: 12, lineHeight: 17, fontWeight: '600' },
+  text: { ...type.smallStrong, flex: 1 },
 });

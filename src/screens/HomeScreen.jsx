@@ -10,8 +10,8 @@ import { buildSpendSummary } from '../utils/spend';
 import { QUESTS } from '../data/quests';
 import { AppDrawer } from '../components/AppDrawer';
 import { DailyRewardModal } from '../components/DailyRewardModal';
-import { AppIcon, MiniBanner, SectionHeader, ListRow, StatTile, Sparkline } from '../components/ui';
-import { colors, layout, radius, spacing } from '../theme/tokens';
+import { AppIcon, MiniBanner, SectionHeader, ListRow, StatTile, Sparkline, IconButton, EmptyState } from '../components/ui';
+import { colors, layout, radius, spacing, type } from '../theme/tokens';
 
 // Ngưỡng coi là "số dư thấp" để hiện banner nhắc nạp thêm
 const LOW_BALANCE = 1000;
@@ -93,14 +93,13 @@ export function HomeScreen({ navigation }) {
       {/* Header cố định: không cuộn theo nội dung */}
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <View style={styles.headerInner}>
-          <TouchableOpacity
-            style={styles.menuBtn}
+          <IconButton
+            icon="menu"
+            label="Mở menu"
+            size={22}
             onPress={() => setShowDrawer(true)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <AppIcon name="menu" size={20} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.brand}>AIBox</Text>
+          />
+          <Text style={styles.brand} numberOfLines={1} maxFontSizeMultiplier={1.2}>AIBox</Text>
 
           <View style={{ flex: 1 }} />
 
@@ -108,26 +107,42 @@ export function HomeScreen({ navigation }) {
             style={styles.balancePill}
             onPress={() => navigation.navigate('CreditsTopup')}
             activeOpacity={0.85}
+            hitSlop={{ top: 6, bottom: 6 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Số dư ${formatToken(balance)} token, mở nạp tiền`}
           >
             <AppIcon name="credit-card" size={12} color={colors.accentSoft} />
-            <Text style={styles.balanceText} numberOfLines={1}>{formatToken(balance)} {'\u{1F4B0}'}</Text>
+            <Text style={styles.balanceText} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+              {formatToken(balance)} {'\u{1F4B0}'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.iconBtn}
             onPress={() => navigation.navigate('Notifications')}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+            accessibilityRole="button"
+            accessibilityLabel={unreadNotifications > 0 ? `Thông báo, ${unreadNotifications} chưa đọc` : 'Thông báo'}
           >
-            <AppIcon name="bell" size={18} color={colors.textDim} />
+            <AppIcon name="bell" size={20} color={colors.textDim} />
             {unreadNotifications > 0 ? (
               <View style={styles.bellBadge}>
-                <Text style={styles.bellBadgeText}>{unreadNotifications > 9 ? '9+' : unreadNotifications}</Text>
+                <Text style={styles.bellBadgeText} maxFontSizeMultiplier={1}>
+                  {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                </Text>
               </View>
             ) : null}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.avatar} onPress={() => navigation.navigate('Profile')} activeOpacity={0.85}>
-            <Text style={styles.avatarText}>{user?.avatar || '\u{1F464}'}</Text>
+          <TouchableOpacity
+            style={styles.avatar}
+            onPress={() => navigation.navigate('Profile')}
+            activeOpacity={0.85}
+            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+            accessibilityRole="button"
+            accessibilityLabel="Hồ sơ cá nhân"
+          >
+            <Text style={styles.avatarText} maxFontSizeMultiplier={1.2}>{user?.avatar || '\u{1F464}'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -146,11 +161,13 @@ export function HomeScreen({ navigation }) {
               style={styles.shortcut}
               onPress={() => navigation.navigate(item.route)}
               activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={item.label}
             >
               <View style={styles.shortcutIcon}>
                 <AppIcon name={item.icon} size={18} color={colors.accentSoft} />
               </View>
-              <Text style={styles.shortcutLabel} numberOfLines={1}>{item.label}</Text>
+              <Text style={styles.shortcutLabel} numberOfLines={1} maxFontSizeMultiplier={1.2}>{item.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -197,11 +214,11 @@ export function HomeScreen({ navigation }) {
             <View style={styles.spendTop}>
               <View style={styles.spendInfo}>
                 <Text style={styles.spendLabel}>Token 7 ngày</Text>
-                <Text style={styles.spendValue}>
+                <Text style={styles.spendValue} maxFontSizeMultiplier={1.2} numberOfLines={1}>
                   {formatTokenShort(spend.total)}
                   <Text style={styles.spendUnit}> {'\u{1F4B0}'}</Text>
                 </Text>
-                <Text style={[styles.spendDelta, { color: deltaColor }]} numberOfLines={1}>{deltaText}</Text>
+                <Text style={[styles.spendDelta, { color: deltaColor }]} numberOfLines={1} maxFontSizeMultiplier={1.2}>{deltaText}</Text>
               </View>
               <Sparkline values={spend.series.map(item => item.value)} width={104} height={54} />
             </View>
@@ -220,7 +237,14 @@ export function HomeScreen({ navigation }) {
           />
           <View style={styles.card}>
             {recentCalls.length === 0 ? (
-              <Text style={styles.empty}>Chưa có request nào. Hỏi AI trong tab Chat để bắt đầu.</Text>
+              <EmptyState
+                compact
+                icon="message-square"
+                title="Chưa có request nào"
+                message="Hỏi AI một câu, request đầu tiên sẽ hiện ở đây."
+                actionLabel="Chat ngay"
+                onAction={() => navigation.navigate('AIHub')}
+              />
             ) : recentCalls.map((tx, index) => {
               const model = state.aiModels.find(m => m.id === tx.modelId);
               return (
@@ -261,53 +285,46 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.gutter,
     gap: spacing.sm,
   },
-  menuBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brand: { color: colors.text, fontSize: 18, fontWeight: '800', letterSpacing: -0.3 },
+  brand: { ...type.section, fontSize: 18, color: colors.text, fontWeight: '800', letterSpacing: -0.3 },
   balancePill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.45)',
+    borderColor: colors.accentBorder,
     backgroundColor: colors.accentDim,
     borderRadius: radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    maxWidth: 128,
+    paddingHorizontal: spacing.sm + 2,
+    minHeight: 32,
+    maxWidth: 110,
     flexShrink: 1,
   },
   balanceText: { color: colors.accentSoft, fontSize: 12, fontWeight: '700', flexShrink: 1 },
-  iconBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   bellBadge: {
     position: 'absolute',
     top: 0,
-    right: 0,
-    minWidth: 15,
-    height: 15,
+    right: -2,
+    minWidth: 16,
+    height: 16,
     borderRadius: 8,
-    backgroundColor: colors.danger,
+    backgroundColor: colors.dangerBg,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
-  bellBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '800' },
+  bellBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.surfaceHi,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.45)',
+    borderColor: colors.accentBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 15 },
+  avatarText: { fontSize: 18 },
   scroll: { flex: 1 },
   content: {
     paddingHorizontal: layout.gutter,
@@ -335,7 +352,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  shortcutLabel: { color: colors.text, fontSize: 11, fontWeight: '600' },
+  shortcutLabel: { ...type.small, fontWeight: '600', color: colors.text },
   tileRow: { flexDirection: 'row', gap: 10 },
   spendCard: {
     backgroundColor: colors.surface,
@@ -348,12 +365,12 @@ const styles = StyleSheet.create({
   },
   spendTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   spendInfo: { flex: 1 },
-  spendLabel: { color: colors.textFaint, fontSize: 11, fontWeight: '600' },
-  spendValue: { color: colors.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.5, marginTop: 2 },
+  spendLabel: { ...type.smallStrong, color: colors.textFaint },
+  spendValue: { ...type.display, color: colors.text, marginTop: 2 },
   spendUnit: { fontSize: 14, fontWeight: '600' },
-  spendDelta: { fontSize: 11, marginTop: 2 },
+  spendDelta: { ...type.small, marginTop: 2 },
   spendDivider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.md },
-  spendMeta: { color: colors.textDim, fontSize: 11 },
+  spendMeta: { ...type.small, color: colors.textDim },
   section: { gap: 0 },
   card: {
     backgroundColor: colors.surface,
@@ -363,6 +380,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   divider: { height: 1, backgroundColor: colors.border, marginLeft: layout.gutter },
-  amount: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
-  empty: { color: colors.textFaint, fontSize: 12, padding: spacing.lg, lineHeight: 18 },
+  amount: { ...type.smallStrong, color: colors.textDim },
 });

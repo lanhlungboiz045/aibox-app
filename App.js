@@ -1,21 +1,24 @@
 // App.jsx — Entry point cho AIBox app (JavaScript)
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { AppProvider, useApp } from './src/context/AppContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { AuthScreen } from './src/screens/AuthScreen';
+import { ToastProvider } from './src/components/ui';
+import { colors } from './src/theme/tokens';
 
+// Theme điều hướng lấy từ tokens (trước đây hard-code 5 mã màu)
 const navTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    background: '#0F1115',
-    card: '#1A1D24',
-    text: '#FFFFFF',
-    border: '#2A2E36',
-    primary: '#6C5CE7',
+    background: colors.bg,
+    card: colors.surface,
+    text: colors.text,
+    border: colors.border,
+    primary: colors.accentStrong,
   },
 };
 
@@ -40,13 +43,17 @@ export default function App() {
   return (
     // initialMetrics: có sẵn insets ngay frame đầu, tránh content bị nhảy/che dưới notch
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <AppProvider>
-        <Root />
-      </AppProvider>
+      {/* Toast/snackbar toàn cục, phải nằm trong SafeAreaProvider để tránh tai thỏ */}
+      <ToastProvider>
+        <AppProvider>
+          <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
+          <Root />
+        </AppProvider>
+      </ToastProvider>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  boot: { flex: 1, backgroundColor: '#0F1115' },
+  boot: { flex: 1, backgroundColor: colors.bg },
 });
