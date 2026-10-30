@@ -25,6 +25,7 @@ const GROUPS = [
     label: 'Công cụ',
     items: [
       { label: 'Usage & Billing', icon: 'bar-chart-2', route: 'UsageDashboard' },
+      { label: 'Logs', icon: 'activity', route: 'Logs' },
       { label: 'Nạp token', icon: 'credit-card', route: 'CreditsTopup' },
       { label: 'Nhiệm vụ', icon: 'target', route: 'Quests' },
       { label: 'Cửa hàng', icon: 'shopping-bag', route: 'Store' },

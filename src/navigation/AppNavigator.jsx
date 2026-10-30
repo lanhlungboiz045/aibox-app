@@ -13,6 +13,7 @@ import { UsageDashboardScreen } from '../screens/UsageDashboardScreen';
 import { CreditsTopupScreen } from '../screens/CreditsTopupScreen';
 import { AISettingsScreen } from '../screens/AISettingsScreen';
 import { APIKeysScreen } from '../screens/APIKeysScreen';
+import { LogsScreen } from '../screens/LogsScreen';
 import { MarketsScreen } from '../screens/MarketsScreen';
 import { MarketDetailScreen } from '../screens/MarketDetailScreen';
 import { PortfolioScreen } from '../screens/PortfolioScreen';
@@ -90,6 +91,7 @@ export function AppNavigator() {
       <Stack.Screen name="CreditsTopup" component={CreditsTopupScreen} />
       <Stack.Screen name="AISettings" component={AISettingsScreen} />
       <Stack.Screen name="APIKeys" component={APIKeysScreen} />
+      <Stack.Screen name="Logs" component={LogsScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Transfer" component={TransferScreen} />
       <Stack.Screen name="Store" component={StoreScreen} />

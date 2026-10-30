@@ -1,14 +1,16 @@
-// screens/HomeScreen.jsx — Home bản gọn (Phần 2)
-// Header cố định 56px + 4 ô shortcut + banner 1 dòng. Markets đã bỏ khỏi Home.
-import React, { useState } from 'react';
+// screens/HomeScreen.jsx — Home bản gọn
+// Header cố định 56px + 4 shortcut + banner 1 dòng + 3 ô Models/Logs/Quota + card Chi tiêu 7 ngày.
+// Markets đã bỏ khỏi Home (vẫn còn tab riêng).
+import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
-import { formatToken, formatRelativeTime } from '../utils/format';
+import { formatToken, formatTokenShort, formatRelativeTime } from '../utils/format';
+import { buildSpendSummary } from '../utils/spend';
 import { QUESTS } from '../data/quests';
 import { AppDrawer } from '../components/AppDrawer';
 import { DailyRewardModal } from '../components/DailyRewardModal';
-import { AppIcon, MiniBanner, SectionHeader, ListRow } from '../components/ui';
+import { AppIcon, MiniBanner, SectionHeader, ListRow, StatTile, Sparkline } from '../components/ui';
 import { colors, layout, radius, spacing } from '../theme/tokens';
 
 // Ngưỡng coi là "số dư thấp" để hiện banner nhắc nạp thêm
@@ -37,6 +39,20 @@ export function HomeScreen({ navigation }) {
 
   // Request gần đây: tạm lấy 3 giao dịch AI_CALL mới nhất (Phần 5 sẽ thay bằng Logs thật)
   const recentCalls = (user?.transactions || []).filter(t => t.type === 'AI_CALL').slice(0, 3);
+
+  // Số liệu 7 ngày + hạn mức tháng cho card "Chi tiêu 7 ngày"
+  const spend = useMemo(
+    () => buildSpendSummary(user?.transactions || []),
+    [user?.transactions]
+  );
+  const totalRequests = (user?.transactions || []).filter(t => t.type === 'AI_CALL').length;
+
+  const deltaText = spend.total === 0
+    ? 'Chưa có chi tiêu trong 7 ngày'
+    : spend.deltaPct === null
+      ? '7 ngày trước chưa có dữ liệu'
+      : `${spend.deltaPct >= 0 ? '\u{25B2}' : '\u{25BC}'} ${Math.abs(spend.deltaPct)}% so với 7 ngày trước`;
+  const deltaColor = spend.deltaPct === null || spend.deltaPct <= 0 ? colors.textFaint : colors.warning;
 
   // Banner chỉ hiện 1 dòng, ưu tiên: thưởng ngày > số dư thấp > nhiệm vụ
   const banner = (() => {
@@ -148,11 +164,59 @@ export function HomeScreen({ navigation }) {
           />
         ) : null}
 
+        {/* 3 ô lớn vừa: Models · Logs · Gói quota */}
+        <View style={styles.tileRow}>
+          <StatTile
+            icon="layers"
+            label="Models"
+            sub={`${state.aiModels.length} model`}
+            onPress={() => navigation.navigate('ModelCatalog')}
+          />
+          <StatTile
+            icon="activity"
+            label="Logs"
+            sub={`${totalRequests} requests`}
+            onPress={() => navigation.navigate('Logs')}
+          />
+          <StatTile
+            icon="pie-chart"
+            label="Gói quota"
+            sub={spend.quotaLeftPct > 0 ? `Còn ${spend.quotaLeftPct}% hạn mức` : 'Hết hạn mức tháng'}
+            onPress={() => navigation.navigate('UsageDashboard')}
+          />
+        </View>
+
+        {/* Chi tiêu 7 ngày: 1 card duy nhất ~140px, gộp luôn PAYG/token 7 ngày */}
+        <View>
+          <SectionHeader
+            title="Chi tiêu 7 ngày"
+            actionLabel="Xem Billing"
+            onAction={() => navigation.navigate('UsageDashboard')}
+          />
+          <View style={styles.spendCard}>
+            <View style={styles.spendTop}>
+              <View style={styles.spendInfo}>
+                <Text style={styles.spendLabel}>Token 7 ngày</Text>
+                <Text style={styles.spendValue}>
+                  {formatTokenShort(spend.total)}
+                  <Text style={styles.spendUnit}> {'\u{1F4B0}'}</Text>
+                </Text>
+                <Text style={[styles.spendDelta, { color: deltaColor }]} numberOfLines={1}>{deltaText}</Text>
+              </View>
+              <Sparkline values={spend.series.map(item => item.value)} width={104} height={54} />
+            </View>
+            <View style={styles.spendDivider} />
+            <Text style={styles.spendMeta} numberOfLines={1}>
+              Đã dùng {formatToken(spend.total)} {'\u{1F4B0}'} · {spend.requests} requests
+            </Text>
+          </View>
+        </View>
+
         {/* Tạm thời: 3 request AI gần nhất — Phần 5 thay bằng Logs + nút "Xem tất cả" */}
         <View style={styles.section}>
           <SectionHeader
             title="Request gần đây"
-            onAction={() => navigation.navigate('UsageDashboard')}
+            onAction={() => navigation.navigate('Logs')}
           />
           <View style={styles.card}>
             {recentCalls.length === 0 ? (
@@ -168,7 +232,7 @@ export function HomeScreen({ navigation }) {
                     subtitle={`${formatRelativeTime(tx.timestamp)} · ${formatToken(Math.abs(tx.amount))} token`}
                     right={<Text style={styles.amount}>-{formatToken(Math.abs(tx.amount))}</Text>}
                     chevron={false}
-                    onPress={() => navigation.navigate('UsageDashboard')}
+                    onPress={() => navigation.navigate('Logs')}
                   />
                 </View>
               );
@@ -272,6 +336,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   shortcutLabel: { color: colors.text, fontSize: 11, fontWeight: '600' },
+  tileRow: { flexDirection: 'row', gap: 10 },
+  spendCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+  },
+  spendTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  spendInfo: { flex: 1 },
+  spendLabel: { color: colors.textFaint, fontSize: 11, fontWeight: '600' },
+  spendValue: { color: colors.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.5, marginTop: 2 },
+  spendUnit: { fontSize: 14, fontWeight: '600' },
+  spendDelta: { fontSize: 11, marginTop: 2 },
+  spendDivider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.md },
+  spendMeta: { color: colors.textDim, fontSize: 11 },
   section: { gap: 0 },
   card: {
     backgroundColor: colors.surface,
