@@ -1542,7 +1542,8 @@ export function AppProvider({ children }) {
     const dice = rollDice();
     const settled = settleTaiXiu(dice, side, amount);
     dispatch({ type: 'PLACE_TAIXIU_BET', payload: { side, stake: amount, dice } });
-    return { ok: true, side, stake: amount, ...settled };
+    // Trả kèm `dice` để UI hiện đúng mặt vừa quay (settleTaiXiu không chứa dice)
+    return { ok: true, side, stake: amount, dice, ...settled };
   }, []);
 
   const claimDailyReward = useCallback(() => {

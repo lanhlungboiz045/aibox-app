@@ -83,12 +83,12 @@ export function TaiXiuScreen({ navigation }) {
       return;
     }
 
-    setFaces(result.dice);
-    const diceText = result.dice.join('-');
+    setFaces(result.dice || [1, 1, 1]);
+    const diceText = (result.dice || []).join('-');
     if (result.triple) {
       hapticError();
       toast.warning(`Bộ ba ${diceText} — nhà cái ăn cả 2 cửa.`);
-      AccessibilityInfo.announceForAccessibility?.(`Bộ ba ${result.dice.join(', ')}. Bạn mất ${amount} token.`);
+      AccessibilityInfo.announceForAccessibility?.(`Bộ ba ${(result.dice || []).join(', ')}. Bạn mất ${amount} token.`);
     } else if (result.win) {
       hapticSuccess();
       toast.success(`Thắng +${formatToken(amount)} token · tổng ${result.total}`);
