@@ -1,21 +1,10 @@
 // components/ui/Skeleton.jsx — Khung xương đúng hình khối thật, nhịp thở bằng opacity
 // Tôn trọng "giảm chuyển động": khi bật thì dừng ở 1 mức sáng cố định.
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Animated, AccessibilityInfo, StyleSheet } from 'react-native';
+// Bước 6: dùng chung hooks/useReduceMotion thay vì tự gọi AccessibilityInfo.
+import React, { useEffect, useRef } from 'react';
+import { View, Animated, StyleSheet } from 'react-native';
 import { colors, radius, spacing } from '../../theme/tokens';
-
-function useReduceMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    let mounted = true;
-    AccessibilityInfo.isReduceMotionEnabled?.()
-      .then(value => { if (mounted) setReduced(Boolean(value)); })
-      .catch(() => {});
-    const sub = AccessibilityInfo.addEventListener?.('reduceMotionChanged', value => setReduced(Boolean(value)));
-    return () => { mounted = false; sub?.remove?.(); };
-  }, []);
-  return reduced;
-}
+import { useReduceMotion } from '../../hooks/useReduceMotion';
 
 export function Skeleton({ width = '100%', height = 12, br = radius.xs, style }) {
   const reduced = useReduceMotion();

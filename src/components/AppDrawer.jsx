@@ -11,6 +11,7 @@ import { formatToken } from '../utils/format';
 import { AppIcon, IconButton } from './ui';
 import { colors, radius, spacing, touch, type } from '../theme/tokens';
 import { useI18n } from '../i18n';
+import { getReduceMotion } from '../hooks/useReduceMotion';
 
 // Nhãn là khoá i18n (Bước 5) → đổi ngôn ngữ chỉ cần sửa src/i18n/index.js.
 const GROUPS = [
@@ -56,6 +57,11 @@ export function AppDrawer({ visible, onClose, navigation }) {
 
   useEffect(() => {
     if (!visible) return;
+    // Giảm chuyển động: panel hiện ngay, không trượt từ trái sang
+    if (getReduceMotion()) {
+      slide.setValue(0);
+      return;
+    }
     slide.setValue(-panelWidth);
     Animated.timing(slide, {
       toValue: 0,
@@ -74,7 +80,12 @@ export function AppDrawer({ visible, onClose, navigation }) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType={getReduceMotion() ? 'none' : 'fade'}
+      onRequestClose={onClose}
+    >
       <View style={styles.root}>
         <Pressable
           style={StyleSheet.absoluteFill}

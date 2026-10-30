@@ -21,3 +21,6 @@ export { ErrorState } from './ErrorState';
 export { ToastProvider, useToast } from './Toast';
 export { OfflineBar } from './OfflineBar';
 export { FadeIn } from './FadeIn';
+
+// Bộ micro-interaction Bước 6
+export { PressableScale } from './PressableScale';

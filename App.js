@@ -7,6 +7,7 @@ import { AppProvider, useApp } from './src/context/AppContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { Skeleton, ToastProvider } from './src/components/ui';
+import { Onboarding, useOnboardingSeen } from './src/components/Onboarding';
 import { colors, isDark, layout, radius, spacing, type } from './src/theme/tokens';
 
 // Theme điều hướng lấy từ tokens (trước đây hard-code 5 mã màu).
@@ -47,10 +48,14 @@ function BootSkeleton() {
 //   1. state.isLoading  → AsyncStorage (ví, markets, quests...)
 //   2. state.authReady  → Firebase Auth đã restore phiên + đọc users/{uid}
 // Tránh flash màn login rồi nhảy vào app khi Firebase còn đang restore session.
+// Bước 6: thêm cờ onboarding (lần mở app đầu tiên) — xong 3 slide mới tới đăng nhập.
 function Root() {
   const { state } = useApp();
+  const { seen, complete } = useOnboardingSeen();
 
-  if (state.isLoading || !state.authReady) return <BootSkeleton />;
+  if (state.isLoading || !state.authReady || seen === null) return <BootSkeleton />;
+  // Lần đầu mở app: giới thiệu 3 slide, "Bỏ qua" cũng vào được ngay
+  if (!seen) return <Onboarding onDone={complete} />;
   if (!state.user) return <AuthScreen />;
 
   return (

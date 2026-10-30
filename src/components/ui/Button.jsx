@@ -4,6 +4,7 @@ import React, { useRef } from 'react';
 import { Text, StyleSheet, ActivityIndicator, Animated, Pressable, View } from 'react-native';
 import { AppIcon } from './AppIcon';
 import { hapticPress, hapticTap } from '../../utils/feedback';
+import { getReduceMotion } from '../../hooks/useReduceMotion';
 import { colors, motion, radius, spacing, touch, type } from '../../theme/tokens';
 
 const VARIANTS = {
@@ -30,6 +31,11 @@ export function Button({
   const isDisabled = disabled || loading;
 
   const animateTo = (to) => {
+    // Giảm chuyển động → không nhún nút (trả scale về 1 để không bị kẹt nếu cài đặt đổi giữa chừng)
+    if (getReduceMotion()) {
+      scale.setValue(1);
+      return;
+    }
     Animated.spring(scale, {
       toValue: to,
       useNativeDriver: true,

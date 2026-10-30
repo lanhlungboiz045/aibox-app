@@ -266,17 +266,42 @@ chỉ thoát. Dải offline dùng `accessibilityRole="alert"`.
 áp cho drawer, tiêu đề các màn chính, các trạng thái lỗi/offline dùng chung và một số nhãn ở Home/AI Hub/Logs;
 phần copy còn lại trong thân màn hình vẫn là tiếng Việt và chuyển dần sang `t()` theo từng màn.
 
+## 5.6. Onboarding, trạng thái rỗng & micro-interaction
+
+**Onboarding lần đầu.** `src/components/Onboarding.jsx` hiện 3 slide (hỏi AI bằng token → ví & chi tiêu →
+dữ liệu ở lại trên máy) **trước** màn đăng nhập, chỉ ở lần mở app đầu tiên. Đi hết 3 slide (tối đa 3 chạm)
+hoặc **Bỏ qua** (1 chạm) đều vào app ngay; cờ đã xem lưu ở AsyncStorage `aibox_onboarding_v1`. Cờ này thuộc
+thiết bị (không theo uid) nên đổi tài khoản không phải xem lại. Muốn xem lại khi test: xoá app hoặc
+`AsyncStorage.removeItem('aibox_onboarding_v1')`. Root chờ đọc cờ xong mới mount (vẫn là `BootSkeleton`) để
+không nháy màn đăng nhập rồi mới bật onboarding.
+
+**Trạng thái rỗng có minh hoạ.** `EmptyState` dựng minh hoạ 2 lớp bằng `View` (vòng `accentDim` +
+đĩa `accentStrong` + 2 chấm nhấn) thay cho 1 icon đơn, nên Home / AI Hub / Logs / danh sách trống trông "có
+chủ đích" thay vì giống thông báo lỗi. Minh hoạ đặt `accessibilityElementsHidden` để screen reader chỉ đọc
+tiêu đề + gợi ý + nút hành động. Có biến thể `compact` cho khối nhỏ trong tab.
+
+**Micro-interaction.** `PressableScale` (`src/components/ui/PressableScale.jsx`) = `Pressable` + scale 0.97
+trong 120ms + 1 nhịp haptic nhẹ: dùng cho card model AI và 4 ô shortcut ở Home; `Button` giữ nguyên nhún
+0.97. Cả hai đều **không animation** khi bật giảm chuyển động.
+
+**Giảm chuyển động (reduce motion).** `src/hooks/useReduceMotion.js` đọc cài đặt hệ điều hành **một lần**
+cho cả app (cache ở module + 1 listener `reduceMotionChanged`), export `useReduceMotion()` cho component và
+`getReduceMotion()` cho hàm thường (onPress, Modal). Khi bật: `FadeIn` hiện ngay, `Skeleton` đứng yên ở 1
+mức sáng, drawer mở không trượt (`animationType="none"`), toast hiện/ẩn tức thì, nút/card không scale (chỉ
+đổi độ mờ nhẹ để vẫn có phản hồi). Haptic vẫn giữ vì không ảnh hưởng tiền đình.
+
 ## 6. Cấu trúc project
 
 ```
 aibox-app/
   src/
-    components/   (UI components .jsx)
+    components/   (UI components .jsx, ui/ cho UI kit, Onboarding.jsx)
     screens/      (screens .jsx, admin/ cho CMS)
     data/         (mockData.js, accounts.js, quests.js, storeItems.js)
     config/       (firebase.js — init Auth/Firestore, ai.js — preset AI gateway, đọc .env)
     services/     (auth.js — Google sign-in, users.js — Firestore users/{uid}, ai.js — gọi AI thật)
     context/      (AppContext.jsx — global state + AsyncStorage)
+    hooks/        (useNetworkStatus.js — mạng, useReduceMotion.js — giảm chuyển động)
     theme/        (palettes.js — bảng màu sáng/tối, tokens.js — spacing/type/colors)
     i18n/         (index.js — từ điển vi/en + t()/useI18n)
     utils/        (format, rewards, analyst, spend, clipboard, apiKeys)

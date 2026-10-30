@@ -11,7 +11,7 @@ import { buildSpendSummary } from '../utils/spend';
 import { QUESTS } from '../data/quests';
 import { AppDrawer } from '../components/AppDrawer';
 import { DailyRewardModal } from '../components/DailyRewardModal';
-import { AppIcon, MiniBanner, SectionHeader, ListRow, StatTile, Sparkline, IconButton, EmptyState } from '../components/ui';
+import { AppIcon, MiniBanner, SectionHeader, ListRow, StatTile, Sparkline, IconButton, EmptyState, PressableScale } from '../components/ui';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { colors, layout, radius, spacing, touch, type } from '../theme/tokens';
 
@@ -167,19 +167,18 @@ export function HomeScreen({ navigation }) {
         {/* 4 ô shortcut vuông, chạm là vào thẳng màn tương ứng */}
         <View style={styles.shortcutRow}>
           {SHORTCUTS.map(item => (
-            <TouchableOpacity
+            <PressableScale
               accessibilityRole="button"
               key={item.key}
               style={styles.shortcut}
               onPress={() => navigation.navigate(item.route)}
-              activeOpacity={0.85}
               accessibilityLabel={item.label}
             >
               <View style={styles.shortcutIcon}>
                 <AppIcon name={item.icon} size={18} color={colors.accentSoft} />
               </View>
               <Text style={styles.shortcutLabel} numberOfLines={1} maxFontSizeMultiplier={1.5}>{item.label}</Text>
-            </TouchableOpacity>
+            </PressableScale>
           ))}
         </View>
 

@@ -81,6 +81,19 @@ const vi = {
   'aihub.suggest': 'Thử một trong các câu này',
   'logs.noMatch': 'Không có request khớp bộ lọc',
   'logs.clearFilter': 'Xoá bộ lọc',
+
+  // ── Onboarding (lần mở app đầu tiên) ──
+  'onboard.skip': 'Bỏ qua',
+  'onboard.next': 'Tiếp tục',
+  'onboard.start': 'Bắt đầu',
+  'onboard.step': 'Bước {current}/{total}',
+  'onboard.hint': 'Chuyển sang bước tiếp theo',
+  'onboard.s1Title': 'Hỏi AI bằng token',
+  'onboard.s1Desc': 'Chat với nhiều model AI trong một chỗ. Mỗi câu trả lời trừ đúng số token đã dùng.',
+  'onboard.s2Title': 'Ví token minh bạch',
+  'onboard.s2Desc': 'Xem số dư, chi tiêu 7 ngày và lịch sử request ngay trên Home. Nạp thêm chỉ 1 chạm.',
+  'onboard.s3Title': 'Dữ liệu ở lại trên máy',
+  'onboard.s3Desc': 'Lịch sử chat lưu theo tài khoản Google của bạn; API key luôn được che trong danh sách.',
 };
 
 const en = {
@@ -138,6 +151,18 @@ const en = {
   'aihub.suggest': 'Try one of these',
   'logs.noMatch': 'No requests match this filter',
   'logs.clearFilter': 'Clear filters',
+
+  'onboard.skip': 'Skip',
+  'onboard.next': 'Continue',
+  'onboard.start': 'Get started',
+  'onboard.step': 'Step {current} of {total}',
+  'onboard.hint': 'Go to the next step',
+  'onboard.s1Title': 'Ask AI with tokens',
+  'onboard.s1Desc': 'Chat with several AI models in one place. Each answer charges exactly the tokens it used.',
+  'onboard.s2Title': 'A transparent token wallet',
+  'onboard.s2Desc': 'See your balance, 7-day spend and request history right on Home. Top up in one tap.',
+  'onboard.s3Title': 'Your data stays on device',
+  'onboard.s3Desc': 'Chat history is stored per Google account and API keys are always masked in the list.',
 };
 
 const DICTS = { vi, en };

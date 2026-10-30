@@ -6,6 +6,7 @@ import { View, Text, Animated, TouchableOpacity, StyleSheet } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppIcon } from './AppIcon';
 import { hapticError, hapticSuccess } from '../../utils/feedback';
+import { getReduceMotion } from '../../hooks/useReduceMotion';
 import { colors, motion, radius, spacing, type } from '../../theme/tokens';
 
 const ToastContext = createContext(null);
@@ -33,6 +34,12 @@ export function ToastProvider({ children }) {
       clearTimeout(timer.current);
       timer.current = null;
     }
+    // Giảm chuyển động: ẩn ngay, không trượt xuống
+    if (getReduceMotion()) {
+      anim.setValue(0);
+      setCurrent(null);
+      return;
+    }
     Animated.timing(anim, {
       toValue: 0,
       duration: 160,
@@ -51,11 +58,16 @@ export function ToastProvider({ children }) {
     setCurrent({ message, tone, action: options.action || null, id: Date.now() });
 
     anim.stopAnimation();
-    Animated.timing(anim, {
-      toValue: 1,
-      duration: motion.base,
-      useNativeDriver: true,
-    }).start();
+    // Giảm chuyển động: hiện ngay ở vị trí cuối
+    if (getReduceMotion()) {
+      anim.setValue(1);
+    } else {
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: motion.base,
+        useNativeDriver: true,
+      }).start();
+    }
 
     if (tone === 'success') hapticSuccess();
     if (tone === 'error') hapticError();

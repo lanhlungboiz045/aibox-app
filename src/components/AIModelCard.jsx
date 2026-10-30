@@ -1,8 +1,10 @@
-// components/AIModelCard.jsx — Card model trong AI Hub (Bước 3)
+// components/AIModelCard.jsx — Card model trong AI Hub (Bước 3, micro-interaction Bước 6)
 // Vùng chạm nguyên card (>= 44), đọc được bằng screen reader, token màu/khoảng cách.
+// Bấm xuống thu nhỏ 0.97 + haptic nhẹ (PressableScale) thay cho activeOpacity.
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { AppIcon } from './ui/AppIcon';
+import { PressableScale } from './ui/PressableScale';
 import { formatTokenShort } from '../utils/format';
 import { colors, layout, radius, spacing, type, touch } from '../theme/tokens';
 
@@ -18,10 +20,9 @@ export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
   ].filter(Boolean).join(', ');
 
   return (
-    <TouchableOpacity
+    <PressableScale
       style={[styles.card, compact && styles.cardCompact]}
       onPress={onPress}
-      activeOpacity={0.85}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint="Mở cuộc trò chuyện với model này"
@@ -71,7 +72,7 @@ export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
