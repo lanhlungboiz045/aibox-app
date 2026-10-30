@@ -6,6 +6,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatToken } from '../utils/format';
+import { colors, touch } from '../theme/tokens';
 
 export function UsageDashboardScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -38,7 +39,7 @@ export function UsageDashboardScreen({ navigation }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity accessibilityRole="button" onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backText}>{'\u{276C}'} Quay lại</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Usage Dashboard</Text>
@@ -66,7 +67,7 @@ export function UsageDashboardScreen({ navigation }) {
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>Số dư hiện tại</Text>
           <Text style={styles.balanceValue}>{formatToken(user?.tokenBalance || 0)} token</Text>
-          <TouchableOpacity style={styles.topupBtn} onPress={() => navigation.navigate('CreditsTopup')}>
+          <TouchableOpacity accessibilityRole="button" style={styles.topupBtn} onPress={() => navigation.navigate('CreditsTopup')}>
             <Text style={styles.topupBtnText}>Nạp thêm token</Text>
           </TouchableOpacity>
         </View>
@@ -83,7 +84,7 @@ export function UsageDashboardScreen({ navigation }) {
                 <Text style={styles.modelStat}>{m.count} req · {formatToken(m.tokens)} token</Text>
               </View>
               <View style={styles.barTrack}>
-                <View style={[styles.barFill, { width: `${Math.max(4, (m.tokens / maxTokens) * 100)}%`, backgroundColor: m.model?.accentColor || '#6C5CE7' }]} />
+                <View style={[styles.barFill, { width: `${Math.max(4, (m.tokens / maxTokens) * 100)}%`, backgroundColor: m.model?.accentColor || colors.accent }]} />
               </View>
             </View>
           ))
@@ -110,33 +111,33 @@ export function UsageDashboardScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { paddingHorizontal: 16, paddingBottom: 8 },
   backBtn: { alignSelf: 'flex-start', paddingVertical: 6 },
-  backText: { color: '#6C5CE7', fontSize: 13, fontWeight: '600' },
-  title: { color: '#FFFFFF', fontSize: 20, fontWeight: '800', marginTop: 4 },
-  sub: { color: '#8E8E93', fontSize: 12, marginTop: 2 },
-  content: { padding: 16, gap: 12, paddingBottom: 32 },
+  backText: { color: colors.accentSoft, fontSize: 13, fontWeight: '600' },
+  title: { color: colors.text, fontSize: 20, fontWeight: '800', marginTop: 4 },
+  sub: { color: colors.textDim, fontSize: 12, marginTop: 2 },
+  content: { ...centeredContent, padding: 16, gap: 12, paddingBottom: 32 },
   summaryRow: { flexDirection: 'row', gap: 8 },
-  summaryCard: { flex: 1, backgroundColor: '#1A1D24', borderRadius: 12, borderWidth: 1, borderColor: '#2A2E36', padding: 12, alignItems: 'center' },
-  summaryLabel: { color: '#8E8E93', fontSize: 10, marginBottom: 4 },
-  summaryValue: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  summaryValueSmall: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', textAlign: 'center' },
-  balanceCard: { backgroundColor: '#1A1D24', borderRadius: 14, borderWidth: 1, borderColor: '#2A2E36', padding: 16, alignItems: 'center' },
-  balanceLabel: { color: '#8E8E93', fontSize: 11 },
-  balanceValue: { color: '#FFB74D', fontSize: 22, fontWeight: '800', marginTop: 4, marginBottom: 10 },
-  topupBtn: { backgroundColor: '#6C5CE7', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8 },
-  topupBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  sectionTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', marginTop: 8 },
-  empty: { color: '#5C5C5C', fontSize: 12, marginTop: 6 },
-  modelRow: { backgroundColor: '#1A1D24', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', padding: 10 },
+  summaryCard: { flex: 1, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.borderSoft, padding: 12, alignItems: 'center' },
+  summaryLabel: { color: colors.textDim, fontSize: 12, marginBottom: 4 },
+  summaryValue: { color: colors.text, fontSize: 16, fontWeight: '800' },
+  summaryValueSmall: { color: colors.text, fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  balanceCard: { backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.borderSoft, padding: 16, alignItems: 'center' },
+  balanceLabel: { color: colors.textDim, fontSize: 12 },
+  balanceValue: { color: colors.warning, fontSize: 22, fontWeight: '800', marginTop: 4, marginBottom: 10 },
+  topupBtn: { backgroundColor: colors.accentStrong, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8, minHeight: touch.min },
+  topupBtnText: { color: colors.onAccent, fontSize: 12, fontWeight: '700' },
+  sectionTitle: { color: colors.text, fontSize: 14, fontWeight: '700', marginTop: 8 },
+  empty: { color: colors.textFaint, fontSize: 12, marginTop: 6 },
+  modelRow: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, padding: 10 },
   modelRowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  modelName: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  modelStat: { color: '#8E8E93', fontSize: 10 },
-  barTrack: { height: 6, backgroundColor: '#22262E', borderRadius: 3, overflow: 'hidden' },
+  modelName: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  modelStat: { color: colors.textDim, fontSize: 12 },
+  barTrack: { height: 6, backgroundColor: colors.surfaceAlt, borderRadius: 3, overflow: 'hidden' },
   barFill: { height: 6, borderRadius: 3 },
-  txRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1D24', borderRadius: 8, borderWidth: 1, borderColor: '#2A2E36', padding: 10, gap: 8 },
-  txDesc: { color: '#FFFFFF', fontSize: 12 },
-  txTime: { color: '#5C5C5C', fontSize: 10, marginTop: 2 },
-  txCost: { color: '#FF6B6B', fontSize: 12, fontWeight: '700' },
+  txRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, padding: 10, gap: 8 },
+  txDesc: { color: colors.text, fontSize: 12 },
+  txTime: { color: colors.textFaint, fontSize: 12, marginTop: 2 },
+  txCost: { color: colors.danger, fontSize: 12, fontWeight: '700' },
 });

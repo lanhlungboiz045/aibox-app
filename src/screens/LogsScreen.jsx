@@ -13,6 +13,7 @@ import {
   BottomSheet, Button, Chip, EmptyState, FadeIn, IconButton, ListRow, Row, AppIcon, useToast,
 } from '../components/ui';
 import { colors, layout, radius, spacing, touch, type } from '../theme/tokens';
+import { t } from '../i18n';
 
 const RANGES = [
   { key: '7d', label: '7 ngày', days: 7 },
@@ -63,7 +64,7 @@ export function LogsScreen({ navigation }) {
     [allLogs, filter.modelId, since]
   );
 
-  const totalTokens = logs.reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
+  const totalTokens = logs.reduce((sum, item) => sum + Math.abs(item.amount || 0), 0);
   const avgTokens = logs.length ? Math.round(totalTokens / logs.length) : 0;
   const filterActive = filter.modelId !== 'all' || filter.range !== 'all';
 
@@ -87,9 +88,9 @@ export function LogsScreen({ navigation }) {
       <View style={styles.header}>
         <IconButton icon="chevron-left" label="Quay lại" onPress={() => navigation.goBack()} />
         <View style={styles.headerBody}>
-          <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.3}>Lịch sử AI</Text>
-          <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.2}>
-            {allLogs.length} request · {formatToken(allLogs.reduce((s, t) => s + Math.abs(t.amount || 0), 0))} {'\u{1F4B0}'}
+          <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.6}>{t('screen.logs')}</Text>
+          <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
+            {allLogs.length} request · {formatToken(allLogs.reduce((s, item) => s + Math.abs(item.amount || 0), 0))} {'\u{1F4B0}'}
           </Text>
         </View>
         <View>
@@ -136,18 +137,18 @@ export function LogsScreen({ navigation }) {
           <FadeIn>
             <View style={styles.summary}>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue} maxFontSizeMultiplier={1.2}>{formatToken(totalTokens)}</Text>
-                <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.2}>token đã dùng</Text>
+                <Text style={styles.summaryValue} maxFontSizeMultiplier={1.5}>{formatToken(totalTokens)}</Text>
+                <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.5}>token đã dùng</Text>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue} maxFontSizeMultiplier={1.2}>{logs.length}</Text>
-                <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.2}>request</Text>
+                <Text style={styles.summaryValue} maxFontSizeMultiplier={1.5}>{logs.length}</Text>
+                <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.5}>request</Text>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue} maxFontSizeMultiplier={1.2}>{formatToken(avgTokens)}</Text>
-                <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.2}>TB / request</Text>
+                <Text style={styles.summaryValue} maxFontSizeMultiplier={1.5}>{formatToken(avgTokens)}</Text>
+                <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.5}>TB / request</Text>
               </View>
             </View>
           </FadeIn>
@@ -156,7 +157,7 @@ export function LogsScreen({ navigation }) {
           allLogs.length === 0 ? (
             <EmptyState
               icon="activity"
-              title="Chưa có request nào"
+              title={t('home.noRequests')}
               message="Gọi AI trong tab Chat, request đầu tiên sẽ hiện ở đây kèm token đã trừ."
               actionLabel="Mở Chat"
               onAction={() => navigation.navigate('AIHub')}
@@ -164,9 +165,9 @@ export function LogsScreen({ navigation }) {
           ) : (
             <EmptyState
               icon="filter"
-              title="Không có request khớp bộ lọc"
+              title={t('logs.noMatch')}
               message="Thử khoảng thời gian rộng hơn hoặc chọn model khác."
-              actionLabel="Xoá bộ lọc"
+              actionLabel={t('logs.clearFilter')}
               onAction={() => setFilter(DEFAULT_FILTER)}
             />
           )
@@ -211,7 +212,7 @@ export function LogsScreen({ navigation }) {
         }
       >
         <View style={styles.sheetSection}>
-          <Text style={styles.sheetLabel} maxFontSizeMultiplier={1.3}>Khoảng thời gian</Text>
+          <Text style={styles.sheetLabel} maxFontSizeMultiplier={1.6}>Khoảng thời gian</Text>
           <View style={styles.chipWrap}>
             {RANGES.map(r => (
               <Chip
@@ -225,7 +226,7 @@ export function LogsScreen({ navigation }) {
         </View>
 
         <View style={styles.sheetSection}>
-          <Text style={styles.sheetLabel} maxFontSizeMultiplier={1.3}>Model</Text>
+          <Text style={styles.sheetLabel} maxFontSizeMultiplier={1.6}>Model</Text>
           <Row
             label="Tất cả model"
             value={String(allLogs.length)}
@@ -264,12 +265,12 @@ export function LogsScreen({ navigation }) {
             />
             <Row label="Mã request" value={String(detail.id).slice(0, 10)} />
             <View style={styles.promptBox}>
-              <Text style={styles.promptLabel} maxFontSizeMultiplier={1.2}>Nội dung</Text>
-              <Text style={styles.promptText} selectable maxFontSizeMultiplier={1.4}>
+              <Text style={styles.promptLabel} maxFontSizeMultiplier={1.5}>Nội dung</Text>
+              <Text style={styles.promptText} selectable maxFontSizeMultiplier={1.8}>
                 {detail.description || 'Không có nội dung được lưu.'}
               </Text>
             </View>
-            <Text style={styles.detailNote} maxFontSizeMultiplier={1.3}>
+            <Text style={styles.detailNote} maxFontSizeMultiplier={1.6}>
               Token đã trừ không hoàn lại. Chi phí tính theo usage thật của nhà cung cấp AI.
             </Text>
           </View>
@@ -282,7 +283,7 @@ export function LogsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: {
-    height: layout.headerHeight + 8,
+    minHeight: layout.headerHeight + 8,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.xs,
@@ -305,7 +306,7 @@ const styles = StyleSheet.create({
   chipScroll: { flexGrow: 0, marginTop: spacing.sm },
   chipRow: { paddingHorizontal: spacing.lg, gap: spacing.sm, alignItems: 'center', paddingVertical: spacing.xs },
   listBody: { flex: 1 },
-  list: { paddingTop: spacing.md, paddingHorizontal: spacing.lg },
+  list: { ...centeredContent, paddingTop: spacing.md, paddingHorizontal: spacing.lg },
   summary: {
     flexDirection: 'row',
     alignItems: 'center',

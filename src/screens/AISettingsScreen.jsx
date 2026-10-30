@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { AI_PRESETS } from '../config/ai';
 import { getAISettings } from '../services/ai';
+import { colors, centeredContent, touch } from '../theme/tokens';
 
 export function AISettingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -96,11 +97,11 @@ export function AISettingsScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 32 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 32 }]}
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <Text style={styles.headerTitle}>Cấu hình AI</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -108,7 +109,7 @@ export function AISettingsScreen({ navigation }) {
       {/* Trạng thái hiện tại */}
       <View style={[styles.statusCard, live ? styles.statusLive : styles.statusMock]}>
         <View style={styles.statusRow}>
-          <View style={[styles.statusDot, { backgroundColor: live ? '#00CE7E' : '#FFB74D' }]} />
+          <View style={[styles.statusDot, { backgroundColor: live ? colors.success : colors.warning }]} />
           <Text style={styles.statusTitle}>{live ? 'LIVE — gọi AI thật' : 'MOCK — câu trả lời mô phỏng'}</Text>
         </View>
         <Text style={styles.statusLine}>Base URL: {aiConfig?.baseUrl || '(chưa có)'}</Text>
@@ -130,6 +131,8 @@ export function AISettingsScreen({ navigation }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.presetRow}>
         {AI_PRESETS.map(p => (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ selected: currentPresetId === p.id }}
             key={p.id}
             style={[styles.presetChip, currentPresetId === p.id && styles.presetChipActive]}
             onPress={() => applyPreset(p)}
@@ -152,7 +155,7 @@ export function AISettingsScreen({ navigation }) {
           value={baseUrl}
           onChangeText={setBaseUrl}
           placeholder="https://api.openai.com/v1"
-          placeholderTextColor="#5C5C5C"
+          placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
@@ -166,12 +169,12 @@ export function AISettingsScreen({ navigation }) {
             value={apiKey}
             onChangeText={setApiKey}
             placeholder="sk-..."
-            placeholderTextColor="#5C5C5C"
+            placeholderTextColor={colors.textFaint}
             autoCapitalize="none"
             autoCorrect={false}
             secureTextEntry={!showKey}
           />
-          <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowKey(v => !v)}>
+          <TouchableOpacity accessibilityRole="button" style={styles.eyeBtn} onPress={() => setShowKey(v => !v)}>
             <Text style={styles.eyeText}>{showKey ? 'Ẩn' : 'Hiện'}</Text>
           </TouchableOpacity>
         </View>
@@ -185,7 +188,7 @@ export function AISettingsScreen({ navigation }) {
           value={model}
           onChangeText={setModel}
           placeholder="gpt-4o-mini"
-          placeholderTextColor="#5C5C5C"
+          placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
           autoCorrect={false}
         />
@@ -201,8 +204,8 @@ export function AISettingsScreen({ navigation }) {
           <Switch
             value={forceModel}
             onValueChange={setForceModel}
-            trackColor={{ false: '#2A2E36', true: 'rgba(108, 92, 231, 0.6)' }}
-            thumbColor={forceModel ? '#A78BFA' : '#8E8E93'}
+            trackColor={{ false: colors.surfaceAlt, true: colors.accentBorder }}
+            thumbColor={forceModel ? colors.accentSoft : colors.textDim}
           />
         </View>
       </View>
@@ -210,7 +213,7 @@ export function AISettingsScreen({ navigation }) {
       {/* Kết quả test */}
       {result && (
         <View style={[styles.resultBox, result.ok ? styles.resultOk : styles.resultErr]}>
-          <Text style={[styles.resultTitle, { color: result.ok ? '#00CE7E' : '#FF6B6B' }]}>
+          <Text style={[styles.resultTitle, { color: result.ok ? colors.success : colors.danger }]}>
             {result.ok ? `Kết nối OK · ${result.totalMs}ms` : 'Kết nối thất bại'}
           </Text>
           {result.ok ? (
@@ -227,22 +230,24 @@ export function AISettingsScreen({ navigation }) {
       {/* Hành động */}
       <View style={styles.actions}>
         <TouchableOpacity
+          accessibilityRole="button"
           style={[styles.testBtn, testing && styles.btnDisabled]}
           onPress={handleTest}
           disabled={testing || saving}
         >
-          {testing ? <ActivityIndicator color="#A78BFA" /> : <Text style={styles.testBtnText}>{'\u{1F50C}'} Kiểm tra kết nối</Text>}
+          {testing ? <ActivityIndicator color={colors.accentSoft} /> : <Text style={styles.testBtnText}>{'\u{1F50C}'} Kiểm tra kết nối</Text>}
         </TouchableOpacity>
         <TouchableOpacity
+          accessibilityRole="button"
           style={[styles.saveBtn, saving && styles.btnDisabled]}
           onPress={handleSave}
           disabled={saving || testing}
         >
-          {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveBtnText}>Lưu cấu hình</Text>}
+          {saving ? <ActivityIndicator color={colors.onAccent} /> : <Text style={styles.saveBtnText}>Lưu cấu hình</Text>}
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
+      <TouchableOpacity accessibilityRole="button" style={styles.resetBtn} onPress={handleReset}>
         <Text style={styles.resetBtnText}>Xoá cấu hình trong app (quay về .env)</Text>
       </TouchableOpacity>
 
@@ -271,48 +276,48 @@ export function AISettingsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 10 },
-  backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600' },
-  headerTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600' },
+  headerTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
   statusCard: { marginHorizontal: 16, borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 16 },
-  statusLive: { backgroundColor: 'rgba(0, 206, 126, 0.08)', borderColor: 'rgba(0, 206, 126, 0.3)' },
-  statusMock: { backgroundColor: 'rgba(255, 183, 77, 0.08)', borderColor: 'rgba(255, 183, 77, 0.3)' },
+  statusLive: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
+  statusMock: { backgroundColor: colors.warningDim, borderColor: colors.warningBorder },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
-  statusTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  statusLine: { color: '#8E8E93', fontSize: 11, marginTop: 2 },
-  sectionTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', marginHorizontal: 16, marginBottom: 8 },
+  statusTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  statusLine: { color: colors.textDim, fontSize: 12, marginTop: 2 },
+  sectionTitle: { color: colors.text, fontSize: 14, fontWeight: '700', marginHorizontal: 16, marginBottom: 8 },
   presetRow: { paddingHorizontal: 16, gap: 8 },
-  presetChip: { backgroundColor: '#1A1D24', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center', minWidth: 78 },
-  presetChipActive: { borderColor: '#6C5CE7', backgroundColor: 'rgba(108, 92, 231, 0.12)' },
+  presetChip: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center', minWidth: 78, minHeight: touch.min },
+  presetChipActive: { borderColor: colors.accent, backgroundColor: colors.accentDim },
   presetIcon: { fontSize: 16, marginBottom: 2 },
-  presetName: { color: '#8E8E93', fontSize: 11, fontWeight: '600' },
-  presetNameActive: { color: '#FFFFFF' },
-  presetHint: { color: '#5C5C5C', fontSize: 10, marginHorizontal: 16, marginTop: 8, lineHeight: 15 },
+  presetName: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
+  presetNameActive: { color: colors.text },
+  presetHint: { color: colors.textFaint, fontSize: 12, marginHorizontal: 16, marginTop: 8, lineHeight: 15 },
   form: { marginHorizontal: 16, marginTop: 12 },
-  label: { color: '#8E8E93', fontSize: 12, fontWeight: '600', marginTop: 14, marginBottom: 6 },
-  input: { backgroundColor: '#1A1D24', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', color: '#FFFFFF', fontSize: 13, paddingHorizontal: 12, paddingVertical: 11 },
+  label: { color: colors.textDim, fontSize: 12, fontWeight: '600', marginTop: 14, marginBottom: 6 },
+  input: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 13, paddingHorizontal: 12, paddingVertical: 11 },
   keyRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  eyeBtn: { backgroundColor: '#22262E', borderRadius: 8, borderWidth: 1, borderColor: '#2A2E36', paddingHorizontal: 12, paddingVertical: 11 },
-  eyeText: { color: '#A78BFA', fontSize: 12, fontWeight: '600' },
-  help: { color: '#5C5C5C', fontSize: 10, marginTop: 6, lineHeight: 15 },
+  eyeBtn: { backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 12, paddingVertical: 11, minHeight: touch.min },
+  eyeText: { color: colors.accentSoft, fontSize: 12, fontWeight: '600' },
+  help: { color: colors.textFaint, fontSize: 12, marginTop: 6, lineHeight: 15 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16 },
-  switchLabel: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
+  switchLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
   resultBox: { marginHorizontal: 16, marginTop: 16, borderRadius: 10, borderWidth: 1, padding: 12 },
-  resultOk: { backgroundColor: 'rgba(0, 206, 126, 0.08)', borderColor: 'rgba(0, 206, 126, 0.3)' },
-  resultErr: { backgroundColor: 'rgba(255, 107, 107, 0.08)', borderColor: 'rgba(255, 107, 107, 0.3)' },
+  resultOk: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
+  resultErr: { backgroundColor: colors.dangerDim, borderColor: colors.dangerBorder },
   resultTitle: { fontSize: 13, fontWeight: '700', marginBottom: 6 },
-  resultText: { color: '#C9C9C9', fontSize: 11, lineHeight: 17 },
+  resultText: { color: colors.textDim, fontSize: 12, lineHeight: 17 },
   actions: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginTop: 18 },
-  testBtn: { flex: 1, backgroundColor: '#22262E', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', paddingVertical: 13, alignItems: 'center' },
-  testBtnText: { color: '#A78BFA', fontSize: 13, fontWeight: '700' },
-  saveBtn: { flex: 1, backgroundColor: '#6C5CE7', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
-  saveBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  testBtn: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, paddingVertical: 13, alignItems: 'center' },
+  testBtnText: { color: colors.accentSoft, fontSize: 13, fontWeight: '700' },
+  saveBtn: { flex: 1, backgroundColor: colors.accentStrong, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  saveBtnText: { color: colors.onAccent, fontSize: 13, fontWeight: '700' },
   btnDisabled: { opacity: 0.6 },
-  resetBtn: { alignItems: 'center', marginTop: 14, paddingVertical: 10 },
-  resetBtnText: { color: '#8E8E93', fontSize: 12, textDecorationLine: 'underline' },
-  warnBox: { backgroundColor: '#1A1D24', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', marginHorizontal: 16, marginTop: 16, padding: 12 },
-  warnTitle: { color: '#FFB74D', fontSize: 12, fontWeight: '700', marginBottom: 6 },
-  warnText: { color: '#8E8E93', fontSize: 11, lineHeight: 17 },
+  resetBtn: { alignItems: 'center', marginTop: 14, paddingVertical: 10, minHeight: touch.min },
+  resetBtnText: { color: colors.textDim, fontSize: 12, textDecorationLine: 'underline' },
+  warnBox: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, marginHorizontal: 16, marginTop: 16, padding: 12 },
+  warnTitle: { color: colors.warning, fontSize: 12, fontWeight: '700', marginBottom: 6 },
+  warnText: { color: colors.textDim, fontSize: 12, lineHeight: 17 },
 });

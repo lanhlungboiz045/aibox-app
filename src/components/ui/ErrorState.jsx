@@ -5,18 +5,19 @@ import { View, Text, StyleSheet } from 'react-native';
 import { AppIcon } from './AppIcon';
 import { Button } from './Button';
 import { colors, radius, spacing, type } from '../../theme/tokens';
+import { t } from '../../i18n';
 
 export function ErrorState({
-  title = 'Không tải được dữ liệu',
-  message = 'Kiểm tra kết nối mạng rồi thử lại.',
-  onRetry, retryLabel = 'Thử lại', compact = false, style,
+  title = t('state.errorTitle'),
+  message = t('state.errorMessage'),
+  onRetry, retryLabel = t('common.retry'), compact = false, style,
 }) {
   return (
     <View style={[styles.wrap, compact && styles.wrapCompact, style]}>
       <View style={styles.art}>
         <AppIcon name="alert-triangle" size={compact ? 22 : 28} color={colors.danger} />
       </View>
-      <Text style={styles.title} maxFontSizeMultiplier={1.4}>{title}</Text>
+      <Text style={styles.title} maxFontSizeMultiplier={1.8}>{title}</Text>
       <Text style={styles.message} maxFontSizeMultiplier={1.5}>{message}</Text>
       {onRetry ? (
         <Button

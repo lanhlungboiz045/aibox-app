@@ -10,39 +10,45 @@ import { useApp } from '../context/AppContext';
 import { formatToken } from '../utils/format';
 import { AppIcon, IconButton } from './ui';
 import { colors, radius, spacing, touch, type } from '../theme/tokens';
+import { useI18n } from '../i18n';
 
+// Nhãn là khoá i18n (Bước 5) → đổi ngôn ngữ chỉ cần sửa src/i18n/index.js.
 const GROUPS = [
   {
-    label: 'Khám phá',
+    id: 'explore',
+    label: 'nav.explore',
     items: [
-      { label: 'Home', icon: 'home', route: 'Home' },
-      { label: 'AI Hub', icon: 'message-square', route: 'AIHub' },
-      { label: 'Markets', icon: 'trending-up', route: 'Markets' },
-      { label: 'Portfolio', icon: 'briefcase', route: 'Portfolio' },
-      { label: 'Xếp hạng', icon: 'award', route: 'Leaderboard' },
+      { label: 'nav.home', icon: 'home', route: 'Home' },
+      { label: 'nav.aihub', icon: 'message-square', route: 'AIHub' },
+      { label: 'nav.markets', icon: 'trending-up', route: 'Markets' },
+      { label: 'nav.portfolio', icon: 'briefcase', route: 'Portfolio' },
+      { label: 'nav.leaderboard', icon: 'award', route: 'Leaderboard' },
     ],
   },
   {
-    label: 'Công cụ',
+    id: 'tools',
+    label: 'nav.tools',
     items: [
-      { label: 'Usage / Billing', icon: 'bar-chart-2', route: 'UsageDashboard' },
-      { label: 'Nạp token', icon: 'plus-circle', route: 'CreditsTopup' },
-      { label: 'Nhiệm vụ', icon: 'target', route: 'Quests' },
-      { label: 'Cửa hàng', icon: 'shopping-bag', route: 'Store' },
-      { label: 'Cài đặt AI', icon: 'settings', route: 'AISettings' },
+      { label: 'nav.usage', icon: 'bar-chart-2', route: 'UsageDashboard' },
+      { label: 'nav.topup', icon: 'plus-circle', route: 'CreditsTopup' },
+      { label: 'nav.quests', icon: 'target', route: 'Quests' },
+      { label: 'nav.store', icon: 'shopping-bag', route: 'Store' },
+      { label: 'nav.aiSettings', icon: 'settings', route: 'AISettings' },
     ],
   },
   {
-    label: 'Tài khoản',
+    id: 'account',
+    label: 'nav.account',
     items: [
-      { label: 'Hồ sơ', icon: 'user', route: 'Profile' },
-      { label: 'Thông báo', icon: 'bell', route: 'Notifications' },
+      { label: 'nav.profile', icon: 'user', route: 'Profile' },
+      { label: 'nav.notifications', icon: 'bell', route: 'Notifications' },
     ],
   },
 ];
 
 export function AppDrawer({ visible, onClose, navigation }) {
   const { state } = useApp();
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const panelWidth = Math.min(320, Math.round(width * 0.82));
@@ -74,7 +80,7 @@ export function AppDrawer({ visible, onClose, navigation }) {
           style={StyleSheet.absoluteFill}
           onPress={onClose}
           accessibilityRole="button"
-          accessibilityLabel="Đóng menu"
+          accessibilityLabel={t('nav.closeMenu')}
         />
         <Animated.View
           style={[
@@ -86,27 +92,27 @@ export function AppDrawer({ visible, onClose, navigation }) {
           onAccessibilityEscape={onClose}
         >
           <View style={styles.topBar}>
-            <Text style={styles.brand} maxFontSizeMultiplier={1.2}>Menu</Text>
-            <IconButton icon="x" label="Đóng menu" onPress={onClose} />
+            <Text style={styles.brand} maxFontSizeMultiplier={1.5}>{t('nav.menu')}</Text>
+            <IconButton icon="x" label={t('nav.closeMenu')} onPress={onClose} />
           </View>
 
           <TouchableOpacity
+            accessibilityRole="button"
             style={styles.profile}
             onPress={() => go('Profile')}
             activeOpacity={0.8}
-            accessibilityRole="button"
             accessibilityLabel={`${user?.username || 'Khách'}, số dư ${formatToken(user?.tokenBalance || 0)} token, mở hồ sơ`}
           >
             <View style={styles.avatar}>
-              <Text style={styles.avatarText} maxFontSizeMultiplier={1.2}>{user?.avatar || '\u{1F464}'}</Text>
+              <Text style={styles.avatarText} maxFontSizeMultiplier={1.5}>{user?.avatar || '\u{1F464}'}</Text>
             </View>
             <View style={styles.profileBody}>
-              <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+              <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.6}>
                 {user?.username || 'Khách'}
               </Text>
               <View style={styles.balanceRow}>
                 <AppIcon name="credit-card" size={12} color={colors.accentSoft} />
-                <Text style={styles.balance} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+                <Text style={styles.balance} numberOfLines={1} maxFontSizeMultiplier={1.5}>
                   {formatToken(user?.tokenBalance || 0)} {'\u{1F4B0}'}
                 </Text>
               </View>
@@ -115,20 +121,20 @@ export function AppDrawer({ visible, onClose, navigation }) {
           </TouchableOpacity>
 
           {GROUPS.map(group => (
-            <View key={group.label} style={styles.group}>
-              <Text style={styles.groupLabel} maxFontSizeMultiplier={1.2}>{group.label}</Text>
+            <View key={group.id} style={styles.group}>
+              <Text style={styles.groupLabel} maxFontSizeMultiplier={1.5}>{t(group.label)}</Text>
               {group.items.map(item => (
                 <TouchableOpacity
+                  accessibilityRole="button"
                   key={item.route}
                   style={styles.item}
                   onPress={() => go(item.route)}
                   activeOpacity={0.75}
-                  accessibilityRole="button"
-                  accessibilityLabel={item.label}
+                  accessibilityLabel={t(item.label)}
                 >
                   <AppIcon name={item.icon} size={18} color={colors.textDim} />
-                  <Text style={styles.itemLabel} numberOfLines={1} maxFontSizeMultiplier={1.3}>
-                    {item.label}
+                  <Text style={styles.itemLabel} numberOfLines={1} maxFontSizeMultiplier={1.6}>
+                    {t(item.label)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -137,16 +143,16 @@ export function AppDrawer({ visible, onClose, navigation }) {
 
           {isAdmin && (
             <View style={styles.group}>
-              <Text style={styles.groupLabel} maxFontSizeMultiplier={1.2}>Quản trị</Text>
+              <Text style={styles.groupLabel} maxFontSizeMultiplier={1.5}>{t('nav.admin')}</Text>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={styles.item}
                 onPress={() => go('AdminHome')}
                 activeOpacity={0.75}
-                accessibilityRole="button"
                 accessibilityLabel="Admin Dashboard"
               >
                 <AppIcon name="shield" size={18} color={colors.warning} />
-                <Text style={[styles.itemLabel, { color: colors.warning }]} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+                <Text style={[styles.itemLabel, { color: colors.warning }]} numberOfLines={1} maxFontSizeMultiplier={1.6}>
                   Admin Dashboard
                 </Text>
               </TouchableOpacity>
@@ -154,7 +160,7 @@ export function AppDrawer({ visible, onClose, navigation }) {
           )}
 
           <View style={styles.spacer} />
-          <Text style={styles.footer} maxFontSizeMultiplier={1.2}>AIBox · bản demo</Text>
+          <Text style={styles.footer} maxFontSizeMultiplier={1.5}>AIBox · bản demo</Text>
         </Animated.View>
       </View>
     </Modal>
@@ -189,6 +195,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    minHeight: touch.min,
   },
   avatar: {
     width: touch.iconButton,

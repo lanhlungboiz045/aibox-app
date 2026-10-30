@@ -18,6 +18,7 @@ import {
   createApiKey, loadApiKeys, peekApiKeys, removeApiKey, restoreApiKey, setApiKeyActive, MAX_API_KEYS,
 } from '../services/apiKeys';
 import { colors, layout, motion, radius, spacing, type } from '../theme/tokens';
+import { t } from '../i18n';
 
 export function APIKeysScreen({ navigation }) {
   const { state } = useApp();
@@ -152,8 +153,8 @@ export function APIKeysScreen({ navigation }) {
       <View style={styles.header}>
         <IconButton icon="chevron-left" label="Quay lại" onPress={() => navigation.goBack()} />
         <View style={styles.headerBody}>
-          <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.3}>API Keys</Text>
-          <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+          <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.6}>{t('screen.apiKeys')}</Text>
+          <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
             {loading ? 'Đang tải…' : `${keys.length}/${MAX_API_KEYS} key · ${activeCount} đang bật`}
           </Text>
         </View>
@@ -195,7 +196,7 @@ export function APIKeysScreen({ navigation }) {
               <View style={[styles.card, !item.active && styles.cardOff]}>
                 <View style={styles.cardTop}>
                   <View style={[styles.dot, { backgroundColor: item.active ? colors.success : colors.textFaint }]} />
-                  <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.3}>{item.name}</Text>
+                  <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.6}>{item.name}</Text>
                   <Switch
                     value={item.active}
                     onValueChange={next => handleToggle(item, next)}
@@ -204,7 +205,7 @@ export function APIKeysScreen({ navigation }) {
                 </View>
 
                 <View style={styles.keyRow}>
-                  <Text style={styles.keyMask} numberOfLines={1} maxFontSizeMultiplier={1.2}>{item.mask}</Text>
+                  <Text style={styles.keyMask} numberOfLines={1} maxFontSizeMultiplier={1.5}>{item.mask}</Text>
                   <IconButton
                     icon="copy"
                     label={`Sao chép key ${item.name}`}
@@ -222,11 +223,11 @@ export function APIKeysScreen({ navigation }) {
                 </View>
 
                 <View style={styles.metaRow}>
-                  <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+                  <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
                     Tạo {formatDate(item.createdAt)}
                   </Text>
                   <Text style={styles.metaDot}>·</Text>
-                  <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+                  <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
                     {item.monthlyLimit ? `Hạn mức ${formatToken(item.monthlyLimit)}/tháng` : 'Không giới hạn'}
                   </Text>
                 </View>
@@ -237,7 +238,7 @@ export function APIKeysScreen({ navigation }) {
 
         {!loading && !error && keys.length > 0 ? (
           <View style={styles.note}>
-            <Text style={styles.noteText} maxFontSizeMultiplier={1.3}>
+            <Text style={styles.noteText} maxFontSizeMultiplier={1.6}>
               Key chỉ lưu trên thiết bị này (bản demo). Muốn thu hồi, xoá key và tạo key mới.
             </Text>
           </View>
@@ -268,7 +269,7 @@ export function APIKeysScreen({ navigation }) {
         {created ? (
           <View style={styles.reveal}>
             <View style={styles.revealKeyBox}>
-              <Text style={styles.revealKey} selectable maxFontSizeMultiplier={1.2}>{created.key}</Text>
+              <Text style={styles.revealKey} selectable maxFontSizeMultiplier={1.5}>{created.key}</Text>
             </View>
             <Button
               label="Sao chép key"
@@ -277,7 +278,7 @@ export function APIKeysScreen({ navigation }) {
               fullWidth
               onPress={() => handleCopy(created.key)}
             />
-            <Text style={styles.revealHint} maxFontSizeMultiplier={1.3}>
+            <Text style={styles.revealHint} maxFontSizeMultiplier={1.6}>
               Key này chỉ hiện đầy đủ một lần. Bạn vẫn có thể sao chép lại từ danh sách nếu cần.
             </Text>
           </View>
@@ -314,7 +315,7 @@ export function APIKeysScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: {
-    height: layout.headerHeight + 8,
+    minHeight: layout.headerHeight + 8,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.xs,
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
   headerBody: { flex: 1, gap: 2 },
   title: { ...type.subtitle, color: colors.text, fontWeight: '700' },
   headerMeta: { ...type.small, color: colors.textFaint },
-  content: { padding: spacing.lg, gap: spacing.md },
+  content: { ...centeredContent, padding: spacing.lg, gap: spacing.md },
   card: {
     backgroundColor: colors.surface,
     borderWidth: 1,

@@ -4,9 +4,10 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AppIcon } from './AppIcon';
 import { colors, radius, spacing, touch, type } from '../../theme/tokens';
+import { t } from '../../i18n';
 
 export function OfflineBar({
-  text = 'Không có kết nối mạng', onRetry, retryLabel = 'Thử lại', style,
+  text = t('state.offline'), onRetry, retryLabel = t('common.retry'), style,
 }) {
   return (
     <View
@@ -16,7 +17,7 @@ export function OfflineBar({
       accessibilityLabel={text}
     >
       <AppIcon name="wifi-off" size={14} color={colors.warning} />
-      <Text style={styles.text} numberOfLines={2} maxFontSizeMultiplier={1.3}>{text}</Text>
+      <Text style={styles.text} numberOfLines={2} maxFontSizeMultiplier={1.6}>{text}</Text>
       {onRetry ? (
         <TouchableOpacity
           onPress={onRetry}
@@ -25,7 +26,7 @@ export function OfflineBar({
           accessibilityLabel={retryLabel}
           style={styles.action}
         >
-          <Text style={styles.actionText} maxFontSizeMultiplier={1.3}>{retryLabel}</Text>
+          <Text style={styles.actionText} maxFontSizeMultiplier={1.6}>{retryLabel}</Text>
         </TouchableOpacity>
       ) : null}
     </View>

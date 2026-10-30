@@ -18,9 +18,9 @@ export function StatTile({ icon, label, sub, onPress, tone = 'accent' }) {
       <View style={styles.iconWrap}>
         <AppIcon name={icon} size={18} color={iconColor} />
       </View>
-      <Text style={styles.label} numberOfLines={1} maxFontSizeMultiplier={1.3}>{label}</Text>
+      <Text style={styles.label} numberOfLines={1} maxFontSizeMultiplier={1.6}>{label}</Text>
       {sub ? (
-        <Text style={styles.sub} numberOfLines={2} maxFontSizeMultiplier={1.3}>{sub}</Text>
+        <Text style={styles.sub} numberOfLines={2} maxFontSizeMultiplier={1.6}>{sub}</Text>
       ) : null}
     </TouchableOpacity>
   );

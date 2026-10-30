@@ -63,7 +63,7 @@ export function MainTabNavigator() {
         },
         tabBarActiveTintColor: colors.accentSoft,
         tabBarInactiveTintColor: colors.textFaint,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: '500' },
         tabBarIcon: ({ focused }) => (
           <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>
             {tabIcons[route.name] || '\u{1F4B0}'}

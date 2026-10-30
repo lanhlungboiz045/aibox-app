@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { LEADERBOARD } from '../data/mockData';
 import { formatToken, formatTokenShort } from '../utils/format';
+import { colors, centeredContent, touch } from '../theme/tokens';
 
 export function CopyTradeScreen({ navigation }) {
   const { state, myCopyTrades, followTrader, unfollowTrader, toggleCopyTrade, simulateCopyTrade } = useApp();
@@ -33,10 +34,10 @@ export function CopyTradeScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <Text style={styles.title}>{'\u{1F4CB}'} Copy Trade</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -48,7 +49,7 @@ export function CopyTradeScreen({ navigation }) {
         </View>
         <View style={{ alignItems: 'flex-end' }}>
           <Text style={styles.summaryLabel}>Đang bật</Text>
-          <Text style={[styles.summaryValue, { color: '#00CE7E' }]}>{totalEnabled}</Text>
+          <Text style={[styles.summaryValue, { color: colors.success }]}>{totalEnabled}</Text>
         </View>
       </View>
 
@@ -68,17 +69,18 @@ export function CopyTradeScreen({ navigation }) {
                   Tối đa {formatToken(config.maxPerTrade)} {'\u{1F4B0}'}/lệnh · {config.enabled ? 'đang bật' : 'tạm dừng'}
                 </Text>
               </View>
-              <View style={[styles.statusDot, { backgroundColor: config.enabled ? '#00CE7E' : '#5C5C5C' }]} />
+              <View style={[styles.statusDot, { backgroundColor: config.enabled ? colors.success : colors.textFaint }]} />
             </View>
 
             <View style={styles.cardActions}>
-              <TouchableOpacity style={styles.smallBtn} onPress={() => toggleCopyTrade(config.id)}>
+              <TouchableOpacity accessibilityRole="button" style={styles.smallBtn} onPress={() => toggleCopyTrade(config.id)}>
                 <Text style={styles.smallBtnText}>{config.enabled ? 'Tạm dừng' : 'Bật lại'}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.smallBtn} onPress={() => simulate(config)}>
+              <TouchableOpacity accessibilityRole="button" style={styles.smallBtn} onPress={() => simulate(config)}>
                 <Text style={styles.smallBtnText}>Mô phỏng lệnh</Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[styles.smallBtn, styles.dangerBtn]}
                 onPress={() => {
                   Alert.alert('Bỏ theo dõi', `Ngừng copy trade theo ${config.leaderName}?`, [
@@ -87,7 +89,7 @@ export function CopyTradeScreen({ navigation }) {
                   ]);
                 }}
               >
-                <Text style={[styles.smallBtnText, { color: '#FF6B6B' }]}>Bỏ</Text>
+                <Text style={[styles.smallBtnText, { color: colors.danger }]}>Bỏ</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -104,10 +106,11 @@ export function CopyTradeScreen({ navigation }) {
                 <Text style={styles.suggestName}>{trader.username}</Text>
                 <Text style={styles.suggestMeta}>#{trader.rank} · {formatTokenShort(trader.tokenBalance)} {'\u{1F4B0}'}</Text>
               </View>
-              <TouchableOpacity style={styles.followSmall} onPress={() => followTrader(trader.id, trader.username, 1000)}>
+              <TouchableOpacity accessibilityRole="button" style={styles.followSmall} onPress={() => followTrader(trader.id, trader.username, 1000)}>
                 <Text style={styles.followSmallText}>Theo dõi</Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={styles.profileSmall}
                 onPress={() => navigation.navigate('TraderProfile', { trader })}
               >
@@ -128,33 +131,33 @@ export function CopyTradeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600', width: 50 },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
-  summaryCard: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#1A1D24', borderRadius: 12, marginHorizontal: 16, padding: 16, borderWidth: 1, borderColor: '#2A2E36' },
-  summaryLabel: { color: '#8E8E93', fontSize: 11 },
-  summaryValue: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginTop: 2 },
-  sectionTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', paddingHorizontal: 16, marginTop: 18, marginBottom: 8 },
-  empty: { color: '#5C5C5C', fontSize: 12, lineHeight: 18, paddingHorizontal: 16 },
-  card: { backgroundColor: '#1A1D24', borderRadius: 12, marginHorizontal: 16, marginBottom: 8, padding: 12, borderWidth: 1, borderColor: '#2A2E36' },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  summaryCard: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, padding: 16, borderWidth: 1, borderColor: colors.borderSoft },
+  summaryLabel: { color: colors.textDim, fontSize: 12 },
+  summaryValue: { color: colors.text, fontSize: 18, fontWeight: '700', marginTop: 2 },
+  sectionTitle: { color: colors.text, fontSize: 14, fontWeight: '700', paddingHorizontal: 16, marginTop: 18, marginBottom: 8 },
+  empty: { color: colors.textFaint, fontSize: 12, lineHeight: 18, paddingHorizontal: 16 },
+  card: { backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, marginBottom: 8, padding: 12, borderWidth: 1, borderColor: colors.borderSoft },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { fontSize: 22 },
-  name: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  meta: { color: '#8E8E93', fontSize: 11, marginTop: 2, fontFamily: 'monospace' },
+  name: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  meta: { color: colors.textDim, fontSize: 12, marginTop: 2, fontFamily: 'monospace' },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
-  cardActions: { flexDirection: 'row', gap: 6, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#22262E' },
-  smallBtn: { flex: 1, backgroundColor: '#22262E', borderRadius: 8, paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
-  dangerBtn: { borderColor: 'rgba(255, 107, 107, 0.3)' },
-  smallBtnText: { color: '#E0E0E0', fontSize: 11, fontWeight: '600' },
-  suggestRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#1A1D24', borderRadius: 10, marginHorizontal: 16, marginBottom: 6, padding: 10, borderWidth: 1, borderColor: '#2A2E36' },
+  cardActions: { flexDirection: 'row', gap: 6, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border },
+  smallBtn: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
+  dangerBtn: { borderColor: colors.dangerBorder },
+  smallBtnText: { color: colors.text, fontSize: 12, fontWeight: '600' },
+  suggestRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderRadius: 10, marginHorizontal: 16, marginBottom: 6, padding: 10, borderWidth: 1, borderColor: colors.borderSoft },
   suggestAvatar: { fontSize: 20 },
-  suggestName: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
-  suggestMeta: { color: '#5C5C5C', fontSize: 10, marginTop: 1, fontFamily: 'monospace' },
-  followSmall: { backgroundColor: '#6C5CE7', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
-  followSmallText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
-  profileSmall: { backgroundColor: '#22262E', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: '#2A2E36' },
-  profileSmallText: { color: '#8E8E93', fontSize: 11 },
-  warning: { marginHorizontal: 16, marginTop: 18, padding: 12, borderRadius: 10, backgroundColor: 'rgba(255, 183, 77, 0.08)', borderWidth: 1, borderColor: 'rgba(255, 183, 77, 0.25)' },
-  warningText: { color: '#FFB74D', fontSize: 11, lineHeight: 17 },
+  suggestName: { color: colors.text, fontSize: 12, fontWeight: '600' },
+  suggestMeta: { color: colors.textFaint, fontSize: 12, marginTop: 1, fontFamily: 'monospace' },
+  followSmall: { backgroundColor: colors.accentStrong, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, minHeight: touch.min },
+  followSmallText: { color: colors.onAccent, fontSize: 12, fontWeight: '700' },
+  profileSmall: { backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min },
+  profileSmallText: { color: colors.textDim, fontSize: 12 },
+  warning: { marginHorizontal: 16, marginTop: 18, padding: 12, borderRadius: 10, backgroundColor: colors.warningDim, borderWidth: 1, borderColor: colors.warningBorder },
+  warningText: { color: colors.warning, fontSize: 12, lineHeight: 17 },
 });

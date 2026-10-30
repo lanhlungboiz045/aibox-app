@@ -13,6 +13,7 @@ import {
   GOOGLE_WEB_CLIENT_ID,
 } from '../config/firebase';
 import { isGoogleSignInNativeAvailable } from '../services/auth';
+import { colors, touch } from '../theme/tokens';
 
 export function AuthScreen() {
   const insets = useSafeAreaInsets();
@@ -53,7 +54,7 @@ export function AuthScreen() {
       </View>
 
       {state.authNotice && (
-        <TouchableOpacity style={styles.noticeBox} onPress={clearAuthNotice} activeOpacity={0.8}>
+        <TouchableOpacity accessibilityRole="button" style={styles.noticeBox} onPress={clearAuthNotice} activeOpacity={0.8}>
           <Text style={styles.noticeText}>{'\u{26A0}'} {state.authNotice}</Text>
           <Text style={styles.noticeClose}>Đóng</Text>
         </TouchableOpacity>
@@ -66,13 +67,14 @@ export function AuthScreen() {
         </Text>
 
         <TouchableOpacity
+          accessibilityRole="button"
           style={[styles.googleBtn, (loading || !canSignIn) && styles.googleBtnDisabled]}
           onPress={handleGoogle}
           activeOpacity={0.85}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#1A1D24" />
+            <ActivityIndicator color={colors.onBright} />
           ) : (
             <>
               <View style={styles.googleIcon}>
@@ -121,7 +123,7 @@ export function AuthScreen() {
 
         {/* CHỈ DEV: Expo Go không có Google Sign-In native → cho test UI bằng ví local */}
         {__DEV__ && !nativeAvailable && (
-          <TouchableOpacity style={styles.demoBtn} onPress={enterDemoMode} activeOpacity={0.85}>
+          <TouchableOpacity accessibilityRole="button" style={styles.demoBtn} onPress={enterDemoMode} activeOpacity={0.85}>
             <Text style={styles.demoBtnText}>{'\u{1F9EA}'} Vào chế độ demo (chỉ dev)</Text>
           </TouchableOpacity>
         )}
@@ -145,73 +147,77 @@ export function AuthScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   content: { flexGrow: 1, paddingHorizontal: 20, justifyContent: 'center' },
   hero: { alignItems: 'center', marginBottom: 28 },
   logo: { fontSize: 64, marginBottom: 8 },
-  title: { color: '#FFFFFF', fontSize: 34, fontWeight: '800', letterSpacing: -1 },
-  subtitle: { color: '#8E8E93', fontSize: 13, marginTop: 6, textAlign: 'center' },
+  title: { color: colors.text, fontSize: 34, fontWeight: '800', letterSpacing: -1 },
+  subtitle: { color: colors.textDim, fontSize: 13, marginTop: 6, textAlign: 'center' },
   noticeBox: {
-    backgroundColor: 'rgba(255, 107, 107, 0.12)',
+    backgroundColor: colors.dangerDim,
     borderWidth: 1,
-    borderColor: 'rgba(255, 107, 107, 0.35)',
+    borderColor: colors.dangerBorder,
     borderRadius: 10,
     padding: 12,
     marginBottom: 14,
+    minHeight: touch.min,
   },
-  noticeText: { color: '#FF8A8A', fontSize: 12, lineHeight: 18 },
-  noticeClose: { color: '#FF8A8A', fontSize: 11, fontWeight: '700', marginTop: 6, textAlign: 'right' },
+  noticeText: { color: colors.danger, fontSize: 12, lineHeight: 18 },
+  noticeClose: { color: colors.danger, fontSize: 12, fontWeight: '700', marginTop: 6, textAlign: 'right' },
   card: {
-    backgroundColor: '#1A1D24',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#2A2E36',
+    borderColor: colors.borderSoft,
     padding: 20,
   },
-  cardTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', textAlign: 'center' },
-  cardSub: { color: '#8E8E93', fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 6, marginBottom: 18 },
+  cardTitle: { color: colors.text, fontSize: 18, fontWeight: '700', textAlign: 'center' },
+  cardSub: { color: colors.textDim, fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 6, marginBottom: 18 },
   googleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
+    // Nền trắng là quy định nhận diện của nút Google → giữ cố định ở cả 2 theme
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
     paddingVertical: 13,
+    minHeight: touch.min,
   },
   googleBtnDisabled: { opacity: 0.7 },
   googleIcon: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#4285F4',
+    backgroundColor: colors.google,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  googleIconText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
-  googleBtnText: { color: '#1A1D24', fontSize: 15, fontWeight: '700' },
+  googleIconText: { color: colors.onAccent, fontSize: 13, fontWeight: '800' },
+  googleBtnText: { color: colors.onBright, fontSize: 15, fontWeight: '700' },
   demoBtn: {
     marginTop: 12,
     borderWidth: 1,
-    borderColor: '#2A2E36',
-    backgroundColor: '#22262E',
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: 10,
     paddingVertical: 11,
     alignItems: 'center',
+    minHeight: touch.min,
   },
-  demoBtnText: { color: '#8E8E93', fontSize: 13, fontWeight: '600' },
+  demoBtnText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
   setupBox: {
     marginTop: 16,
-    backgroundColor: 'rgba(255, 183, 77, 0.08)',
+    backgroundColor: colors.warningDim,
     borderWidth: 1,
-    borderColor: 'rgba(255, 183, 77, 0.3)',
+    borderColor: colors.warningBorder,
     borderRadius: 10,
     padding: 12,
   },
-  setupTitle: { color: '#FFB74D', fontSize: 12, fontWeight: '700', marginBottom: 6 },
-  setupText: { color: '#C9A66B', fontSize: 11, lineHeight: 17 },
-  terms: { color: '#5C5C5C', fontSize: 10, lineHeight: 15, textAlign: 'center', marginTop: 16 },
+  setupTitle: { color: colors.warning, fontSize: 12, fontWeight: '700', marginBottom: 6 },
+  setupText: { color: colors.gold, fontSize: 12, lineHeight: 17 },
+  terms: { color: colors.textFaint, fontSize: 12, lineHeight: 15, textAlign: 'center', marginTop: 16 },
   footer: { alignItems: 'center', marginTop: 22 },
-  footerText: { color: '#8E8E93', fontSize: 11, fontFamily: 'monospace' },
-  footerHint: { color: '#5C5C5C', fontSize: 10, marginTop: 4, textAlign: 'center' },
+  footerText: { color: colors.textDim, fontSize: 12, fontFamily: 'monospace' },
+  footerHint: { color: colors.textFaint, fontSize: 12, marginTop: 4, textAlign: 'center' },
 });

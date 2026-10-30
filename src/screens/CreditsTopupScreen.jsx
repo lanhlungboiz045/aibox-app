@@ -14,6 +14,7 @@ import {
   AppIcon, BottomSheet, Button, EmptyState, IconButton, Row, useToast,
 } from '../components/ui';
 import { colors, layout, radius, spacing, type } from '../theme/tokens';
+import { t } from '../i18n';
 
 const PACKAGES = [
   { id: 'p1', tokens: 1000, bonus: 0, price: '29.000đ', label: 'Starter' },
@@ -84,15 +85,15 @@ export function CreditsTopupScreen({ navigation }) {
   };
 
   const topups = (user?.transactions || []).filter(t => t.type === 'TOPUP');
-  const totalTopup = topups.reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
+  const totalTopup = topups.reduce((sum, item) => sum + Math.abs(item.amount || 0), 0);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <IconButton icon="chevron-left" label="Quay lại" onPress={() => navigation.goBack()} />
         <View style={styles.headerBody}>
-          <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.3}>Nạp token</Text>
-          <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+          <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.6}>{t('screen.topup')}</Text>
+          <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
             Trả theo usage · giá tốt hơn mua lẻ
           </Text>
         </View>
@@ -101,48 +102,48 @@ export function CreditsTopupScreen({ navigation }) {
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxl }]}>
         <View style={styles.balanceCard}>
           <View style={styles.balanceTop}>
-            <Text style={styles.balanceLabel} maxFontSizeMultiplier={1.2}>Số dư hiện tại</Text>
+            <Text style={styles.balanceLabel} maxFontSizeMultiplier={1.5}>Số dư hiện tại</Text>
             <View style={styles.balancePill}>
-              <Text style={styles.balancePillText} maxFontSizeMultiplier={1.2}>Đã nạp {formatToken(totalTopup)}</Text>
+              <Text style={styles.balancePillText} maxFontSizeMultiplier={1.5}>Đã nạp {formatToken(totalTopup)}</Text>
             </View>
           </View>
-          <Text style={styles.balanceValue} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.2}>
+          <Text style={styles.balanceValue} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.5}>
             {formatToken(user?.tokenBalance || 0)}
             <Text style={styles.balanceUnit}> {'\u{1F4B0}'}</Text>
           </Text>
-          <Text style={styles.balanceHint} maxFontSizeMultiplier={1.3}>
+          <Text style={styles.balanceHint} maxFontSizeMultiplier={1.6}>
             1 token = 1 token xử lý của AI. Chỉ trừ khi AI trả lời thành công.
           </Text>
         </View>
 
-        <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>Chọn gói nạp</Text>
+        <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.6}>Chọn gói nạp</Text>
         <View style={styles.grid}>
           {PACKAGES.map(p => {
             const active = p.id === selected;
             const bonus = p.bonus > 0;
             return (
               <TouchableOpacity
+                accessibilityRole="button"
                 key={p.id}
                 style={[styles.pkgCard, active && styles.pkgCardActive]}
                 onPress={() => setSelected(p.id)}
                 activeOpacity={0.85}
-                accessibilityRole="radio"
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={`${p.label}, ${formatToken(p.tokens)} token${bonus ? `, tặng ${formatToken(p.bonus)}` : ''}, ${p.price}`}
               >
                 <View style={styles.pkgTop}>
-                  <Text style={[styles.pkgName, active && { color: colors.accentSoft }]} maxFontSizeMultiplier={1.2}>
+                  <Text style={[styles.pkgName, active && { color: colors.accentSoft }]} maxFontSizeMultiplier={1.5}>
                     {p.label}
                   </Text>
                   {active ? <AppIcon name="check-circle" size={16} color={colors.accentSoft} /> : null}
                 </View>
-                <Text style={styles.pkgTokens} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+                <Text style={styles.pkgTokens} numberOfLines={1} maxFontSizeMultiplier={1.5}>
                   {formatToken(p.tokens)}
                 </Text>
-                <Text style={styles.pkgUnit} maxFontSizeMultiplier={1.2}>
+                <Text style={styles.pkgUnit} maxFontSizeMultiplier={1.5}>
                   token{bonus ? ` +${formatToken(p.bonus)}` : ''}
                 </Text>
-                <Text style={styles.pkgPrice} maxFontSizeMultiplier={1.2}>{p.price}</Text>
+                <Text style={styles.pkgPrice} maxFontSizeMultiplier={1.5}>{p.price}</Text>
               </TouchableOpacity>
             );
           })}
@@ -155,13 +156,13 @@ export function CreditsTopupScreen({ navigation }) {
           fullWidth
           onPress={openPayment}
         />
-        <Text style={styles.payNote} maxFontSizeMultiplier={1.3}>
+        <Text style={styles.payNote} maxFontSizeMultiplier={1.6}>
           Thanh toán mô phỏng cho đồ án — không phát sinh giao dịch thật.
         </Text>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.3}>Lịch sử nạp</Text>
-          <Text style={styles.sectionMeta} maxFontSizeMultiplier={1.2}>{topups.length} giao dịch</Text>
+          <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.6}>Lịch sử nạp</Text>
+          <Text style={styles.sectionMeta} maxFontSizeMultiplier={1.5}>{topups.length} giao dịch</Text>
         </View>
 
         {topups.length === 0 ? (
@@ -178,14 +179,14 @@ export function CreditsTopupScreen({ navigation }) {
                 <AppIcon name="arrow-down-left" size={16} color={colors.success} />
               </View>
               <View style={styles.txBody}>
-                <Text style={styles.txDesc} numberOfLines={1} maxFontSizeMultiplier={1.3}>{t.description}</Text>
-                <Text style={styles.txTime} maxFontSizeMultiplier={1.2}>
+                <Text style={styles.txDesc} numberOfLines={1} maxFontSizeMultiplier={1.6}>{t.description}</Text>
+                <Text style={styles.txTime} maxFontSizeMultiplier={1.5}>
                   {new Date(t.timestamp).toLocaleString('vi-VN')}
                 </Text>
               </View>
               <View style={styles.txRight}>
-                <Text style={styles.txAmount} maxFontSizeMultiplier={1.2}>+{formatToken(Math.abs(t.amount || 0))}</Text>
-                <Text style={styles.txStatus} maxFontSizeMultiplier={1.2}>Thành công</Text>
+                <Text style={styles.txAmount} maxFontSizeMultiplier={1.5}>+{formatToken(Math.abs(t.amount || 0))}</Text>
+                <Text style={styles.txStatus} maxFontSizeMultiplier={1.5}>Thành công</Text>
               </View>
             </View>
           ))
@@ -217,13 +218,13 @@ export function CreditsTopupScreen({ navigation }) {
             <View style={styles.doneIcon}>
               <AppIcon name="check" size={28} color={colors.success} />
             </View>
-            <Text style={styles.doneTitle} maxFontSizeMultiplier={1.3}>
+            <Text style={styles.doneTitle} maxFontSizeMultiplier={1.6}>
               +{formatToken(order?.tokens || 0)} token
             </Text>
-            <Text style={styles.doneText} maxFontSizeMultiplier={1.4}>
+            <Text style={styles.doneText} maxFontSizeMultiplier={1.8}>
               Số dư mới: {formatToken(user?.tokenBalance || 0)} {'\u{1F4B0}'}
             </Text>
-            <Text style={styles.doneHint} maxFontSizeMultiplier={1.3}>
+            <Text style={styles.doneHint} maxFontSizeMultiplier={1.6}>
               Giao dịch đã được ghi vào lịch sử nạp bên dưới.
             </Text>
           </View>
@@ -232,9 +233,9 @@ export function CreditsTopupScreen({ navigation }) {
             <StatusSteps step={step} />
 
             <View style={styles.amountBox}>
-              <Text style={styles.amountLabel} maxFontSizeMultiplier={1.2}>Số tiền cần chuyển</Text>
-              <Text style={styles.amountValue} maxFontSizeMultiplier={1.2}>{order?.amount}</Text>
-              <Text style={styles.amountNote} maxFontSizeMultiplier={1.3}>
+              <Text style={styles.amountLabel} maxFontSizeMultiplier={1.5}>Số tiền cần chuyển</Text>
+              <Text style={styles.amountValue} maxFontSizeMultiplier={1.5}>{order?.amount}</Text>
+              <Text style={styles.amountNote} maxFontSizeMultiplier={1.6}>
                 Nhận {formatToken(order?.tokens || 0)} token (đã gồm bonus)
               </Text>
             </View>
@@ -242,8 +243,8 @@ export function CreditsTopupScreen({ navigation }) {
             {/* QR mô phỏng: đồ án chưa nối cổng thanh toán nên không tạo mã thật */}
             <View style={styles.qrBox}>
               <AppIcon name="grid" size={28} color={colors.textFaint} />
-              <Text style={styles.qrTitle} maxFontSizeMultiplier={1.3}>QR chuyển khoản</Text>
-              <Text style={styles.qrHint} maxFontSizeMultiplier={1.3}>
+              <Text style={styles.qrTitle} maxFontSizeMultiplier={1.6}>QR chuyển khoản</Text>
+              <Text style={styles.qrHint} maxFontSizeMultiplier={1.6}>
                 Bản demo chưa nối cổng thanh toán. Dùng thông tin bên dưới để mô phỏng.
               </Text>
             </View>
@@ -294,7 +295,7 @@ function StatusSteps({ step }) {
             <View style={[styles.stepDot, done && styles.stepDotDone, active && styles.stepDotActive]}>
               {done ? <AppIcon name="check" size={10} color={colors.bg} /> : null}
             </View>
-            <Text style={[styles.stepLabel, (done || active) && styles.stepLabelOn]} maxFontSizeMultiplier={1.2}>
+            <Text style={[styles.stepLabel, (done || active) && styles.stepLabelOn]} maxFontSizeMultiplier={1.5}>
               {label}
             </Text>
             {i < steps.length - 1 ? <View style={[styles.stepLine, done && styles.stepLineDone]} /> : null}
@@ -308,7 +309,7 @@ function StatusSteps({ step }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: {
-    height: layout.headerHeight + 8,
+    minHeight: layout.headerHeight + 8,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.xs,
@@ -319,7 +320,7 @@ const styles = StyleSheet.create({
   headerBody: { flex: 1, gap: 2 },
   title: { ...type.subtitle, color: colors.text, fontWeight: '700' },
   headerMeta: { ...type.small, color: colors.textFaint },
-  content: { padding: spacing.lg, gap: spacing.lg },
+  content: { ...centeredContent, padding: spacing.lg, gap: spacing.lg },
   balanceCard: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,

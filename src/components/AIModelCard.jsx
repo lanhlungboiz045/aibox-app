@@ -4,7 +4,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AppIcon } from './ui/AppIcon';
 import { formatTokenShort } from '../utils/format';
-import { colors, layout, radius, spacing, type } from '../theme/tokens';
+import { colors, layout, radius, spacing, type, touch } from '../theme/tokens';
 
 export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
   const capabilities = Array.isArray(model.capabilities) ? model.capabilities : [];
@@ -33,18 +33,18 @@ export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
             <Text style={styles.icon}>{model.icon}</Text>
           </View>
           <View style={styles.nameCol}>
-            <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.4}>{model.name}</Text>
-            <Text style={styles.provider} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+            <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.8}>{model.name}</Text>
+            <Text style={styles.provider} numberOfLines={1} maxFontSizeMultiplier={1.6}>
               {model.providerName}
             </Text>
           </View>
           <View style={styles.costWrap}>
             <Text style={styles.costIcon}>{'\u{1F4B0}'}</Text>
-            <Text style={styles.cost} maxFontSizeMultiplier={1.2}>usage</Text>
+            <Text style={styles.cost} maxFontSizeMultiplier={1.5}>usage</Text>
           </View>
         </View>
 
-        <Text style={styles.description} numberOfLines={2} maxFontSizeMultiplier={1.4}>
+        <Text style={styles.description} numberOfLines={2} maxFontSizeMultiplier={1.8}>
           {model.description}
         </Text>
 
@@ -52,7 +52,7 @@ export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
           <View style={styles.capWrap}>
             {capabilities.slice(0, 3).map(cap => (
               <View key={cap} style={styles.capTag}>
-                <Text style={styles.capText} numberOfLines={1} maxFontSizeMultiplier={1.2}>{cap}</Text>
+                <Text style={styles.capText} numberOfLines={1} maxFontSizeMultiplier={1.5}>{cap}</Text>
               </View>
             ))}
           </View>
@@ -60,12 +60,12 @@ export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
             {historyCount > 0 ? (
               <View style={styles.historyPill}>
                 <AppIcon name="message-square" size={12} color={colors.accentSoft} />
-                <Text style={styles.history} maxFontSizeMultiplier={1.2}>{historyCount}</Text>
+                <Text style={styles.history} maxFontSizeMultiplier={1.5}>{historyCount}</Text>
               </View>
             ) : null}
             <AppIcon name="star" size={12} color={colors.warning} />
-            <Text style={styles.rating} maxFontSizeMultiplier={1.2}>{model.rating}</Text>
-            <Text style={styles.popularity} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+            <Text style={styles.rating} maxFontSizeMultiplier={1.5}>{model.rating}</Text>
+            <Text style={styles.popularity} numberOfLines={1} maxFontSizeMultiplier={1.5}>
               {formatTokenShort(model.popularity || 0)} dùng
             </Text>
           </View>
@@ -85,6 +85,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     flexDirection: 'row',
     overflow: 'hidden',
+    minHeight: touch.min,
   },
   cardCompact: { width: 240, marginHorizontal: spacing.xs },
   stripe: { width: 4 },

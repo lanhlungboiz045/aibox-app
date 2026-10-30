@@ -6,6 +6,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatToken, formatTokenShort, formatRelativeTime } from '../utils/format';
+import { t } from '../i18n';
 import { buildSpendSummary } from '../utils/spend';
 import { QUESTS } from '../data/quests';
 import { AppDrawer } from '../components/AppDrawer';
@@ -109,29 +110,29 @@ export function HomeScreen({ navigation }) {
             size={22}
             onPress={() => setShowDrawer(true)}
           />
-          <Text style={styles.brand} numberOfLines={1} maxFontSizeMultiplier={1.2}>AIBox</Text>
+          <Text style={styles.brand} numberOfLines={1} maxFontSizeMultiplier={1.5}>AIBox</Text>
 
           <View style={{ flex: 1 }} />
 
           <TouchableOpacity
+            accessibilityRole="button"
             style={styles.balancePill}
             onPress={() => navigation.navigate('CreditsTopup')}
             activeOpacity={0.85}
             hitSlop={{ top: 6, bottom: 6 }}
-            accessibilityRole="button"
             accessibilityLabel={`Số dư ${formatToken(balance)} token, mở nạp tiền`}
           >
             <AppIcon name="credit-card" size={12} color={colors.accentSoft} />
-            <Text style={styles.balanceText} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+            <Text style={styles.balanceText} numberOfLines={1} maxFontSizeMultiplier={1.5}>
               {formatToken(balance)} {'\u{1F4B0}'}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
+            accessibilityRole="button"
             style={styles.iconBtn}
             onPress={() => navigation.navigate('Notifications')}
             hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
-            accessibilityRole="button"
             accessibilityLabel={unreadNotifications > 0 ? `Thông báo, ${unreadNotifications} chưa đọc` : 'Thông báo'}
           >
             <AppIcon name="bell" size={20} color={colors.textDim} />
@@ -145,14 +146,14 @@ export function HomeScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity
+            accessibilityRole="button"
             style={styles.avatar}
             onPress={() => navigation.navigate('Profile')}
             activeOpacity={0.85}
             hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-            accessibilityRole="button"
             accessibilityLabel="Hồ sơ cá nhân"
           >
-            <Text style={styles.avatarText} maxFontSizeMultiplier={1.2}>{user?.avatar || '\u{1F464}'}</Text>
+            <Text style={styles.avatarText} maxFontSizeMultiplier={1.5}>{user?.avatar || '\u{1F464}'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -167,17 +168,17 @@ export function HomeScreen({ navigation }) {
         <View style={styles.shortcutRow}>
           {SHORTCUTS.map(item => (
             <TouchableOpacity
+              accessibilityRole="button"
               key={item.key}
               style={styles.shortcut}
               onPress={() => navigation.navigate(item.route)}
               activeOpacity={0.85}
-              accessibilityRole="button"
               accessibilityLabel={item.label}
             >
               <View style={styles.shortcutIcon}>
                 <AppIcon name={item.icon} size={18} color={colors.accentSoft} />
               </View>
-              <Text style={styles.shortcutLabel} numberOfLines={1} maxFontSizeMultiplier={1.2}>{item.label}</Text>
+              <Text style={styles.shortcutLabel} numberOfLines={1} maxFontSizeMultiplier={1.5}>{item.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -216,7 +217,7 @@ export function HomeScreen({ navigation }) {
         {/* Chi tiêu 7 ngày: 1 card duy nhất ~140px, gộp luôn PAYG/token 7 ngày */}
         <View>
           <SectionHeader
-            title="Chi tiêu 7 ngày"
+            title={t('home.spend7d')}
             actionLabel="Xem Billing"
             onAction={() => navigation.navigate('UsageDashboard')}
           />
@@ -224,11 +225,11 @@ export function HomeScreen({ navigation }) {
             <View style={styles.spendTop}>
               <View style={styles.spendInfo}>
                 <Text style={styles.spendLabel}>Token 7 ngày</Text>
-                <Text style={styles.spendValue} maxFontSizeMultiplier={1.2} numberOfLines={1}>
+                <Text style={styles.spendValue} maxFontSizeMultiplier={1.5} numberOfLines={1}>
                   {formatTokenShort(spend.total)}
                   <Text style={styles.spendUnit}> {'\u{1F4B0}'}</Text>
                 </Text>
-                <Text style={[styles.spendDelta, { color: deltaColor }]} numberOfLines={1} maxFontSizeMultiplier={1.2}>{deltaText}</Text>
+                <Text style={[styles.spendDelta, { color: deltaColor }]} numberOfLines={1} maxFontSizeMultiplier={1.5}>{deltaText}</Text>
               </View>
               <Sparkline values={spend.series.map(item => item.value)} width={104} height={54} />
             </View>
@@ -242,7 +243,7 @@ export function HomeScreen({ navigation }) {
         {/* Tạm thời: 3 request AI gần nhất — Phần 5 thay bằng Logs + nút "Xem tất cả" */}
         <View style={styles.section}>
           <SectionHeader
-            title="Request gần đây"
+            title={t('home.recentRequests')}
             onAction={() => navigation.navigate('Logs')}
           />
           <View style={styles.card}>
@@ -250,7 +251,7 @@ export function HomeScreen({ navigation }) {
               <EmptyState
                 compact
                 icon="message-square"
-                title="Chưa có request nào"
+                title={t('home.noRequests')}
                 message="Hỏi AI một câu, request đầu tiên sẽ hiện ở đây."
                 actionLabel="Chat ngay"
                 onAction={() => navigation.navigate('AIHub')}
@@ -289,7 +290,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   headerInner: {
-    height: layout.headerHeight,
+    minHeight: layout.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: layout.gutter,
@@ -337,6 +338,7 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 18 },
   scroll: { flex: 1 },
   content: {
+    ...centeredContent,
     paddingHorizontal: layout.gutter,
     paddingTop: spacing.lg,
     paddingBottom: spacing.xxl,

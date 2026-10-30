@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { QUESTS, getQuestProgress, QUEST_TOTAL_REWARD } from '../data/quests';
 import { formatToken } from '../utils/format';
+import { colors, centeredContent, touch } from '../theme/tokens';
 
 export function QuestsScreen({ navigation }) {
   const {
@@ -22,10 +23,10 @@ export function QuestsScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <Text style={styles.title}>{'\u{1F3AF}'} Nhiệm vụ ngày</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -43,11 +44,12 @@ export function QuestsScreen({ navigation }) {
           </View>
         </View>
         <TouchableOpacity
+          accessibilityRole="button"
           style={[styles.dailyBtn, !canClaimDaily && styles.dailyBtnDone]}
           onPress={claimDailyReward}
           disabled={!canClaimDaily}
         >
-          <Text style={[styles.dailyBtnText, !canClaimDaily && { color: '#8E8E93' }]}>
+          <Text style={[styles.dailyBtnText, !canClaimDaily && { color: colors.textDim }]}>
             {canClaimDaily ? `Nhận ${formatToken(nextDailyReward)} \u{1F4B0}` : '\u{2713} Đã nhận hôm nay'}
           </Text>
         </TouchableOpacity>
@@ -59,11 +61,11 @@ export function QuestsScreen({ navigation }) {
           <Text style={styles.summaryLabel}>Nhiệm vụ đã nhận</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={[styles.summaryValue, { color: '#FFB74D' }]}>{formatToken(QUEST_TOTAL_REWARD)}</Text>
+          <Text style={[styles.summaryValue, { color: colors.warning }]}>{formatToken(QUEST_TOTAL_REWARD)}</Text>
           <Text style={styles.summaryLabel}>Tối đa mỗi ngày</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={[styles.summaryValue, { color: '#00CE7E' }]}>{formatToken(earnedFromQuests)}</Text>
+          <Text style={[styles.summaryValue, { color: colors.success }]}>{formatToken(earnedFromQuests)}</Text>
           <Text style={styles.summaryLabel}>Đã kiếm từ quest</Text>
         </View>
       </View>
@@ -87,16 +89,17 @@ export function QuestsScreen({ navigation }) {
                   <Text style={styles.claimedTag}>{'\u{2713}'} Đã nhận</Text>
                 ) : (
                   <TouchableOpacity
+                    accessibilityRole="button"
                     style={[styles.claimBtn, !done && styles.claimBtnDisabled]}
                     onPress={() => claimQuest(quest.id)}
                     disabled={!done}
                   >
-                    <Text style={styles.claimText}>{done ? 'Nhận' : 'Chưa đủ'}</Text>
+                    <Text style={[styles.claimText, !done && styles.claimTextDisabled]}>{done ? 'Nhận' : 'Chưa đủ'}</Text>
                   </TouchableOpacity>
                 )}
               </View>
               <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${percent}%` }, claimed && { backgroundColor: '#00CE7E' }]} />
+                <View style={[styles.progressFill, { width: `${percent}%` }, claimed && { backgroundColor: colors.success }]} />
               </View>
             </View>
           );
@@ -121,37 +124,38 @@ export function QuestsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600', width: 50 },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
-  streakCard: { marginHorizontal: 16, backgroundColor: 'rgba(255, 183, 77, 0.1)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(255, 183, 77, 0.3)' },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  streakCard: { marginHorizontal: 16, backgroundColor: colors.warningDim, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.warningBorder },
   streakHead: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   streakIcon: { fontSize: 30 },
-  streakTitle: { color: '#FFB74D', fontSize: 16, fontWeight: '700' },
-  streakSub: { color: '#8E8E93', fontSize: 11, marginTop: 3, lineHeight: 16 },
-  dailyBtn: { backgroundColor: '#FFB74D', borderRadius: 8, paddingVertical: 11, alignItems: 'center' },
-  dailyBtnDone: { backgroundColor: '#22262E' },
-  dailyBtnText: { color: '#0F1115', fontSize: 14, fontWeight: '700' },
+  streakTitle: { color: colors.warning, fontSize: 16, fontWeight: '700' },
+  streakSub: { color: colors.textDim, fontSize: 12, marginTop: 3, lineHeight: 16 },
+  dailyBtn: { backgroundColor: colors.warningBg, borderRadius: 8, paddingVertical: 11, alignItems: 'center', minHeight: touch.min },
+  dailyBtnDone: { backgroundColor: colors.surfaceAlt },
+  dailyBtnText: { color: colors.bg, fontSize: 14, fontWeight: '700' },
   summaryRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginTop: 12 },
-  summaryCard: { flex: 1, backgroundColor: '#1A1D24', borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
-  summaryValue: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', fontFamily: 'monospace' },
-  summaryLabel: { color: '#8E8E93', fontSize: 9, marginTop: 3, textAlign: 'center' },
+  summaryCard: { flex: 1, backgroundColor: colors.surface, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
+  summaryValue: { color: colors.text, fontSize: 14, fontWeight: '700', fontFamily: 'monospace' },
+  summaryLabel: { color: colors.textDim, fontSize: 12, marginTop: 3, textAlign: 'center' },
   list: { marginTop: 16, paddingHorizontal: 16 },
-  questCard: { backgroundColor: '#1A1D24', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#2A2E36', marginBottom: 8 },
-  questCardDone: { borderColor: 'rgba(0, 206, 126, 0.3)' },
+  questCard: { backgroundColor: colors.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.borderSoft, marginBottom: 8 },
+  questCardDone: { borderColor: colors.successBorder },
   questHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   questIcon: { fontSize: 22 },
-  questTitle: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  questProgressText: { color: '#8E8E93', fontSize: 11, marginTop: 2 },
-  claimBtn: { backgroundColor: '#6C5CE7', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 },
-  claimBtnDisabled: { backgroundColor: '#22262E' },
-  claimText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
-  claimedTag: { color: '#00CE7E', fontSize: 11, fontWeight: '700' },
-  progressTrack: { height: 5, borderRadius: 3, backgroundColor: '#22262E', marginTop: 10, overflow: 'hidden' },
-  progressFill: { height: 5, borderRadius: 3, backgroundColor: '#6C5CE7' },
-  tip: { marginHorizontal: 16, marginTop: 8, backgroundColor: 'rgba(108, 92, 231, 0.08)', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: 'rgba(108, 92, 231, 0.25)' },
-  tipTitle: { color: '#A78BFA', fontSize: 12, fontWeight: '700', marginBottom: 6 },
-  tipText: { color: '#8E8E93', fontSize: 11, lineHeight: 18 },
-  footnote: { color: '#5C5C5C', fontSize: 10, lineHeight: 15, paddingHorizontal: 16, marginTop: 12 },
+  questTitle: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  questProgressText: { color: colors.textDim, fontSize: 12, marginTop: 2 },
+  claimBtn: { backgroundColor: colors.accentStrong, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7, minHeight: touch.min },
+  claimBtnDisabled: { backgroundColor: colors.surfaceAlt },
+  claimText: { color: colors.onAccent, fontSize: 12, fontWeight: '700' },
+  claimTextDisabled: { color: colors.textFaint },
+  claimedTag: { color: colors.success, fontSize: 12, fontWeight: '700' },
+  progressTrack: { height: 5, borderRadius: 3, backgroundColor: colors.surfaceAlt, marginTop: 10, overflow: 'hidden' },
+  progressFill: { height: 5, borderRadius: 3, backgroundColor: colors.accentStrong },
+  tip: { marginHorizontal: 16, marginTop: 8, backgroundColor: colors.accentDim, borderRadius: 10, padding: 14, borderWidth: 1, borderColor: colors.accentDim },
+  tipTitle: { color: colors.accentSoft, fontSize: 12, fontWeight: '700', marginBottom: 6 },
+  tipText: { color: colors.textDim, fontSize: 12, lineHeight: 18 },
+  footnote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 12 },
 });

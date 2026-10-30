@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { TokenBadge } from '../components/TokenBadge';
 import { formatToken } from '../utils/format';
+import { colors, touch } from '../theme/tokens';
 
 const TYPE_FILTERS = [
   { key: 'all', label: 'Tất cả' },
@@ -78,10 +79,10 @@ export function ModelCatalogScreen({ navigation }) {
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.detailBtn} onPress={() => setDetail(item)} activeOpacity={0.8}>
+        <TouchableOpacity accessibilityRole="button" style={styles.detailBtn} onPress={() => setDetail(item)} activeOpacity={0.8}>
           <Text style={styles.detailBtnText}>Chi tiết</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tryBtn} onPress={() => tryNow(item)} activeOpacity={0.85}>
+        <TouchableOpacity accessibilityRole="button" style={styles.tryBtn} onPress={() => tryNow(item)} activeOpacity={0.85}>
           <Text style={styles.tryBtnText}>Thử ngay</Text>
         </TouchableOpacity>
       </View>
@@ -91,7 +92,7 @@ export function ModelCatalogScreen({ navigation }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity accessibilityRole="button" onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backText}>{'\u{276C}'} Quay lại</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Catalog mô hình AI</Text>
@@ -102,7 +103,7 @@ export function ModelCatalogScreen({ navigation }) {
         <TextInput
           style={styles.searchInput}
           placeholder="Tìm model hoặc nhà cung cấp..."
-          placeholderTextColor="#5C5C5C"
+          placeholderTextColor={colors.textFaint}
           value={search}
           onChangeText={setSearch}
         />
@@ -111,6 +112,8 @@ export function ModelCatalogScreen({ navigation }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={styles.chipRow}>
         {providers.map(p => (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ selected: provider === p.key }}
             key={p.key}
             style={[styles.chip, provider === p.key && styles.chipActive]}
             onPress={() => setProvider(p.key)}
@@ -123,6 +126,8 @@ export function ModelCatalogScreen({ navigation }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={styles.chipRow}>
         {TYPE_FILTERS.map(t => (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ selected: type === t.key }}
             key={t.key}
             style={[styles.chip, type === t.key && styles.chipActive]}
             onPress={() => setType(t.key)}
@@ -151,7 +156,7 @@ export function ModelCatalogScreen({ navigation }) {
                     <Text style={styles.modalName}>{detail.name}</Text>
                     <Text style={styles.modalProvider}>{detail.providerName} · {detail.type}</Text>
                   </View>
-                  <TouchableOpacity onPress={() => setDetail(null)}>
+                  <TouchableOpacity accessibilityRole="button" onPress={() => setDetail(null)}>
                     <Text style={styles.modalClose}>{'\u{2715}'}</Text>
                   </TouchableOpacity>
                 </View>
@@ -163,7 +168,7 @@ export function ModelCatalogScreen({ navigation }) {
                   <Text style={styles.modalMetaText}>Lượt dùng: {detail.popularity.toLocaleString('vi-VN')}</Text>
                   <Text style={styles.modalMetaText}>Capabilities: {detail.capabilities.join(', ')}</Text>
                 </View>
-                <TouchableOpacity style={styles.tryBtn} onPress={() => { setDetail(null); tryNow(detail); }}>
+                <TouchableOpacity accessibilityRole="button" style={styles.tryBtn} onPress={() => { setDetail(null); tryNow(detail); }}>
                   <Text style={styles.tryBtnText}>Thử ngay</Text>
                 </TouchableOpacity>
               </>
@@ -176,54 +181,54 @@ export function ModelCatalogScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { paddingHorizontal: 16, paddingBottom: 8 },
   backBtn: { alignSelf: 'flex-start', paddingVertical: 6 },
-  backText: { color: '#6C5CE7', fontSize: 13, fontWeight: '600' },
-  title: { color: '#FFFFFF', fontSize: 20, fontWeight: '800', marginTop: 4 },
-  sub: { color: '#8E8E93', fontSize: 12, marginTop: 2 },
+  backText: { color: colors.accentSoft, fontSize: 13, fontWeight: '600' },
+  title: { color: colors.text, fontSize: 20, fontWeight: '800', marginTop: 4 },
+  sub: { color: colors.textDim, fontSize: 12, marginTop: 2 },
   searchBox: { paddingHorizontal: 16, marginTop: 8 },
   searchInput: {
-    backgroundColor: '#1A1D24', borderWidth: 1, borderColor: '#2A2E36', borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 10, color: '#FFFFFF', fontSize: 13,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10, color: colors.text, fontSize: 13,
   },
   chipScroll: { maxHeight: 40, marginTop: 8 },
   chipRow: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
-  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#1A1D24', borderWidth: 1, borderColor: '#2A2E36' },
-  chipActive: { backgroundColor: '#6C5CE7', borderColor: '#6C5CE7' },
-  chipText: { color: '#8E8E93', fontSize: 12, fontWeight: '600' },
-  chipTextActive: { color: '#FFFFFF' },
-  list: { padding: 16, gap: 12 },
-  card: { backgroundColor: '#1A1D24', borderRadius: 14, borderWidth: 1, borderColor: '#2A2E36', padding: 14 },
+  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min },
+  chipActive: { backgroundColor: colors.accentStrong, borderColor: colors.accent },
+  chipText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
+  chipTextActive: { color: colors.onAccent },
+  list: { ...centeredContent, padding: 16, gap: 12 },
+  card: { backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.borderSoft, padding: 14 },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   iconBox: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   icon: { fontSize: 20 },
   cardInfo: { flex: 1 },
-  name: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  provider: { color: '#8E8E93', fontSize: 11, marginTop: 2 },
+  name: { color: colors.text, fontSize: 15, fontWeight: '700' },
+  provider: { color: colors.textDim, fontSize: 12, marginTop: 2 },
   priceBox: { alignItems: 'flex-end' },
-  price: { color: '#FFB74D', fontSize: 16, fontWeight: '800' },
-  priceUnit: { color: '#5C5C5C', fontSize: 9 },
-  desc: { color: '#C9A66B', fontSize: 12, marginTop: 8, lineHeight: 17 },
+  price: { color: colors.warning, fontSize: 16, fontWeight: '800' },
+  priceUnit: { color: colors.textFaint, fontSize: 12 },
+  desc: { color: colors.gold, fontSize: 12, marginTop: 8, lineHeight: 17 },
   metaRow: { flexDirection: 'row', gap: 12, marginTop: 8, flexWrap: 'wrap' },
-  meta: { color: '#8E8E93', fontSize: 10 },
+  meta: { color: colors.textDim, fontSize: 12 },
   capRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
-  capChip: { backgroundColor: '#22262E', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  capText: { color: '#8E8E93', fontSize: 10 },
+  capChip: { backgroundColor: colors.surfaceAlt, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  capText: { color: colors.textDim, fontSize: 12 },
   actions: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  detailBtn: { flex: 1, borderWidth: 1, borderColor: '#2A2E36', borderRadius: 8, paddingVertical: 9, alignItems: 'center' },
-  detailBtnText: { color: '#8E8E93', fontSize: 12, fontWeight: '600' },
-  tryBtn: { flex: 1, backgroundColor: '#6C5CE7', borderRadius: 8, paddingVertical: 9, alignItems: 'center' },
-  tryBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  empty: { color: '#5C5C5C', textAlign: 'center', marginTop: 40, fontSize: 13 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 20 },
-  modalCard: { backgroundColor: '#1A1D24', borderRadius: 16, borderWidth: 1, borderColor: '#2A2E36', padding: 18 },
+  detailBtn: { flex: 1, borderWidth: 1, borderColor: colors.borderSoft, borderRadius: 8, paddingVertical: 9, alignItems: 'center' },
+  detailBtnText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
+  tryBtn: { flex: 1, backgroundColor: colors.accentStrong, borderRadius: 8, paddingVertical: 9, alignItems: 'center' },
+  tryBtnText: { color: colors.onAccent, fontSize: 12, fontWeight: '700' },
+  empty: { color: colors.textFaint, textAlign: 'center', marginTop: 40, fontSize: 13 },
+  modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: 20 },
+  modalCard: { backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.borderSoft, padding: 18 },
   modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   modalIcon: { fontSize: 28 },
-  modalName: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
-  modalProvider: { color: '#8E8E93', fontSize: 12, marginTop: 2 },
-  modalClose: { color: '#8E8E93', fontSize: 18, padding: 4 },
-  modalDesc: { color: '#C9A66B', fontSize: 12, lineHeight: 18, marginBottom: 10 },
+  modalName: { color: colors.text, fontSize: 17, fontWeight: '800' },
+  modalProvider: { color: colors.textDim, fontSize: 12, marginTop: 2 },
+  modalClose: { color: colors.textDim, fontSize: 18, padding: 4 },
+  modalDesc: { color: colors.gold, fontSize: 12, lineHeight: 18, marginBottom: 10 },
   modalMeta: { gap: 4, marginBottom: 14 },
-  modalMetaText: { color: '#8E8E93', fontSize: 12 },
+  modalMetaText: { color: colors.textDim, fontSize: 12 },
 });

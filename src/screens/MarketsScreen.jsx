@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import { TokenBadge } from '../components/TokenBadge';
 import { MarketCard } from '../components/MarketCard';
 import { CategoryFilter } from '../components/CategoryFilter';
+import { colors, centeredContent } from '../theme/tokens';
 
 export function MarketsScreen({ navigation }) {
   const { state } = useApp();
@@ -32,14 +33,14 @@ export function MarketsScreen({ navigation }) {
     <ScrollView
       style={styles.container}
       // Tab bar bên dưới đã tự chừa insets.bottom → chỉ cần chừa status bar ở trên
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: 20 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: 20 }]}
     >
       <View style={styles.header}>
         <Text style={styles.title}>Markets</Text>
         <TokenBadge size="medium" />
       </View>
       <View style={styles.searchWrap}>
-        <TextInput style={styles.search} value={search} onChangeText={setSearch} placeholder="Tìm sự kiện..." placeholderTextColor="#5C5C5C" />
+        <TextInput style={styles.search} value={search} onChangeText={setSearch} placeholder="Tìm sự kiện..." placeholderTextColor={colors.textFaint} />
       </View>
       <CategoryFilter categories={categories} selected={category} onSelect={setCategory} />
       <View style={{ marginTop: 8 }}>
@@ -56,10 +57,10 @@ export function MarketsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
-  title: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
+  title: { color: colors.text, fontSize: 22, fontWeight: '700' },
   searchWrap: { paddingHorizontal: 16, marginBottom: 12 },
-  search: { backgroundColor: '#22262E', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', color: '#FFFFFF', fontSize: 14, paddingHorizontal: 14, paddingVertical: 10 },
-  empty: { color: '#5C5C5C', fontSize: 13, textAlign: 'center', padding: 20 },
+  search: { backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 14, paddingHorizontal: 14, paddingVertical: 10 },
+  empty: { color: colors.textFaint, fontSize: 13, textAlign: 'center', padding: 20 },
 });

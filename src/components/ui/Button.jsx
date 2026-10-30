@@ -14,9 +14,9 @@ const VARIANTS = {
 };
 
 const SIZES = {
-  sm: { height: touch.min, paddingHorizontal: spacing.lg, icon: 16, text: type.smallStrong },
-  md: { height: 48, paddingHorizontal: spacing.xl, icon: 18, text: type.bodyStrong },
-  lg: { height: 52, paddingHorizontal: spacing.xxl, icon: 20, text: { ...type.subtitle, fontWeight: '700' } },
+  sm: { minHeight: touch.min, paddingHorizontal: spacing.lg, icon: 16, text: type.smallStrong },
+  md: { minHeight: 48, paddingHorizontal: spacing.xl, icon: 18, text: type.bodyStrong },
+  lg: { minHeight: 52, paddingHorizontal: spacing.xxl, icon: 20, text: { ...type.subtitle, fontWeight: '700' } },
 };
 
 export function Button({
@@ -54,8 +54,7 @@ export function Button({
       {label || children ? (
         <Text
           style={[s.text, { color: v.fg }, textStyle]}
-          numberOfLines={1}
-          maxFontSizeMultiplier={1.4}
+          maxFontSizeMultiplier={1.6}
         >
           {label || children}
         </Text>
@@ -79,7 +78,8 @@ export function Button({
         style={[
           styles.base,
           {
-            height: s.height,
+            minHeight: s.minHeight,
+            paddingVertical: spacing.xs,
             paddingHorizontal: s.paddingHorizontal,
             backgroundColor: v.bg,
             borderColor: v.border,
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: touch.min,
   },
-  content: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  content: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
   // Disabled: giảm tương phản nhưng vẫn đọc được + chặn press
   disabled: { opacity: 0.45 },
 });

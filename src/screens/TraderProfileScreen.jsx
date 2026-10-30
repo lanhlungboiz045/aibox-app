@@ -4,6 +4,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatToken, formatTokenShort, formatDate } from '../utils/format';
+import { colors, centeredContent, touch } from '../theme/tokens';
 
 // Sinh chỉ số ổn định từ id (cùng trader luôn ra cùng số)
 function hashOf(text) {
@@ -59,10 +60,10 @@ export function TraderProfileScreen({ route, navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <Text style={styles.headerTitle}>Trader profile</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -79,7 +80,7 @@ export function TraderProfileScreen({ route, navigation }) {
 
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: winRate >= 65 ? '#00CE7E' : '#FFB74D' }]}>{winRate}%</Text>
+          <Text style={[styles.statValue, { color: winRate >= 65 ? colors.success : colors.warning }]}>{winRate}%</Text>
           <Text style={styles.statLabel}>Win rate</Text>
         </View>
         <View style={styles.statCard}>
@@ -87,7 +88,7 @@ export function TraderProfileScreen({ route, navigation }) {
           <Text style={styles.statLabel}>Trades</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: '#A78BFA' }]}>+{roi}%</Text>
+          <Text style={[styles.statValue, { color: colors.accentSoft }]}>+{roi}%</Text>
           <Text style={styles.statLabel}>ROI 30 ngày</Text>
         </View>
       </View>
@@ -103,15 +104,16 @@ export function TraderProfileScreen({ route, navigation }) {
                     Tối đa {formatToken(config.maxPerTrade)} token/lệnh · {config.enabled ? 'đang bật' : 'đang tạm dừng'}
                   </Text>
                 </View>
-                <TouchableOpacity style={styles.toggleBtn} onPress={() => toggleCopyTrade(config.id)}>
+                <TouchableOpacity accessibilityRole="button" style={styles.toggleBtn} onPress={() => toggleCopyTrade(config.id)}>
                   <Text style={styles.toggleText}>{config.enabled ? 'Tạm dừng' : 'Bật lại'}</Text>
                 </TouchableOpacity>
               </View>
               <View style={styles.rowBtns}>
-                <TouchableOpacity style={styles.secondaryBtn} onPress={() => navigation.navigate('CopyTrade')}>
+                <TouchableOpacity accessibilityRole="button" style={styles.secondaryBtn} onPress={() => navigation.navigate('CopyTrade')}>
                   <Text style={styles.secondaryText}>Quản lý copy trade</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
+                  accessibilityRole="button"
                   style={styles.unfollowBtn}
                   onPress={() => {
                     Alert.alert('Bỏ theo dõi', `Ngừng copy trade theo ${trader.username}?`, [
@@ -125,13 +127,13 @@ export function TraderProfileScreen({ route, navigation }) {
               </View>
             </>
           ) : (
-            <TouchableOpacity style={styles.followBtn} onPress={follow}>
+            <TouchableOpacity accessibilityRole="button" style={styles.followBtn} onPress={follow}>
               <Text style={styles.followText}>{'\u{1F4E1}'} Theo dõi & Copy trade</Text>
             </TouchableOpacity>
           )}
 
           {config && (
-            <TouchableOpacity style={styles.simulateBtn} onPress={simulate}>
+            <TouchableOpacity accessibilityRole="button" style={styles.simulateBtn} onPress={simulate}>
               <Text style={styles.simulateText}>{'\u{1F3AC}'} Mô phỏng {trader.username} mở lệnh</Text>
             </TouchableOpacity>
           )}
@@ -148,6 +150,7 @@ export function TraderProfileScreen({ route, navigation }) {
         ) : (
           picks.map(market => (
             <TouchableOpacity
+              accessibilityRole="button"
               key={market.id}
               style={styles.marketRow}
               onPress={() => navigation.navigate('MarketDetail', { marketId: market.id })}
@@ -173,45 +176,45 @@ export function TraderProfileScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600', width: 50 },
-  headerTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
-  error: { color: '#FF6B6B', textAlign: 'center', marginTop: 80, fontSize: 15 },
-  profileCard: { alignItems: 'center', marginHorizontal: 16, backgroundColor: '#1A1D24', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#2A2E36' },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  headerTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  error: { color: colors.danger, textAlign: 'center', marginTop: 80, fontSize: 15 },
+  profileCard: { alignItems: 'center', marginHorizontal: 16, backgroundColor: colors.surface, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.borderSoft },
   avatar: { fontSize: 56, marginBottom: 8 },
-  username: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
+  username: { color: colors.text, fontSize: 22, fontWeight: '700' },
   badgeRow: { flexDirection: 'row', gap: 12, marginTop: 6 },
-  rankBadge: { color: '#FFB74D', fontSize: 12, fontWeight: '600' },
-  followers: { color: '#8E8E93', fontSize: 12 },
-  balance: { color: '#A78BFA', fontSize: 18, fontWeight: '700', fontFamily: 'monospace', marginTop: 10 },
+  rankBadge: { color: colors.warning, fontSize: 12, fontWeight: '600' },
+  followers: { color: colors.textDim, fontSize: 12 },
+  balance: { color: colors.accentSoft, fontSize: 18, fontWeight: '700', fontFamily: 'monospace', marginTop: 10 },
   statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginTop: 12 },
-  statCard: { flex: 1, backgroundColor: '#1A1D24', borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
-  statValue: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', fontFamily: 'monospace' },
-  statLabel: { color: '#8E8E93', fontSize: 10, marginTop: 3 },
+  statCard: { flex: 1, backgroundColor: colors.surface, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
+  statValue: { color: colors.text, fontSize: 18, fontWeight: '700', fontFamily: 'monospace' },
+  statLabel: { color: colors.textDim, fontSize: 12, marginTop: 3 },
   actionSection: { paddingHorizontal: 16, marginTop: 16 },
-  followBtn: { backgroundColor: '#6C5CE7', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
-  followText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  followingCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0, 206, 126, 0.1)', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: 'rgba(0, 206, 126, 0.3)' },
-  followingTitle: { color: '#00CE7E', fontSize: 13, fontWeight: '700' },
-  followingSub: { color: '#8E8E93', fontSize: 11, marginTop: 2 },
-  toggleBtn: { backgroundColor: '#22262E', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: '#2A2E36' },
-  toggleText: { color: '#E0E0E0', fontSize: 11, fontWeight: '600' },
+  followBtn: { backgroundColor: colors.accentStrong, borderRadius: 10, paddingVertical: 14, alignItems: 'center', minHeight: touch.min },
+  followText: { color: colors.onAccent, fontSize: 15, fontWeight: '700' },
+  followingCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.successDim, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: colors.successBorder },
+  followingTitle: { color: colors.success, fontSize: 13, fontWeight: '700' },
+  followingSub: { color: colors.textDim, fontSize: 12, marginTop: 2 },
+  toggleBtn: { backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min },
+  toggleText: { color: colors.text, fontSize: 12, fontWeight: '600' },
   rowBtns: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  secondaryBtn: { flex: 1, backgroundColor: '#22262E', borderRadius: 10, paddingVertical: 11, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
-  secondaryText: { color: '#A78BFA', fontSize: 12, fontWeight: '600' },
-  unfollowBtn: { flex: 1, backgroundColor: 'rgba(255, 107, 107, 0.1)', borderRadius: 10, paddingVertical: 11, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.35)' },
-  unfollowText: { color: '#FF6B6B', fontSize: 12, fontWeight: '600' },
-  simulateBtn: { backgroundColor: '#22262E', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: '#2A2E36' },
-  simulateText: { color: '#E0E0E0', fontSize: 12, fontWeight: '600' },
-  disclaimer: { color: '#5C5C5C', fontSize: 10, lineHeight: 15, marginTop: 10 },
+  secondaryBtn: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 10, paddingVertical: 11, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
+  secondaryText: { color: colors.accentSoft, fontSize: 12, fontWeight: '600' },
+  unfollowBtn: { flex: 1, backgroundColor: colors.dangerDim, borderRadius: 10, paddingVertical: 11, alignItems: 'center', borderWidth: 1, borderColor: colors.dangerBorder },
+  unfollowText: { color: colors.danger, fontSize: 12, fontWeight: '600' },
+  simulateBtn: { backgroundColor: colors.surfaceAlt, borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min },
+  simulateText: { color: colors.text, fontSize: 12, fontWeight: '600' },
+  disclaimer: { color: colors.textFaint, fontSize: 12, lineHeight: 15, marginTop: 10 },
   section: { marginTop: 20, paddingHorizontal: 16 },
-  sectionTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', marginBottom: 8 },
-  empty: { color: '#5C5C5C', fontSize: 12, paddingVertical: 12 },
-  marketRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#1A1D24', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#2A2E36', marginBottom: 6 },
+  sectionTitle: { color: colors.text, fontSize: 15, fontWeight: '700', marginBottom: 8 },
+  empty: { color: colors.textFaint, fontSize: 12, paddingVertical: 12 },
+  marketRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: colors.borderSoft, marginBottom: 6, minHeight: touch.min },
   marketIcon: { fontSize: 20 },
-  marketQuestion: { color: '#FFFFFF', fontSize: 13, fontWeight: '500', lineHeight: 18 },
-  marketMeta: { color: '#8E8E93', fontSize: 10, marginTop: 2, fontFamily: 'monospace' },
-  marketArrow: { color: '#5C5C5C', fontSize: 14 },
-  footnote: { color: '#5C5C5C', fontSize: 10, lineHeight: 15, paddingHorizontal: 16, marginTop: 16 },
+  marketQuestion: { color: colors.text, fontSize: 13, fontWeight: '500', lineHeight: 18 },
+  marketMeta: { color: colors.textDim, fontSize: 12, marginTop: 2, fontFamily: 'monospace' },
+  marketArrow: { color: colors.textFaint, fontSize: 14 },
+  footnote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 16 },
 });

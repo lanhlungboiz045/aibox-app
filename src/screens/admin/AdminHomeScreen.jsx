@@ -4,6 +4,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { formatToken, formatTokenShort, formatTimeLeft } from '../../utils/format';
+import { colors, centeredContent, touch } from '../../theme/tokens';
 
 export function AdminHomeScreen({ navigation }) {
   const { state, setUserStatus } = useApp();
@@ -21,12 +22,12 @@ export function AdminHomeScreen({ navigation }) {
   const storeSpend = accounts.reduce((sum, a) => sum + (a.totalSpentOnStore || 0), 0);
 
   const stats = [
-    { label: 'Người dùng', value: realAccounts.length, icon: '\u{1F465}', color: '#6C5CE7' },
-    { label: 'Market mở', value: openMarkets.length, icon: '\u{1F4C8}', color: '#00CE7E' },
-    { label: 'Token lưu hành', value: formatTokenShort(totalSupply), icon: '\u{1F4B0}', color: '#FFB74D' },
-    { label: 'Volume (tất cả)', value: formatTokenShort(totalVolume), icon: '\u{1F4CA}', color: '#4285F4' },
-    { label: 'Chi cho AI', value: formatTokenShort(aiSpend), icon: '\u{1F916}', color: '#10A37F' },
-    { label: 'Sink (Store)', value: formatTokenShort(storeSpend), icon: '\u{1F6D2}', color: '#FF6B6B' },
+    { label: 'Người dùng', value: realAccounts.length, icon: '\u{1F465}', color: colors.accentSoft },
+    { label: 'Market mở', value: openMarkets.length, icon: '\u{1F4C8}', color: colors.success },
+    { label: 'Token lưu hành', value: formatTokenShort(totalSupply), icon: '\u{1F4B0}', color: colors.warning },
+    { label: 'Volume (tất cả)', value: formatTokenShort(totalVolume), icon: '\u{1F4CA}', color: colors.google },
+    { label: 'Chi cho AI', value: formatTokenShort(aiSpend), icon: '\u{1F916}', color: colors.openai },
+    { label: 'Sink (Store)', value: formatTokenShort(storeSpend), icon: '\u{1F6D2}', color: colors.danger },
   ];
 
   const links = [
@@ -40,16 +41,16 @@ export function AdminHomeScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <Text style={styles.title}>{'\u{1F6E1}'} Admin CMS</Text>
         <View style={{ width: 50 }} />
       </View>
 
       {overdue.length > 0 && (
-        <TouchableOpacity style={styles.alertBox} onPress={() => navigation.navigate('AdminMarkets')}>
+        <TouchableOpacity accessibilityRole="button" style={styles.alertBox} onPress={() => navigation.navigate('AdminMarkets')}>
           <Text style={styles.alertText}>{'\u{26A0}'} {overdue.length} market đã quá hạn nhưng chưa resolve</Text>
           <Text style={styles.alertArrow}>{'\u{276F}'}</Text>
         </TouchableOpacity>
@@ -68,7 +69,7 @@ export function AdminHomeScreen({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Công cụ quản trị</Text>
         {links.map(link => (
-          <TouchableOpacity key={link.screen} style={styles.linkRow} onPress={() => navigation.navigate(link.screen)}>
+          <TouchableOpacity accessibilityRole="button" key={link.screen} style={styles.linkRow} onPress={() => navigation.navigate(link.screen)}>
             <Text style={styles.linkIcon}>{link.icon}</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.linkLabel}>{link.label}</Text>
@@ -85,7 +86,7 @@ export function AdminHomeScreen({ navigation }) {
           {banned.map(account => (
             <View key={account.id} style={styles.banRow}>
               <Text style={styles.banName}>{account.avatar} {account.username}</Text>
-              <TouchableOpacity style={styles.unbanBtn} onPress={() => setUserStatus(account.id, 'active')}>
+              <TouchableOpacity accessibilityRole="button" style={styles.unbanBtn} onPress={() => setUserStatus(account.id, 'active')}>
                 <Text style={styles.unbanText}>Mở khoá</Text>
               </TouchableOpacity>
             </View>
@@ -102,28 +103,28 @@ export function AdminHomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600', width: 50 },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
-  alertBox: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 12, padding: 12, borderRadius: 10, backgroundColor: 'rgba(255, 107, 107, 0.12)', borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.35)' },
-  alertText: { flex: 1, color: '#FF6B6B', fontSize: 12 },
-  alertArrow: { color: '#FF6B6B', fontSize: 14 },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  alertBox: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 12, padding: 12, borderRadius: 10, backgroundColor: colors.dangerDim, borderWidth: 1, borderColor: colors.dangerBorder, minHeight: touch.min },
+  alertText: { flex: 1, color: colors.danger, fontSize: 12 },
+  alertArrow: { color: colors.danger, fontSize: 14 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginBottom: 8 },
-  statCard: { width: '31%', flexGrow: 1, backgroundColor: '#1A1D24', borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
+  statCard: { width: '31%', flexGrow: 1, backgroundColor: colors.surface, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
   statIcon: { fontSize: 16, marginBottom: 4 },
   statValue: { fontSize: 16, fontWeight: '700', fontFamily: 'monospace' },
-  statLabel: { color: '#8E8E93', fontSize: 10, marginTop: 2, textAlign: 'center' },
+  statLabel: { color: colors.textDim, fontSize: 12, marginTop: 2, textAlign: 'center' },
   section: { marginTop: 16, paddingHorizontal: 16 },
-  sectionTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', marginBottom: 8 },
-  linkRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#1A1D24', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#2A2E36', marginBottom: 6 },
+  sectionTitle: { color: colors.text, fontSize: 15, fontWeight: '700', marginBottom: 8 },
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 10, padding: 14, borderWidth: 1, borderColor: colors.borderSoft, marginBottom: 6, minHeight: touch.min },
   linkIcon: { fontSize: 18 },
-  linkLabel: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-  linkSub: { color: '#8E8E93', fontSize: 11, marginTop: 2 },
-  linkArrow: { color: '#5C5C5C', fontSize: 14 },
-  banRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1D24', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.25)', marginBottom: 6 },
-  banName: { flex: 1, color: '#FFFFFF', fontSize: 13 },
-  unbanBtn: { backgroundColor: 'rgba(0, 206, 126, 0.15)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: 'rgba(0, 206, 126, 0.4)' },
-  unbanText: { color: '#00CE7E', fontSize: 12, fontWeight: '700' },
-  footnote: { color: '#5C5C5C', fontSize: 10, lineHeight: 15, paddingHorizontal: 16, marginTop: 20 },
+  linkLabel: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  linkSub: { color: colors.textDim, fontSize: 12, marginTop: 2 },
+  linkArrow: { color: colors.textFaint, fontSize: 14 },
+  banRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: colors.dangerBorder, marginBottom: 6 },
+  banName: { flex: 1, color: colors.text, fontSize: 13 },
+  unbanBtn: { backgroundColor: colors.successDim, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: colors.successBorder, minHeight: touch.min },
+  unbanText: { color: colors.success, fontSize: 12, fontWeight: '700' },
+  footnote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 20 },
 });

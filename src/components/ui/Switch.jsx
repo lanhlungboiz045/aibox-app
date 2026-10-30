@@ -41,9 +41,9 @@ export function Switch({
       accessibilityState={{ checked: value, disabled }}
     >
       <View style={styles.body}>
-        <Text style={styles.label} maxFontSizeMultiplier={1.4}>{label}</Text>
+        <Text style={styles.label} maxFontSizeMultiplier={1.8}>{label}</Text>
         {description ? (
-          <Text style={styles.desc} maxFontSizeMultiplier={1.3}>{description}</Text>
+          <Text style={styles.desc} maxFontSizeMultiplier={1.6}>{description}</Text>
         ) : null}
       </View>
       {/* Vùng chạm của cả hàng đã >= 44, switch chỉ là hình thức */}

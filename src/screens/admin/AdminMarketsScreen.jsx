@@ -4,6 +4,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { formatTokenShort, formatDate, formatTimeLeft, formatRelativeTime } from '../../utils/format';
+import { colors, centeredContent } from '../../theme/tokens';
 
 const FILTERS = [
   { key: 'open', label: 'Đang mở' },
@@ -50,10 +51,10 @@ export function AdminMarketsScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <Text style={styles.title}>Quản lý Markets</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -61,6 +62,8 @@ export function AdminMarketsScreen({ navigation }) {
       <View style={styles.filterRow}>
         {FILTERS.map(item => (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ selected: filter === item.key }}
             key={item.key}
             style={[styles.filterChip, filter === item.key && styles.filterChipActive]}
             onPress={() => setFilter(item.key)}
@@ -83,7 +86,7 @@ export function AdminMarketsScreen({ navigation }) {
                 <Text style={styles.meta}>
                   {market.category.toUpperCase()} · {formatTokenShort(market.volume)} {'\u{1F4B0}'} volume · thanh khoản {formatTokenShort(market.liquidity || 0)}
                 </Text>
-                <Text style={[styles.meta, overdue && { color: '#FF6B6B' }]}>
+                <Text style={[styles.meta, overdue && { color: colors.danger }]}>
                   {market.resolved
                     ? `Đã resolve ${market.outcome} · ${formatRelativeTime(market.resolvedAt)}`
                     : `Kết thúc ${formatDate(market.endDate)} (${formatTimeLeft(market.endDate)})`}
@@ -94,10 +97,10 @@ export function AdminMarketsScreen({ navigation }) {
 
             {!market.resolved ? (
               <View style={styles.resolveRow}>
-                <TouchableOpacity style={[styles.resolveBtn, styles.resolveYes]} onPress={() => confirmResolve(market, 'YES')}>
+                <TouchableOpacity accessibilityRole="button" style={[styles.resolveBtn, styles.resolveYes]} onPress={() => confirmResolve(market, 'YES')}>
                   <Text style={styles.resolveYesText}>Resolve YES</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.resolveBtn, styles.resolveNo]} onPress={() => confirmResolve(market, 'NO')}>
+                <TouchableOpacity accessibilityRole="button" style={[styles.resolveBtn, styles.resolveNo]} onPress={() => confirmResolve(market, 'NO')}>
                   <Text style={styles.resolveNoText}>Resolve NO</Text>
                 </TouchableOpacity>
               </View>
@@ -118,32 +121,32 @@ export function AdminMarketsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600', width: 50 },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   filterRow: { flexDirection: 'row', gap: 6, paddingHorizontal: 16, marginBottom: 12 },
-  filterChip: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 8, backgroundColor: '#1A1D24', borderWidth: 1, borderColor: '#2A2E36' },
-  filterChipActive: { backgroundColor: 'rgba(108, 92, 231, 0.15)', borderColor: '#6C5CE7' },
-  filterText: { color: '#8E8E93', fontSize: 12, fontWeight: '600' },
-  filterTextActive: { color: '#FFFFFF' },
-  empty: { color: '#5C5C5C', fontSize: 13, textAlign: 'center', padding: 24 },
-  card: { backgroundColor: '#1A1D24', borderRadius: 12, marginHorizontal: 16, marginBottom: 8, padding: 14, borderWidth: 1, borderColor: '#2A2E36' },
-  cardOverdue: { borderColor: 'rgba(255, 107, 107, 0.35)' },
+  filterChip: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft },
+  filterChipActive: { backgroundColor: colors.accentDim, borderColor: colors.accent },
+  filterText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
+  filterTextActive: { color: colors.accentSoft },
+  empty: { color: colors.textFaint, fontSize: 13, textAlign: 'center', padding: 24 },
+  card: { backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, marginBottom: 8, padding: 14, borderWidth: 1, borderColor: colors.borderSoft },
+  cardOverdue: { borderColor: colors.dangerBorder },
   cardHead: { flexDirection: 'row', gap: 10 },
   icon: { fontSize: 22 },
-  question: { color: '#FFFFFF', fontSize: 14, fontWeight: '600', lineHeight: 19, marginBottom: 4 },
-  meta: { color: '#8E8E93', fontSize: 11, lineHeight: 16 },
-  creator: { color: '#FFB74D', fontSize: 10, marginTop: 2 },
-  resolveRow: { flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#22262E' },
+  question: { color: colors.text, fontSize: 14, fontWeight: '600', lineHeight: 19, marginBottom: 4 },
+  meta: { color: colors.textDim, fontSize: 12, lineHeight: 16 },
+  creator: { color: colors.warning, fontSize: 12, marginTop: 2 },
+  resolveRow: { flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border },
   resolveBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', borderWidth: 1 },
-  resolveYes: { backgroundColor: 'rgba(0, 206, 126, 0.12)', borderColor: 'rgba(0, 206, 126, 0.4)' },
-  resolveNo: { backgroundColor: 'rgba(255, 107, 107, 0.12)', borderColor: 'rgba(255, 107, 107, 0.4)' },
-  resolveYesText: { color: '#00CE7E', fontSize: 13, fontWeight: '700' },
-  resolveNoText: { color: '#FF6B6B', fontSize: 13, fontWeight: '700' },
+  resolveYes: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
+  resolveNo: { backgroundColor: colors.dangerDim, borderColor: colors.dangerBorder },
+  resolveYesText: { color: colors.success, fontSize: 13, fontWeight: '700' },
+  resolveNoText: { color: colors.danger, fontSize: 13, fontWeight: '700' },
   outcomeTag: { marginTop: 10, borderRadius: 8, paddingVertical: 7, alignItems: 'center', borderWidth: 1 },
-  outcomeYes: { backgroundColor: 'rgba(0, 206, 126, 0.1)', borderColor: 'rgba(0, 206, 126, 0.3)' },
-  outcomeNo: { backgroundColor: 'rgba(255, 107, 107, 0.1)', borderColor: 'rgba(255, 107, 107, 0.3)' },
-  outcomeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
-  footnote: { color: '#5C5C5C', fontSize: 10, lineHeight: 15, paddingHorizontal: 16, marginTop: 16 },
+  outcomeYes: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
+  outcomeNo: { backgroundColor: colors.dangerDim, borderColor: colors.dangerBorder },
+  outcomeText: { color: colors.text, fontSize: 12, fontWeight: '600' },
+  footnote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 16 },
 });

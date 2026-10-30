@@ -23,11 +23,11 @@ export function ChatBubble({ message }) {
       </View>
       <View style={styles.metaRow}>
         {message.tokenCost > 0 ? (
-          <Text style={styles.cost} maxFontSizeMultiplier={1.2}>
+          <Text style={styles.cost} maxFontSizeMultiplier={1.5}>
             {`-${message.tokenCost} \u{1F4B0}`}
           </Text>
         ) : null}
-        <Text style={styles.time} maxFontSizeMultiplier={1.2}>
+        <Text style={styles.time} maxFontSizeMultiplier={1.5}>
           {formatRelativeTime(message.timestamp)}
         </Text>
       </View>

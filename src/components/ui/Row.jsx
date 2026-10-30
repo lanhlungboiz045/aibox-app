@@ -23,15 +23,15 @@ export function Row({
     >
       {icon ? <AppIcon name={icon} size={18} color={iconColor} style={styles.icon} /> : null}
       <View style={styles.body}>
-        <Text style={[styles.label, { color: labelColor }]} numberOfLines={2} maxFontSizeMultiplier={1.4}>
+        <Text style={[styles.label, { color: labelColor }]} numberOfLines={2} maxFontSizeMultiplier={1.8}>
           {label}
         </Text>
         {description ? (
-          <Text style={styles.desc} numberOfLines={2} maxFontSizeMultiplier={1.3}>{description}</Text>
+          <Text style={styles.desc} numberOfLines={2} maxFontSizeMultiplier={1.6}>{description}</Text>
         ) : null}
       </View>
       {value ? (
-        <Text style={styles.value} numberOfLines={1} maxFontSizeMultiplier={1.3}>{value}</Text>
+        <Text style={styles.value} numberOfLines={1} maxFontSizeMultiplier={1.6}>{value}</Text>
       ) : null}
       {right}
       {chevron && onPress ? <AppIcon name="chevron-right" size={16} color={colors.textFaint} /> : null}

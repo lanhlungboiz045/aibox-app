@@ -4,6 +4,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { formatTokenShort } from '../../utils/format';
+import { colors, centeredContent, touch } from '../../theme/tokens';
 
 export function AdminAIModelsScreen({ navigation }) {
   const { state, toggleModelAvailability } = useApp();
@@ -26,10 +27,10 @@ export function AdminAIModelsScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <Text style={styles.title}>AI Models</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -40,7 +41,7 @@ export function AdminAIModelsScreen({ navigation }) {
           <Text style={styles.summaryLabel}>Lượt gọi AI</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={[styles.summaryValue, { color: '#FFB74D' }]}>{formatTokenShort(totalSpent)}</Text>
+          <Text style={[styles.summaryValue, { color: colors.warning }]}>{formatTokenShort(totalSpent)}</Text>
           <Text style={styles.summaryLabel}>Token thu được</Text>
         </View>
       </View>
@@ -67,10 +68,11 @@ export function AdminAIModelsScreen({ navigation }) {
               </Text>
             </View>
             <TouchableOpacity
+              accessibilityRole="button"
               style={[styles.toggle, model.isAvailable ? styles.toggleOn : styles.toggleOff]}
               onPress={() => toggleModelAvailability(model.id)}
             >
-              <Text style={[styles.toggleText, { color: model.isAvailable ? '#00CE7E' : '#8E8E93' }]}>
+              <Text style={[styles.toggleText, { color: model.isAvailable ? colors.success : colors.textDim }]}>
                 {model.isAvailable ? 'Mở' : 'Tắt'}
               </Text>
             </TouchableOpacity>
@@ -86,25 +88,25 @@ export function AdminAIModelsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600', width: 50 },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   summaryRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 10 },
-  summaryCard: { flex: 1, backgroundColor: '#1A1D24', borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
-  summaryValue: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', fontFamily: 'monospace' },
-  summaryLabel: { color: '#8E8E93', fontSize: 11, marginTop: 2 },
-  hint: { color: '#5C5C5C', fontSize: 11, paddingHorizontal: 16, marginBottom: 10, lineHeight: 16 },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#1A1D24', borderRadius: 12, marginHorizontal: 16, marginBottom: 6, padding: 12, borderWidth: 1, borderColor: '#2A2E36' },
+  summaryCard: { flex: 1, backgroundColor: colors.surface, borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
+  summaryValue: { color: colors.text, fontSize: 18, fontWeight: '700', fontFamily: 'monospace' },
+  summaryLabel: { color: colors.textDim, fontSize: 12, marginTop: 2 },
+  hint: { color: colors.textFaint, fontSize: 12, paddingHorizontal: 16, marginBottom: 10, lineHeight: 16 },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, marginBottom: 6, padding: 12, borderWidth: 1, borderColor: colors.borderSoft },
   cardOff: { opacity: 0.6 },
   icon: { fontSize: 22 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  name: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  provider: { color: '#5C5C5C', fontSize: 10 },
-  meta: { color: '#8E8E93', fontSize: 11, marginTop: 3, fontFamily: 'monospace' },
-  toggle: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, borderWidth: 1 },
-  toggleOn: { backgroundColor: 'rgba(0, 206, 126, 0.12)', borderColor: 'rgba(0, 206, 126, 0.4)' },
-  toggleOff: { backgroundColor: '#22262E', borderColor: '#2A2E36' },
-  toggleText: { fontSize: 11, fontWeight: '700' },
-  footnote: { color: '#5C5C5C', fontSize: 10, lineHeight: 15, paddingHorizontal: 16, marginTop: 16 },
+  name: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  provider: { color: colors.textFaint, fontSize: 12 },
+  meta: { color: colors.textDim, fontSize: 12, marginTop: 3, fontFamily: 'monospace' },
+  toggle: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, borderWidth: 1, minHeight: touch.min },
+  toggleOn: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
+  toggleOff: { backgroundColor: colors.surfaceAlt, borderColor: colors.borderSoft },
+  toggleText: { fontSize: 12, fontWeight: '700' },
+  footnote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 16 },
 });

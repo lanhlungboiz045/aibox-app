@@ -6,7 +6,7 @@ import { colors, spacing, touch, type } from '../../theme/tokens';
 export function SectionHeader({ title, actionLabel = 'Xem tất cả', onAction, style }) {
   return (
     <View style={[styles.row, style]}>
-      <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.3}>{title}</Text>
+      <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.6}>{title}</Text>
       {onAction ? (
         <TouchableOpacity
           onPress={onAction}
@@ -15,7 +15,7 @@ export function SectionHeader({ title, actionLabel = 'Xem tất cả', onAction,
           accessibilityRole="button"
           accessibilityLabel={actionLabel}
         >
-          <Text style={styles.action} numberOfLines={1} maxFontSizeMultiplier={1.3}>{actionLabel}</Text>
+          <Text style={styles.action} numberOfLines={1} maxFontSizeMultiplier={1.6}>{actionLabel}</Text>
         </TouchableOpacity>
       ) : null}
     </View>

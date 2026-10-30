@@ -39,9 +39,9 @@ export function BottomSheet({
       {title ? (
         <View style={styles.header}>
           <View style={styles.headerBody}>
-            <Text style={styles.title} maxFontSizeMultiplier={1.3}>{title}</Text>
+            <Text style={styles.title} maxFontSizeMultiplier={1.6}>{title}</Text>
             {subtitle ? (
-              <Text style={styles.subtitle} maxFontSizeMultiplier={1.3}>{subtitle}</Text>
+              <Text style={styles.subtitle} maxFontSizeMultiplier={1.6}>{subtitle}</Text>
             ) : null}
           </View>
           <TouchableOpacity

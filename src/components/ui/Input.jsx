@@ -26,9 +26,9 @@ export function Input({
     <View style={[styles.wrap, style]}>
       {label ? (
         <View style={styles.labelRow}>
-          <Text style={styles.label} maxFontSizeMultiplier={1.4}>{label}</Text>
+          <Text style={styles.label} maxFontSizeMultiplier={1.8}>{label}</Text>
           {maxLength ? (
-            <Text style={styles.counter} maxFontSizeMultiplier={1.2}>
+            <Text style={styles.counter} maxFontSizeMultiplier={1.5}>
               {String(value || '').length}/{maxLength}
             </Text>
           ) : null}
@@ -59,14 +59,14 @@ export function Input({
           accessibilityHint={error || helper}
           testID={testID}
           // Không cho chữ phóng to phá layout form, nhưng vẫn cho tới 1.4x
-          maxFontSizeMultiplier={1.4}
+          maxFontSizeMultiplier={1.8}
         />
         {secureTextEntry ? (
           <TouchableOpacity
+            accessibilityRole="button"
             style={styles.eye}
             onPress={() => setHidden(h => !h)}
             hitSlop={touch.hitSlop}
-            accessibilityRole="button"
             accessibilityLabel={hidden ? 'Hiện nội dung' : 'Ẩn nội dung'}
           >
             <AppIcon name={hidden ? 'eye' : 'eye-off'} size={18} color={colors.textDim} />
@@ -79,10 +79,10 @@ export function Input({
       {hasError ? (
         <View style={styles.msgRow}>
           <AppIcon name="alert-circle" size={12} color={colors.danger} />
-          <Text style={styles.error} maxFontSizeMultiplier={1.3}>{error}</Text>
+          <Text style={styles.error} maxFontSizeMultiplier={1.6}>{error}</Text>
         </View>
       ) : helper ? (
-        <Text style={styles.helper} maxFontSizeMultiplier={1.3}>{helper}</Text>
+        <Text style={styles.helper} maxFontSizeMultiplier={1.6}>{helper}</Text>
       ) : null}
     </View>
   );
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   },
   inputMultiline: { textAlignVertical: 'top', minHeight: 80 },
   inputDisabled: { color: colors.textFaint },
-  eye: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  eye: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', minHeight: touch.min },
   right: { paddingLeft: spacing.sm },
   msgRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   error: { ...type.small, color: colors.danger, flex: 1 },

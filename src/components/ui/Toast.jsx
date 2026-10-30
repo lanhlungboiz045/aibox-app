@@ -106,18 +106,18 @@ function ToastHost({ current, anim, onHide }) {
         accessibilityLabel={current.message}
       >
         <AppIcon name={tone.icon} size={18} color={tone.color} />
-        <Text style={styles.text} numberOfLines={3} maxFontSizeMultiplier={1.4}>
+        <Text style={styles.text} numberOfLines={3} maxFontSizeMultiplier={1.8}>
           {current.message}
         </Text>
         {current.action ? (
           <TouchableOpacity
+            accessibilityRole="button"
             style={styles.action}
             onPress={() => { current.action.onPress?.(); onHide(); }}
-            accessibilityRole="button"
             accessibilityLabel={current.action.label}
             hitSlop={spacing.sm}
           >
-            <Text style={styles.actionText} maxFontSizeMultiplier={1.3}>{current.action.label}</Text>
+            <Text style={styles.actionText} maxFontSizeMultiplier={1.6}>{current.action.label}</Text>
           </TouchableOpacity>
         ) : null}
       </Animated.View>
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderSoft,
     // Bóng nhẹ để tách khỏi nội dung phía sau
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOpacity: 0.35,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },

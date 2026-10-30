@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { LEADERBOARD } from '../data/mockData';
 import { formatToken } from '../utils/format';
+import { colors, centeredContent, touch } from '../theme/tokens';
 
 export function LeaderboardScreen({ navigation }) {
   const { state } = useApp();
@@ -37,7 +38,7 @@ export function LeaderboardScreen({ navigation }) {
     <ScrollView
       style={styles.container}
       // Tab bar bên dưới đã tự chừa insets.bottom → chỉ cần chừa status bar ở trên
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: 20 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: 20 }]}
     >
       <View style={styles.header}>
         <Text style={styles.title}>{'\u{1F3C6}'} Xếp hạng</Text>
@@ -47,6 +48,7 @@ export function LeaderboardScreen({ navigation }) {
       <View style={styles.podium}>
         {top3.map((user, i) => (
           <TouchableOpacity
+            accessibilityRole="button"
             key={user.id}
             style={[styles.podiumCard, i === 0 && styles.podiumFirst, i === 1 && styles.podiumSecond, i === 2 && styles.podiumThird]}
             onPress={() => openTrader(user)}
@@ -64,6 +66,7 @@ export function LeaderboardScreen({ navigation }) {
       <View style={styles.listSection}>
         {rest.map(user => (
           <TouchableOpacity
+            accessibilityRole="button"
             key={user.id}
             style={[styles.listItem, user.id === state.user.id && styles.listItemMe]}
             onPress={() => openTrader(user)}
@@ -85,28 +88,28 @@ export function LeaderboardScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { paddingHorizontal: 16, paddingVertical: 14 },
-  title: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
-  subtitle: { color: '#5C5C5C', fontSize: 11, marginTop: 3 },
+  title: { color: colors.text, fontSize: 22, fontWeight: '700' },
+  subtitle: { color: colors.textFaint, fontSize: 12, marginTop: 3 },
   podium: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 20 },
-  podiumCard: { flex: 1, alignItems: 'center', backgroundColor: '#1A1D24', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#2A2E36' },
+  podiumCard: { flex: 1, alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.borderSoft },
   podiumFirst: { borderColor: 'rgba(255, 215, 0, 0.3)', backgroundColor: 'rgba(255, 215, 0, 0.08)', transform: [{ scale: 1.05 }] },
   podiumSecond: { borderColor: 'rgba(192, 192, 192, 0.2)' },
   podiumThird: { borderColor: 'rgba(205, 127, 50, 0.2)' },
   medal: { fontSize: 24, marginBottom: 4 },
   podiumAvatar: { fontSize: 32, marginBottom: 6 },
-  podiumName: { color: '#FFFFFF', fontSize: 13, fontWeight: '600', marginBottom: 4 },
-  podiumTokens: { color: '#A78BFA', fontSize: 15, fontWeight: '700', fontFamily: 'monospace' },
+  podiumName: { color: colors.text, fontSize: 13, fontWeight: '600', marginBottom: 4 },
+  podiumTokens: { color: colors.accentSoft, fontSize: 15, fontWeight: '700', fontFamily: 'monospace' },
   podiumTokenLabel: { fontSize: 12 },
   listSection: { paddingHorizontal: 16, gap: 4 },
-  listItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1D24', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#2A2E36', gap: 10 },
-  listItemMe: { borderColor: '#6C5CE7', backgroundColor: 'rgba(108, 92, 231, 0.08)' },
-  rank: { color: '#8E8E93', fontSize: 13, fontWeight: '600', fontFamily: 'monospace', width: 32 },
+  listItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: colors.borderSoft, gap: 10, minHeight: touch.min },
+  listItemMe: { borderColor: colors.accent, backgroundColor: colors.accentDim },
+  rank: { color: colors.textDim, fontSize: 13, fontWeight: '600', fontFamily: 'monospace', width: 32 },
   avatar: { fontSize: 20 },
-  username: { flex: 1, color: '#FFFFFF', fontSize: 14, fontWeight: '500' },
-  youTag: { backgroundColor: '#6C5CE7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginRight: 8 },
-  youTagText: { color: '#FFFFFF', fontSize: 11, fontWeight: '600' },
-  tokenBalance: { color: '#A78BFA', fontSize: 13, fontWeight: '600', fontFamily: 'monospace' },
-  arrow: { color: '#5C5C5C', fontSize: 12 },
+  username: { flex: 1, color: colors.text, fontSize: 14, fontWeight: '500' },
+  youTag: { backgroundColor: colors.accentStrong, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginRight: 8 },
+  youTagText: { color: colors.onAccent, fontSize: 12, fontWeight: '600' },
+  tokenBalance: { color: colors.accentSoft, fontSize: 13, fontWeight: '600', fontFamily: 'monospace' },
+  arrow: { color: colors.textFaint, fontSize: 12 },
 });

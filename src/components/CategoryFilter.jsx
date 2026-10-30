@@ -17,17 +17,17 @@ export function CategoryFilter({ categories, selected, onSelect }) {
         const isActive = selected === cat.key;
         return (
           <TouchableOpacity
+            accessibilityRole="button"
             key={cat.key}
             onPress={() => onSelect(cat.key)}
             style={[styles.chip, isActive && styles.chipActive]}
             activeOpacity={0.8}
             hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
-            accessibilityRole="button"
             accessibilityLabel={cat.label}
             accessibilityState={{ selected: isActive }}
           >
             <Text style={styles.chipIcon}>{cat.icon}</Text>
-            <Text style={[styles.chipText, isActive && styles.chipTextActive]} maxFontSizeMultiplier={1.3}>
+            <Text style={[styles.chipText, isActive && styles.chipTextActive]} maxFontSizeMultiplier={1.6}>
               {cat.label}
             </Text>
           </TouchableOpacity>

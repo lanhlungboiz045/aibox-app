@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { ROLE_LABELS } from '../../data/accounts';
 import { formatToken, formatTokenShort, formatRelativeTime } from '../../utils/format';
+import { colors, centeredContent } from '../../theme/tokens';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -92,19 +93,19 @@ export function AdminRiskScreen({ navigation }) {
   const totalStore = state.accounts.reduce((sum, a) => sum + (a.totalSpentOnStore || 0), 0);
 
   const money = [
-    { label: 'Token lưu hành', value: formatTokenShort(totalSupply), color: '#A78BFA' },
-    { label: 'Tổng transfer', value: formatTokenShort(totalTransferred), color: '#FFB74D' },
-    { label: 'Sink AI', value: formatTokenShort(totalAi), color: '#10A37F' },
-    { label: 'Sink Store', value: formatTokenShort(totalStore), color: '#FF6B6B' },
+    { label: 'Token lưu hành', value: formatTokenShort(totalSupply), color: colors.accentSoft },
+    { label: 'Tổng transfer', value: formatTokenShort(totalTransferred), color: colors.warning },
+    { label: 'Sink AI', value: formatTokenShort(totalAi), color: colors.openai },
+    { label: 'Sink Store', value: formatTokenShort(totalStore), color: colors.danger },
   ];
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <Text style={styles.title}>Rủi ro dòng tiền</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -130,7 +131,7 @@ export function AdminRiskScreen({ navigation }) {
             >
               <View style={styles.alertHead}>
                 <Text style={styles.alertName}>{row.account.avatar} {row.account.username}</Text>
-                <Text style={[styles.riskBadge, { color: row.risk === 'high' ? '#FF6B6B' : row.risk === 'medium' ? '#FFB74D' : '#8E8E93' }]}>
+                <Text style={[styles.riskBadge, { color: row.risk === 'high' ? colors.danger : row.risk === 'medium' ? colors.warning : colors.textDim }]}>
                   {row.risk === 'high' ? 'HIGH' : row.risk === 'medium' ? 'MEDIUM' : 'LOW'} · {row.score}
                 </Text>
               </View>
@@ -184,7 +185,7 @@ export function AdminRiskScreen({ navigation }) {
               <View key={tx.id} style={styles.txRow}>
                 <Text style={styles.txOwner} numberOfLines={1}>{tx.owner}</Text>
                 <Text style={styles.txDesc} numberOfLines={2}>{tx.description}</Text>
-                <Text style={[styles.txTime, { color: tx.type === 'TRANSFER_OUT' ? '#FF6B6B' : '#00CE7E' }]}>
+                <Text style={[styles.txTime, { color: tx.type === 'TRANSFER_OUT' ? colors.danger : colors.success }]}>
                   {formatRelativeTime(tx.timestamp)}
                 </Text>
               </View>
@@ -203,38 +204,38 @@ export function AdminRiskScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600', width: 50 },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginBottom: 4 },
-  gridCard: { width: '47%', flexGrow: 1, backgroundColor: '#1A1D24', borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
+  gridCard: { width: '47%', flexGrow: 1, backgroundColor: colors.surface, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
   gridValue: { fontSize: 16, fontWeight: '700', fontFamily: 'monospace' },
-  gridLabel: { color: '#8E8E93', fontSize: 10, marginTop: 3 },
+  gridLabel: { color: colors.textDim, fontSize: 12, marginTop: 3 },
   section: { marginTop: 16, paddingHorizontal: 16 },
-  sectionTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', marginBottom: 8 },
-  empty: { color: '#5C5C5C', fontSize: 12, textAlign: 'center', paddingVertical: 16, lineHeight: 18 },
+  sectionTitle: { color: colors.text, fontSize: 15, fontWeight: '700', marginBottom: 8 },
+  empty: { color: colors.textFaint, fontSize: 12, textAlign: 'center', paddingVertical: 16, lineHeight: 18 },
   alertCard: { borderRadius: 10, padding: 12, marginBottom: 6, borderWidth: 1 },
-  alertHigh: { backgroundColor: 'rgba(255, 107, 107, 0.08)', borderColor: 'rgba(255, 107, 107, 0.35)' },
-  alertMedium: { backgroundColor: 'rgba(255, 183, 77, 0.08)', borderColor: 'rgba(255, 183, 77, 0.3)' },
-  alertLow: { backgroundColor: '#1A1D24', borderColor: '#2A2E36' },
+  alertHigh: { backgroundColor: colors.dangerDim, borderColor: colors.dangerBorder },
+  alertMedium: { backgroundColor: colors.warningDim, borderColor: colors.warningBorder },
+  alertLow: { backgroundColor: colors.surface, borderColor: colors.borderSoft },
   alertHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  alertName: { color: '#FFFFFF', fontSize: 13, fontWeight: '600', flex: 1 },
-  riskBadge: { fontSize: 10, fontWeight: '800', fontFamily: 'monospace' },
-  alertMeta: { color: '#8E8E93', fontSize: 10, lineHeight: 15 },
-  alertReasons: { color: '#FFB74D', fontSize: 11, marginTop: 4, lineHeight: 15 },
-  table: { backgroundColor: '#1A1D24', borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#2A2E36' },
-  tableHead: { flexDirection: 'row', paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#22262E' },
-  tableRow: { flexDirection: 'row', paddingHorizontal: 10, paddingVertical: 9, borderTopWidth: 1, borderTopColor: '#22262E' },
-  cell: { width: 58, textAlign: 'right', color: '#8E8E93', fontSize: 11, fontFamily: 'monospace' },
+  alertName: { color: colors.text, fontSize: 13, fontWeight: '600', flex: 1 },
+  riskBadge: { fontSize: 12, fontWeight: '800', fontFamily: 'monospace' },
+  alertMeta: { color: colors.textDim, fontSize: 12, lineHeight: 15 },
+  alertReasons: { color: colors.warning, fontSize: 12, marginTop: 4, lineHeight: 15 },
+  table: { backgroundColor: colors.surface, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: colors.borderSoft },
+  tableHead: { flexDirection: 'row', paddingHorizontal: 10, paddingVertical: 8, backgroundColor: colors.surfaceAlt },
+  tableRow: { flexDirection: 'row', paddingHorizontal: 10, paddingVertical: 9, borderTopWidth: 1, borderTopColor: colors.border },
+  cell: { width: 58, textAlign: 'right', color: colors.textDim, fontSize: 12, fontFamily: 'monospace' },
   cellName: { flex: 1, textAlign: 'left', fontFamily: undefined },
-  headText: { color: '#5C5C5C', fontSize: 10, fontWeight: '700' },
-  cellText: { color: '#E0E0E0' },
-  cellWarn: { color: '#FF6B6B', fontWeight: '700' },
-  txList: { backgroundColor: '#1A1D24', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', paddingHorizontal: 10 },
-  txRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#22262E' },
-  txOwner: { color: '#FFFFFF', fontSize: 11, fontWeight: '600', width: 82 },
-  txDesc: { flex: 1, color: '#8E8E93', fontSize: 10, lineHeight: 14 },
-  txTime: { fontSize: 10 },
-  footnote: { color: '#5C5C5C', fontSize: 10, lineHeight: 15, paddingHorizontal: 16, marginTop: 16 },
+  headText: { color: colors.textFaint, fontSize: 12, fontWeight: '700' },
+  cellText: { color: colors.text },
+  cellWarn: { color: colors.danger, fontWeight: '700' },
+  txList: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 10 },
+  txRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: colors.surfaceAlt },
+  txOwner: { color: colors.text, fontSize: 12, fontWeight: '600', width: 82 },
+  txDesc: { flex: 1, color: colors.textDim, fontSize: 12, lineHeight: 14 },
+  txTime: { fontSize: 12 },
+  footnote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 16 },
 });

@@ -29,6 +29,8 @@ cp .env.example .env
 | `EXPO_PUBLIC_FIREBASE_APP_ID` | `appId` |
 | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Web client ID của Google OAuth (bắt buộc để đăng nhập) |
 | `EXPO_PUBLIC_ADMIN_EMAILS` | Email được cấp role System Admin, cách nhau dấu phẩy |
+| `EXPO_PUBLIC_THEME` | `light` hoặc `dark` để ép giao diện; bỏ trống = theo hệ điều hành |
+| `EXPO_PUBLIC_LANG` | `vi` (mặc định) hoặc `en` cho khung đa ngôn ngữ |
 
 > Đổi sang project Firebase khác chỉ cần thay 6 giá trị `EXPO_PUBLIC_FIREBASE_*`
 > trong `.env` rồi restart Metro — không phải sửa code.
@@ -234,6 +236,36 @@ vùng giá vào, chốt lời; kèm 3 yếu tố cần soi theo đúng danh mụ
   `maxToRenderPerBatch`, `windowSize`, `removeClippedSubviews` (Android) để cuộn mượt.
 - Animation mount (`FadeIn`) và skeleton tôn trọng cài đặt **giảm chuyển động** của hệ điều hành.
 
+## 5.5. Giao diện thích ứng: theme sáng/tối, cỡ chữ, tablet, a11y, i18n
+
+**Theme sáng/tối.** Bảng màu nằm ở `src/theme/palettes.js` (`darkColors`, `lightColors`), `src/theme/tokens.js`
+chọn bảng theo `Appearance.getColorScheme()` ngay khi module được nạp rồi export ra `colors` như cũ — nên
+mọi `StyleSheet.create` đang dùng `colors.*` **không phải sửa**. Vì giá trị màu được chụp lúc nạp module,
+đổi theme trong lúc app đang chạy (hoặc bật dark mode ở hệ điều hành) cần **mở lại app**. Muốn ép theme:
+`EXPO_PUBLIC_THEME=light` (hoặc `dark`) trong `.env`.
+
+**Tương phản.** Mọi cặp chữ/nền bắt buộc đạt WCAG AA (≥ 4.5:1) ở **cả hai** bảng màu; nền đặc
+(`accentStrong`, `dangerBg`, `warningBg`) chỉ dùng chữ `colors.onAccent`/`colors.onBright`. Nút Google giữ
+nền trắng cố định (nhận diện thương hiệu) với chữ tối.
+
+**Cỡ chữ 130–200%.** Không còn `height` cố định cho nút/ô nhập/hàng — thay bằng `minHeight`, nên chữ phóng
+to vẫn không bị cắt. Chữ trong `Text` đặt `maxFontSizeMultiplier` 1.5–1.8, không dùng cỡ < 12 và `Button`
+không còn `numberOfLines={1}` (nhãn dài xuống dòng thay vì bị "…").
+
+**Tablet ≥ 720px.** Token `centeredContent` (`width: '100%'`, `maxWidth: 720`, `alignSelf: 'center'`) được
+thêm vào `contentContainerStyle` của các màn chính, nên trên tablet nội dung canh giữa thay vì giãn hết bề
+ngang. Các `ScrollView horizontal` (hàng chip) cố ý **không** áp để vẫn cuộn đúng.
+
+**Trợ năng (a11y).** Mọi phần tử bấm được có `accessibilityRole="button"`; nút chỉ có icon có
+`accessibilityLabel`; chip lọc có `accessibilityState={{ selected }}`; vùng chạm tối thiểu 44×44 (kèm
+`hitSlop` 8 cho icon nhỏ); drawer đặt `accessibilityViewIsModal` + `onAccessibilityEscape` để đóng bằng cử
+chỉ thoát. Dải offline dùng `accessibilityRole="alert"`.
+
+**Đa ngôn ngữ.** `src/i18n/index.js` chứa 2 từ điển `vi`/`en` và hàm `t(key, vars)` (nội suy `{name}`),
+`useI18n()` cho component. Đặt `EXPO_PUBLIC_LANG=en` để chạy bản tiếng Anh (đổi cần restart Metro). Hiện đã
+áp cho drawer, tiêu đề các màn chính, các trạng thái lỗi/offline dùng chung và một số nhãn ở Home/AI Hub/Logs;
+phần copy còn lại trong thân màn hình vẫn là tiếng Việt và chuyển dần sang `t()` theo từng màn.
+
 ## 6. Cấu trúc project
 
 ```
@@ -245,7 +277,9 @@ aibox-app/
     config/       (firebase.js — init Auth/Firestore, ai.js — preset AI gateway, đọc .env)
     services/     (auth.js — Google sign-in, users.js — Firestore users/{uid}, ai.js — gọi AI thật)
     context/      (AppContext.jsx — global state + AsyncStorage)
-    utils/        (format, rewards, analyst)
+    theme/        (palettes.js — bảng màu sáng/tối, tokens.js — spacing/type/colors)
+    i18n/         (index.js — từ điển vi/en + t()/useI18n)
+    utils/        (format, rewards, analyst, spend, clipboard, apiKeys)
     navigation/   (AppNavigator.jsx)
   App.js
   firestore.rules
@@ -260,10 +294,10 @@ aibox-app/
 - React Native (Expo SDK 52) + Expo Dev Client
 - Firebase Auth (Google) + Cloud Firestore (`firebase@10.14.1` — bản có RN persistence)
 - `@react-native-google-signin/google-signin`
-- React Navigation (drawer + stack, điều hướng bằng header — không dùng bottom tab bar)
+- React Navigation (bottom tab 5 mục + stack cho màn phụ; điều hướng phụ bằng header + drawer)
 - AsyncStorage (ví token, markets, quests, comments theo uid)
 - `@react-native-community/netinfo` (trạng thái mạng), `expo-haptics`, `expo-clipboard`
-- React Native SVG (charts), Dark mode UI
+- React Native SVG (charts), theme sáng/tối (theo hệ điều hành hoặc `EXPO_PUBLIC_THEME`)
 
 ## Disclaimer
 

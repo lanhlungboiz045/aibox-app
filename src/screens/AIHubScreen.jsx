@@ -32,7 +32,8 @@ import {
   loadChatHistory, loadModelHistory, saveModelHistory,
   clearModelHistory, clearAllChatHistory, countByModel,
 } from '../services/chatHistory';
-import { colors, layout, radius, spacing, touch, type } from '../theme/tokens';
+import { colors, layout, radius, spacing, touch, type, centeredContent } from '../theme/tokens';
+import { t } from '../i18n';
 
 // Khoảng cách (px) tới cuối danh sách để coi là "đang ở cuối"
 const NEAR_BOTTOM = 120;
@@ -55,7 +56,7 @@ function TypingRow() {
     <View style={styles.typingRow} accessibilityLiveRegion="polite" accessibilityLabel="AI đang trả lời">
       <View style={styles.typingBubble}>
         <ActivityIndicator size="small" color={colors.accentSoft} />
-        <Text style={styles.typingText} maxFontSizeMultiplier={1.3}>AI đang trả lời{dots}</Text>
+        <Text style={styles.typingText} maxFontSizeMultiplier={1.6}>AI đang trả lời{dots}</Text>
       </View>
     </View>
   );
@@ -481,12 +482,12 @@ export function AIHubScreen() {
               <Text style={styles.chatAvatarText}>{selectedModel.icon}</Text>
             </View>
             <View style={styles.chatHeaderInfo}>
-              <Text style={styles.chatHeaderName} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+              <Text style={styles.chatHeaderName} numberOfLines={1} maxFontSizeMultiplier={1.6}>
                 {selectedModel.name}
               </Text>
               <View style={styles.chatHeaderMetaRow}>
                 <View style={[styles.modeDot, { backgroundColor: live ? colors.success : colors.warning }]} />
-                <Text style={styles.chatHeaderSub} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+                <Text style={styles.chatHeaderSub} numberOfLines={1} maxFontSizeMultiplier={1.5}>
                   {sending ? 'Đang trả lời…' : live ? `LIVE · ${aiConfig.model}` : 'MOCK · chưa có API key'}
                 </Text>
               </View>
@@ -558,7 +559,7 @@ export function AIHubScreen() {
                   title="Bắt đầu trò chuyện"
                   message={`Hỏi ${selectedModel.name} bất cứ điều gì. Lịch sử được lưu tự động theo tài khoản.`}
                 />
-                <Text style={styles.suggestLabel} maxFontSizeMultiplier={1.3}>Thử một trong các câu này</Text>
+                <Text style={styles.suggestLabel} maxFontSizeMultiplier={1.6}>{t('aihub.suggest')}</Text>
                 <View style={styles.suggestWrap}>
                   {SUGGESTIONS.map(s => (
                     <Chip key={s} label={s} onPress={() => setInput(s)} />
@@ -577,13 +578,13 @@ export function AIHubScreen() {
                   onRetry={() => handleSend(sendError.prompt)}
                 />
                 <TouchableOpacity
+                  accessibilityRole="button"
                   onPress={() => setSendError(null)}
                   style={styles.errorDismiss}
                   hitSlop={touch.hitSlop}
-                  accessibilityRole="button"
                   accessibilityLabel="Bỏ thông báo lỗi"
                 >
-                  <Text style={styles.errorDismissText} maxFontSizeMultiplier={1.3}>Bỏ qua</Text>
+                  <Text style={styles.errorDismissText} maxFontSizeMultiplier={1.6}>Bỏ qua</Text>
                 </TouchableOpacity>
               </View>
             ) : null
@@ -593,7 +594,7 @@ export function AIHubScreen() {
         {/* Thông tin lần gọi gần nhất (model thật, độ trễ, token usage) */}
         {metaText && !sending ? (
           <View style={styles.metaBar}>
-            <Text style={styles.metaText} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+            <Text style={styles.metaText} numberOfLines={1} maxFontSizeMultiplier={1.5}>
               {metaText}
             </Text>
           </View>
@@ -602,7 +603,7 @@ export function AIHubScreen() {
         {selectedModel.type === 'image' ? (
           <View style={styles.imageNote}>
             <AppIcon name="image" size={14} color={colors.textFaint} />
-            <Text style={styles.imageNoteText} maxFontSizeMultiplier={1.3}>
+            <Text style={styles.imageNoteText} maxFontSizeMultiplier={1.6}>
               Model ảnh chưa hỗ trợ trong khung chat văn bản.
             </Text>
           </View>
@@ -613,14 +614,14 @@ export function AIHubScreen() {
           <TextInput
             style={styles.input}
             value={input}
-            onChangeText={(t) => { setInput(t); if (sendError) setSendError(null); }}
+            onChangeText={(value) => { setInput(value); if (sendError) setSendError(null); }}
             placeholder={isLoadingHistory ? 'Đang tải lịch sử…' : 'Nhập câu hỏi…'}
             placeholderTextColor={colors.textFaint}
             multiline
             editable={!isLoadingHistory}
             accessibilityLabel="Nội dung tin nhắn"
             accessibilityHint="Nhập câu hỏi rồi bấm Gửi"
-            maxFontSizeMultiplier={1.4}
+            maxFontSizeMultiplier={1.8}
           />
 
           {sending ? (
@@ -635,10 +636,10 @@ export function AIHubScreen() {
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
+              accessibilityRole="button"
               style={[styles.actionBtn, !canSend && styles.actionBtnDisabled]}
               onPress={() => handleSend()}
               disabled={!canSend}
-              accessibilityRole="button"
               accessibilityLabel="Gửi tin nhắn"
               accessibilityState={{ disabled: !canSend }}
             >
@@ -656,8 +657,8 @@ export function AIHubScreen() {
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <View style={styles.headerRow}>
           <View style={styles.headerTitleWrap}>
-            <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.2}>AI Hub</Text>
-            <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+            <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.5}>{t('screen.aihub')}</Text>
+            <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
               {totalHistory > 0 ? `${totalHistory} tin nhắn đã lưu` : 'Chọn model để bắt đầu'}
             </Text>
           </View>
@@ -674,7 +675,7 @@ export function AIHubScreen() {
       ) : null}
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: spacing.xxl }}
+        contentContainerStyle={[centeredContent, { paddingBottom: spacing.xxl }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -700,7 +701,7 @@ export function AIHubScreen() {
             placeholderTextColor={colors.textFaint}
             returnKeyType="search"
             accessibilityLabel="Tìm model"
-            maxFontSizeMultiplier={1.4}
+            maxFontSizeMultiplier={1.8}
           />
           {search ? (
             <IconButton icon="x" label="Xoá từ khoá tìm kiếm" size={16} onPress={() => setSearch('')} />
@@ -745,7 +746,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   headerRow: {
-    height: layout.headerHeight,
+    minHeight: layout.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
@@ -806,7 +807,7 @@ const styles = StyleSheet.create({
   chatHeaderSub: { ...type.small, color: colors.textFaint, flex: 1 },
 
   // ── Chat: body ──
-  messagesList: { paddingVertical: spacing.md, paddingHorizontal: 0 },
+  messagesList: { ...centeredContent, paddingVertical: spacing.md, paddingHorizontal: 0 },
   messagesListEmpty: { flexGrow: 1, justifyContent: 'center' },
   historySkeleton: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.lg },
   historySkeletonLeft: { gap: spacing.sm },

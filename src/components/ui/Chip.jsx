@@ -12,12 +12,12 @@ export function Chip({
   const content = (
     <>
       {icon ? <AppIcon name={icon} size={12} color={color} /> : null}
-      {value ? <Text style={[styles.value, { color }]} maxFontSizeMultiplier={1.3}>{value}</Text> : null}
+      {value ? <Text style={[styles.value, { color }]} maxFontSizeMultiplier={1.6}>{value}</Text> : null}
       {label ? (
         <Text
           style={[styles.label, { color: value ? colors.textFaint : color }]}
           numberOfLines={1}
-          maxFontSizeMultiplier={1.3}
+          maxFontSizeMultiplier={1.6}
         >
           {label}
         </Text>

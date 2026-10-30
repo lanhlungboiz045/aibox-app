@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatToken } from '../utils/format';
 import { DAILY_REWARD_STREAK_BONUS, DAILY_REWARD_BONUS_AT_STREAK } from '../utils/rewards';
+import { colors, touch } from '../theme/tokens';
 
 export function DailyRewardModal({ visible, onClose }) {
   const { state, claimDailyReward, canClaimDaily, nextStreak, nextDailyReward } = useApp();
@@ -35,7 +36,7 @@ export function DailyRewardModal({ visible, onClose }) {
                 <Text style={styles.bonus}>(+{formatToken(DAILY_REWARD_STREAK_BONUS)} bonus streak {DAILY_REWARD_BONUS_AT_STREAK} ngày!)</Text>
               )}
               <Text style={styles.hint}>Quay lại mỗi ngày để nhận thưởng và giữ streak!</Text>
-              <TouchableOpacity style={styles.claimBtn} onPress={handleClaim}>
+              <TouchableOpacity accessibilityRole="button" style={styles.claimBtn} onPress={handleClaim}>
                 <Text style={styles.claimBtnText}>Nhận ngay {'\u{1F4B0}'}</Text>
               </TouchableOpacity>
             </>
@@ -43,7 +44,7 @@ export function DailyRewardModal({ visible, onClose }) {
             <>
               <Text style={styles.claimedText}>Bạn đã nhận thưởng hôm nay!</Text>
               <Text style={styles.hint}>Quay lại sau 24h để nhận tiếp. {'\u{1F525}'} Streak: {state.user.dailyStreak} ngày</Text>
-              <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+              <TouchableOpacity accessibilityRole="button" style={styles.closeBtn} onPress={onClose}>
                 <Text style={styles.closeBtnText}>Đóng</Text>
               </TouchableOpacity>
             </>
@@ -55,17 +56,17 @@ export function DailyRewardModal({ visible, onClose }) {
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },
-  card: { backgroundColor: '#1A1D24', borderRadius: 20, padding: 28, alignItems: 'center', width: '85%', borderWidth: 1, borderColor: '#2A2E36' },
+  overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.overlay },
+  card: { backgroundColor: colors.surface, borderRadius: 20, padding: 28, alignItems: 'center', width: '85%', borderWidth: 1, borderColor: colors.borderSoft },
   icon: { fontSize: 48, marginBottom: 12 },
-  title: { color: '#FFFFFF', fontSize: 20, fontWeight: '700', marginBottom: 8 },
-  amount: { color: '#FFB74D', fontSize: 22, fontWeight: '700', fontFamily: 'monospace', marginBottom: 4 },
-  streak: { color: '#FF6B6B', fontSize: 14, fontWeight: '600', marginBottom: 2 },
-  bonus: { color: '#00CE7E', fontSize: 12, marginBottom: 12 },
-  hint: { color: '#8E8E93', fontSize: 12, textAlign: 'center', marginBottom: 16, lineHeight: 18 },
-  claimBtn: { backgroundColor: '#FFB74D', paddingVertical: 12, paddingHorizontal: 32, borderRadius: 10 },
-  claimBtnText: { color: '#1A1D24', fontSize: 15, fontWeight: '700' },
-  claimedText: { color: '#8E8E93', fontSize: 16, marginBottom: 8 },
-  closeBtn: { backgroundColor: '#22262E', paddingVertical: 10, paddingHorizontal: 28, borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36' },
-  closeBtnText: { color: '#8E8E93', fontSize: 14 },
+  title: { color: colors.text, fontSize: 20, fontWeight: '700', marginBottom: 8 },
+  amount: { color: colors.warning, fontSize: 22, fontWeight: '700', fontFamily: 'monospace', marginBottom: 4 },
+  streak: { color: colors.danger, fontSize: 14, fontWeight: '600', marginBottom: 2 },
+  bonus: { color: colors.success, fontSize: 12, marginBottom: 12 },
+  hint: { color: colors.textDim, fontSize: 12, textAlign: 'center', marginBottom: 16, lineHeight: 18 },
+  claimBtn: { backgroundColor: colors.warningBg, paddingVertical: 12, paddingHorizontal: 32, borderRadius: 10, minHeight: touch.min },
+  claimBtnText: { color: colors.onBright, fontSize: 15, fontWeight: '700' },
+  claimedText: { color: colors.textDim, fontSize: 16, marginBottom: 8 },
+  closeBtn: { backgroundColor: colors.surfaceAlt, paddingVertical: 10, paddingHorizontal: 28, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min },
+  closeBtnText: { color: colors.textDim, fontSize: 14 },
 });

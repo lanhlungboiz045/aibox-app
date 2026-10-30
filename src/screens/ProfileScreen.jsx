@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { ROLE_LABELS, ROLE_COLORS, PROVIDER_LABELS, AVATARS } from '../data/accounts';
 import { formatToken, formatDate } from '../utils/format';
+import { colors, centeredContent, touch } from '../theme/tokens';
 
 // Ảnh Google có thể lỗi (mạng/không có ảnh) → fallback emoji avatar
 function UserAvatar({ user, size = 96 }) {
@@ -99,13 +100,14 @@ export function ProfileScreen({ navigation }) {
 
   const link = (icon, label, onPress, options = {}) => (
     <TouchableOpacity
+      accessibilityRole="button"
       key={label}
       style={[styles.actionBtn, options.danger && styles.dangerBtn]}
       onPress={onPress}
     >
       <Text style={styles.actionIcon}>{icon}</Text>
       <View style={{ flex: 1 }}>
-        <Text style={[styles.actionText, options.danger && { color: '#FF6B6B' }]}>{label}</Text>
+        <Text style={[styles.actionText, options.danger && { color: colors.danger }]}>{label}</Text>
         {options.hint ? <Text style={styles.actionHint}>{options.hint}</Text> : null}
       </View>
       {options.badge ? <Text style={styles.actionBadge}>{options.badge}</Text> : null}
@@ -116,10 +118,10 @@ export function ProfileScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 20 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 20 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -134,7 +136,7 @@ export function ProfileScreen({ navigation }) {
               value={draftName}
               onChangeText={setDraftName}
               placeholder="Tên hiển thị"
-              placeholderTextColor="#5C5C5C"
+              placeholderTextColor={colors.textFaint}
               maxLength={24}
               autoCapitalize="none"
             />
@@ -142,6 +144,8 @@ export function ProfileScreen({ navigation }) {
             <View style={styles.avatarPicker}>
               {AVATARS.map(emoji => (
                 <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: draftAvatar === emoji }}
                   key={emoji}
                   style={[styles.avatarOption, draftAvatar === emoji && styles.avatarOptionActive]}
                   onPress={() => setDraftAvatar(emoji)}
@@ -151,10 +155,10 @@ export function ProfileScreen({ navigation }) {
               ))}
             </View>
             <View style={styles.editActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditing(false)} disabled={saving}>
+              <TouchableOpacity accessibilityRole="button" style={styles.cancelBtn} onPress={() => setEditing(false)} disabled={saving}>
                 <Text style={styles.cancelBtnText}>Hủy</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={saveEdit} disabled={saving}>
+              <TouchableOpacity accessibilityRole="button" style={styles.saveBtn} onPress={saveEdit} disabled={saving}>
                 <Text style={styles.saveBtnText}>{saving ? 'Đang lưu…' : 'Lưu'}</Text>
               </TouchableOpacity>
             </View>
@@ -172,7 +176,7 @@ export function ProfileScreen({ navigation }) {
 
             <Text style={styles.email} numberOfLines={1}>{user.email}</Text>
 
-            <TouchableOpacity style={styles.editBtn} onPress={startEdit}>
+            <TouchableOpacity accessibilityRole="button" style={styles.editBtn} onPress={startEdit}>
               <Text style={styles.editBtnText}>{'\u{270F}'} Sửa hồ sơ</Text>
             </TouchableOpacity>
 
@@ -192,7 +196,7 @@ export function ProfileScreen({ navigation }) {
             </View>
             <View style={styles.metaRow}>
               <Text style={styles.metaLabel}>Trạng thái</Text>
-              <Text style={[styles.metaValue, { color: user.status === 'banned' ? '#FF6B6B' : '#00CE7E' }]}>
+              <Text style={[styles.metaValue, { color: user.status === 'banned' ? colors.danger : colors.success }]}>
                 {user.status === 'banned' ? 'Bị khoá' : 'Hoạt động'}
               </Text>
             </View>
@@ -219,6 +223,7 @@ export function ProfileScreen({ navigation }) {
 
       {canClaimDaily ? (
         <TouchableOpacity
+          accessibilityRole="button"
           style={styles.dailyBtn}
           onPress={() => {
             claimDailyReward();
@@ -228,7 +233,7 @@ export function ProfileScreen({ navigation }) {
           <Text style={styles.dailyBtnText}>{'\u{1F381}'} Nhận {formatToken(nextDailyReward)} token hôm nay</Text>
         </TouchableOpacity>
       ) : (
-        <TouchableOpacity style={styles.dailyBtnDone} onPress={() => navigation.navigate('Quests')}>
+        <TouchableOpacity accessibilityRole="button" style={styles.dailyBtnDone} onPress={() => navigation.navigate('Quests')}>
           <Text style={styles.dailyBtnDoneText}>{'\u{2713}'} Đã nhận thưởng hôm nay · xem nhiệm vụ</Text>
         </TouchableOpacity>
       )}
@@ -237,7 +242,7 @@ export function ProfileScreen({ navigation }) {
         <Text style={styles.sectionTitle}>{'\u{1F4CA}'} Thống kê</Text>
         <View style={styles.statsGrid}>
           <View style={styles.statCard}><Text style={styles.statValue}>{totalTrades}</Text><Text style={styles.statLabel}>Trades</Text></View>
-          <View style={styles.statCard}><Text style={[styles.statValue, { color: winRate >= 50 ? '#00CE7E' : '#FF6B6B' }]}>{winRate}%</Text><Text style={styles.statLabel}>Win rate</Text></View>
+          <View style={styles.statCard}><Text style={[styles.statValue, { color: winRate >= 50 ? colors.success : colors.danger }]}>{winRate}%</Text><Text style={styles.statLabel}>Win rate</Text></View>
           <View style={styles.statCard}><Text style={styles.statValue}>{aiCalls}</Text><Text style={styles.statLabel}>AI calls</Text></View>
           <View style={styles.statCard}><Text style={styles.statValue}>{transfers}</Text><Text style={styles.statLabel}>Transfers</Text></View>
         </View>
@@ -289,62 +294,62 @@ export function ProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 10 },
-  backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600' },
-  headerTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
-  profileCard: { backgroundColor: '#1A1D24', borderRadius: 16, marginHorizontal: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36', marginBottom: 12 },
-  avatarWrap: { backgroundColor: '#22262E', alignItems: 'center', justifyContent: 'center', marginBottom: 10, overflow: 'hidden' },
-  username: { color: '#FFFFFF', fontSize: 22, fontWeight: '700', marginBottom: 6 },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600' },
+  headerTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  profileCard: { backgroundColor: colors.surface, borderRadius: 16, marginHorizontal: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft, marginBottom: 12 },
+  avatarWrap: { backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginBottom: 10, overflow: 'hidden' },
+  username: { color: colors.text, fontSize: 22, fontWeight: '700', marginBottom: 6 },
   badgeRow: { flexDirection: 'row', gap: 6, marginBottom: 6, flexWrap: 'wrap', justifyContent: 'center' },
-  roleBadge: { fontSize: 10, fontWeight: '700', borderWidth: 1, borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2, overflow: 'hidden' },
-  providerBadge: { color: '#8E8E93', fontSize: 10, fontWeight: '600', backgroundColor: '#22262E', borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2, overflow: 'hidden' },
-  email: { color: '#8E8E93', fontSize: 12, marginBottom: 10, maxWidth: '90%' },
-  editBtn: { backgroundColor: '#22262E', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 14 },
-  editBtnText: { color: '#A78BFA', fontSize: 12, fontWeight: '600' },
+  roleBadge: { fontSize: 12, fontWeight: '700', borderWidth: 1, borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2, overflow: 'hidden' },
+  providerBadge: { color: colors.textDim, fontSize: 12, fontWeight: '600', backgroundColor: colors.surfaceAlt, borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2, overflow: 'hidden' },
+  email: { color: colors.textDim, fontSize: 12, marginBottom: 10, maxWidth: '90%' },
+  editBtn: { backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 14, minHeight: touch.min },
+  editBtnText: { color: colors.accentSoft, fontSize: 12, fontWeight: '600' },
   editBlock: { width: '100%', marginTop: 4 },
-  nameInput: { backgroundColor: '#0F1115', borderWidth: 1, borderColor: '#2A2E36', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: '#FFFFFF', fontSize: 15, textAlign: 'center' },
-  avatarPickerLabel: { color: '#8E8E93', fontSize: 11, marginTop: 12, marginBottom: 6 },
+  nameInput: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.borderSoft, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: colors.text, fontSize: 15, textAlign: 'center' },
+  avatarPickerLabel: { color: colors.textDim, fontSize: 12, marginTop: 12, marginBottom: 6 },
   avatarPicker: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
-  avatarOption: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#22262E', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'transparent' },
-  avatarOptionActive: { borderColor: '#6C5CE7', backgroundColor: 'rgba(108, 92, 231, 0.18)' },
+  avatarOption: { width: 40, height: 40, borderRadius: 10, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'transparent', minHeight: touch.min },
+  avatarOptionActive: { borderColor: colors.accent, backgroundColor: colors.accentDim },
   avatarOptionText: { fontSize: 19 },
   editActions: { flexDirection: 'row', gap: 8, marginTop: 14 },
-  cancelBtn: { flex: 1, backgroundColor: '#22262E', borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
-  cancelBtnText: { color: '#8E8E93', fontSize: 13, fontWeight: '600' },
-  saveBtn: { flex: 1, backgroundColor: '#6C5CE7', borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
-  saveBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  cancelBtn: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
+  cancelBtnText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
+  saveBtn: { flex: 1, backgroundColor: colors.accentStrong, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
+  saveBtnText: { color: colors.onAccent, fontSize: 13, fontWeight: '700' },
   rankRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  rank: { color: '#FFB74D', fontSize: 13, fontWeight: '600' },
-  joined: { color: '#5C5C5C', fontSize: 12 },
-  balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#0F1115', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, width: '100%', justifyContent: 'center' },
-  balanceLabel: { color: '#8E8E93', fontSize: 14 },
-  balanceValue: { color: '#A78BFA', fontSize: 18, fontWeight: '700', fontFamily: 'monospace' },
-  metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#22262E' },
-  metaLabel: { color: '#5C5C5C', fontSize: 11 },
-  metaValue: { color: '#8E8E93', fontSize: 11, fontWeight: '600', fontFamily: 'monospace' },
-  syncWarn: { backgroundColor: 'rgba(255, 183, 77, 0.08)', borderWidth: 1, borderColor: 'rgba(255, 183, 77, 0.25)', borderRadius: 10, marginHorizontal: 16, marginBottom: 12, padding: 12 },
-  syncWarnText: { color: '#FFB74D', fontSize: 11, lineHeight: 17 },
-  demoBox: { backgroundColor: 'rgba(142, 142, 147, 0.10)', borderWidth: 1, borderColor: '#2A2E36', borderRadius: 10, marginHorizontal: 16, marginBottom: 12, padding: 12 },
-  demoBoxText: { color: '#8E8E93', fontSize: 11, lineHeight: 17 },
-  dailyBtn: { backgroundColor: 'rgba(255, 183, 77, 0.15)', marginHorizontal: 16, marginBottom: 16, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255, 183, 77, 0.3)' },
-  dailyBtnText: { color: '#FFB74D', fontSize: 14, fontWeight: '600' },
-  dailyBtnDone: { backgroundColor: '#1A1D24', marginHorizontal: 16, marginBottom: 16, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
-  dailyBtnDoneText: { color: '#8E8E93', fontSize: 13, fontWeight: '600' },
+  rank: { color: colors.warning, fontSize: 13, fontWeight: '600' },
+  joined: { color: colors.textFaint, fontSize: 12 },
+  balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.bg, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, width: '100%', justifyContent: 'center' },
+  balanceLabel: { color: colors.textDim, fontSize: 14 },
+  balanceValue: { color: colors.accentSoft, fontSize: 18, fontWeight: '700', fontFamily: 'monospace' },
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border },
+  metaLabel: { color: colors.textFaint, fontSize: 12 },
+  metaValue: { color: colors.textDim, fontSize: 12, fontWeight: '600', fontFamily: 'monospace' },
+  syncWarn: { backgroundColor: colors.warningDim, borderWidth: 1, borderColor: colors.warningBorder, borderRadius: 10, marginHorizontal: 16, marginBottom: 12, padding: 12 },
+  syncWarnText: { color: colors.warning, fontSize: 12, lineHeight: 17 },
+  demoBox: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.borderSoft, borderRadius: 10, marginHorizontal: 16, marginBottom: 12, padding: 12 },
+  demoBoxText: { color: colors.textDim, fontSize: 12, lineHeight: 17 },
+  dailyBtn: { backgroundColor: colors.warningDim, marginHorizontal: 16, marginBottom: 16, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.warningBorder, minHeight: touch.min },
+  dailyBtnText: { color: colors.warning, fontSize: 14, fontWeight: '600' },
+  dailyBtnDone: { backgroundColor: colors.surface, marginHorizontal: 16, marginBottom: 16, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min },
+  dailyBtnDoneText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
   section: { marginBottom: 16, paddingHorizontal: 16 },
-  sectionTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '600', marginBottom: 8 },
+  sectionTitle: { color: colors.text, fontSize: 16, fontWeight: '600', marginBottom: 8 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  statCard: { width: '48%', flexGrow: 1, backgroundColor: '#1A1D24', borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
-  statValue: { color: '#FFFFFF', fontSize: 22, fontWeight: '700', fontFamily: 'monospace' },
-  statLabel: { color: '#8E8E93', fontSize: 12, marginTop: 4 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1D24', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#2A2E36', marginBottom: 6, gap: 12 },
-  dangerBtn: { borderColor: 'rgba(255, 107, 107, 0.2)' },
+  statCard: { width: '48%', flexGrow: 1, backgroundColor: colors.surface, borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
+  statValue: { color: colors.text, fontSize: 22, fontWeight: '700', fontFamily: 'monospace' },
+  statLabel: { color: colors.textDim, fontSize: 12, marginTop: 4 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 10, padding: 14, borderWidth: 1, borderColor: colors.borderSoft, marginBottom: 6, gap: 12, minHeight: touch.min },
+  dangerBtn: { borderColor: colors.dangerBorder },
   actionIcon: { fontSize: 18 },
-  actionText: { color: '#FFFFFF', fontSize: 14, fontWeight: '500' },
-  actionHint: { color: '#5C5C5C', fontSize: 10, marginTop: 2 },
-  actionBadge: { color: '#FFFFFF', fontSize: 10, fontWeight: '700', backgroundColor: '#6C5CE7', borderRadius: 9, minWidth: 18, textAlign: 'center', paddingHorizontal: 5, paddingVertical: 1, overflow: 'hidden' },
-  actionArrow: { color: '#5C5C5C', fontSize: 14 },
-  disclaimer: { backgroundColor: 'rgba(255, 183, 77, 0.08)', borderRadius: 10, marginHorizontal: 16, padding: 14, borderWidth: 1, borderColor: 'rgba(255, 183, 77, 0.2)' },
-  disclaimerText: { color: '#FFB74D', fontSize: 12, lineHeight: 18 },
-  mockNote: { color: '#5C5C5C', fontSize: 10, lineHeight: 15, paddingHorizontal: 16, marginTop: 10 },
+  actionText: { color: colors.text, fontSize: 14, fontWeight: '500' },
+  actionHint: { color: colors.textFaint, fontSize: 12, marginTop: 2 },
+  actionBadge: { color: colors.onAccent, fontSize: 12, fontWeight: '700', backgroundColor: colors.accentStrong, borderRadius: 9, minWidth: 18, textAlign: 'center', paddingHorizontal: 5, paddingVertical: 1, overflow: 'hidden' },
+  actionArrow: { color: colors.textFaint, fontSize: 14 },
+  disclaimer: { backgroundColor: colors.warningDim, borderRadius: 10, marginHorizontal: 16, padding: 14, borderWidth: 1, borderColor: colors.warningBorder },
+  disclaimerText: { color: colors.warning, fontSize: 12, lineHeight: 18 },
+  mockNote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 10 },
 });

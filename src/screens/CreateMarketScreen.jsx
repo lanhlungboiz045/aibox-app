@@ -4,6 +4,7 @@ import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Alert 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatToken } from '../utils/format';
+import { colors, centeredContent, touch } from '../theme/tokens';
 
 const CATEGORIES = [
   { key: 'sports', label: 'Sports', icon: '\u{26BD}' },
@@ -39,7 +40,7 @@ export function CreateMarketScreen({ navigation }) {
     return (
       <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
           <Text style={styles.title}>Tạo market</Text>
           <View style={{ width: 50 }} />
         </View>
@@ -49,7 +50,7 @@ export function CreateMarketScreen({ navigation }) {
           <Text style={styles.lockText}>
             Bạn đang là Standard User. Mua Creator Pass trong Store để tự tạo kèo và nhận 2% fee trên volume market của mình.
           </Text>
-          <TouchableOpacity style={styles.lockBtn} onPress={() => navigation.navigate('Store')}>
+          <TouchableOpacity accessibilityRole="button" style={styles.lockBtn} onPress={() => navigation.navigate('Store')}>
             <Text style={styles.lockBtnText}>Mở Store</Text>
           </TouchableOpacity>
         </View>
@@ -90,11 +91,11 @@ export function CreateMarketScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <Text style={styles.title}>Tạo market</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -112,7 +113,7 @@ export function CreateMarketScreen({ navigation }) {
           value={question}
           onChangeText={setQuestion}
           placeholder="VD: MU sẽ thắng Chelsea ngày 02/11?"
-          placeholderTextColor="#5C5C5C"
+          placeholderTextColor={colors.textFaint}
           maxLength={140}
         />
 
@@ -122,7 +123,7 @@ export function CreateMarketScreen({ navigation }) {
           value={description}
           onChangeText={setDescription}
           placeholder="Nêu rõ nguồn kết quả, mốc thời gian, điều kiện thắng..."
-          placeholderTextColor="#5C5C5C"
+          placeholderTextColor={colors.textFaint}
           multiline
           maxLength={400}
         />
@@ -131,6 +132,8 @@ export function CreateMarketScreen({ navigation }) {
         <View style={styles.chipWrap}>
           {CATEGORIES.map(item => (
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ selected: category === item.key }}
               key={item.key}
               style={[styles.chip, category === item.key && styles.chipActive]}
               onPress={() => setCategory(item.key)}
@@ -144,6 +147,8 @@ export function CreateMarketScreen({ navigation }) {
         <View style={styles.chipWrap}>
           {ICONS.map(item => (
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ selected: icon === item }}
               key={item}
               style={[styles.iconChip, icon === item && styles.chipActive]}
               onPress={() => setIcon(item)}
@@ -157,6 +162,8 @@ export function CreateMarketScreen({ navigation }) {
         <View style={styles.priceRow}>
           {PRESET_PRICES.map(price => (
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ selected: Number(yesPrice) === price }}
               key={price}
               style={[styles.chip, Number(yesPrice) === price && styles.chipActive]}
               onPress={() => setYesPrice(String(price))}
@@ -180,13 +187,14 @@ export function CreateMarketScreen({ navigation }) {
           value={endDateText}
           onChangeText={setEndDateText}
           placeholder="2026-12-31"
-          placeholderTextColor="#5C5C5C"
+          placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
         />
 
         {error ? <Text style={styles.error}>{'\u{26A0}'} {error}</Text> : null}
 
         <TouchableOpacity
+          accessibilityRole="button"
           style={[styles.submitBtn, (!question.trim() || !endDateText.trim()) && styles.submitBtnDisabled]}
           onPress={submit}
           disabled={!question.trim() || !endDateText.trim()}
@@ -203,35 +211,35 @@ export function CreateMarketScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600', width: 50 },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
-  notice: { marginHorizontal: 16, marginBottom: 8, padding: 12, borderRadius: 10, backgroundColor: 'rgba(255, 183, 77, 0.1)', borderWidth: 1, borderColor: 'rgba(255, 183, 77, 0.3)' },
-  noticeText: { color: '#FFB74D', fontSize: 11, lineHeight: 16 },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  notice: { marginHorizontal: 16, marginBottom: 8, padding: 12, borderRadius: 10, backgroundColor: colors.warningDim, borderWidth: 1, borderColor: colors.warningBorder },
+  noticeText: { color: colors.warning, fontSize: 12, lineHeight: 16 },
   form: { paddingHorizontal: 16 },
-  label: { color: '#8E8E93', fontSize: 12, marginTop: 14, marginBottom: 8 },
-  input: { backgroundColor: '#22262E', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', color: '#FFFFFF', fontSize: 14, paddingHorizontal: 14, paddingVertical: 11 },
+  label: { color: colors.textDim, fontSize: 12, marginTop: 14, marginBottom: 8 },
+  input: { backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 14, paddingHorizontal: 14, paddingVertical: 11 },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { backgroundColor: '#22262E', borderRadius: 8, borderWidth: 1, borderColor: '#2A2E36', paddingHorizontal: 10, paddingVertical: 7, marginRight: 6, marginBottom: 6 },
-  chipActive: { borderColor: '#6C5CE7', backgroundColor: 'rgba(108, 92, 231, 0.15)' },
-  chipText: { color: '#8E8E93', fontSize: 12, fontWeight: '600' },
-  chipTextActive: { color: '#FFFFFF' },
-  iconChip: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#22262E', borderWidth: 1, borderColor: '#2A2E36', alignItems: 'center', justifyContent: 'center', marginRight: 6, marginBottom: 6 },
+  chip: { backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 10, paddingVertical: 7, marginRight: 6, marginBottom: 6, minHeight: touch.min },
+  chipActive: { borderColor: colors.accent, backgroundColor: colors.accentDim },
+  chipText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
+  chipTextActive: { color: colors.accentSoft },
+  iconChip: { width: 40, height: 40, borderRadius: 8, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.borderSoft, alignItems: 'center', justifyContent: 'center', marginRight: 6, marginBottom: 6, minHeight: touch.min },
   iconText: { fontSize: 18 },
   priceRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
-  priceInput: { width: 60, backgroundColor: '#22262E', borderRadius: 8, borderWidth: 1, borderColor: '#2A2E36', color: '#A78BFA', fontSize: 15, fontWeight: '700', fontFamily: 'monospace', paddingHorizontal: 10, paddingVertical: 8, textAlign: 'center' },
-  hint: { color: '#5C5C5C', fontSize: 11, marginTop: 2 },
-  error: { color: '#FF6B6B', fontSize: 12, marginTop: 12, lineHeight: 17 },
-  submitBtn: { backgroundColor: '#6C5CE7', borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 18 },
+  priceInput: { width: 60, backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, color: colors.accentSoft, fontSize: 15, fontWeight: '700', fontFamily: 'monospace', paddingHorizontal: 10, paddingVertical: 8, textAlign: 'center' },
+  hint: { color: colors.textFaint, fontSize: 12, marginTop: 2 },
+  error: { color: colors.danger, fontSize: 12, marginTop: 12, lineHeight: 17 },
+  submitBtn: { backgroundColor: colors.accentStrong, borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 18, minHeight: touch.min },
   submitBtnDisabled: { opacity: 0.4 },
-  submitText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  footnote: { color: '#5C5C5C', fontSize: 10, lineHeight: 15, marginTop: 12 },
-  lockCard: { backgroundColor: '#1A1D24', borderRadius: 16, margin: 16, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
+  submitText: { color: colors.onAccent, fontSize: 15, fontWeight: '700' },
+  footnote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, marginTop: 12 },
+  lockCard: { backgroundColor: colors.surface, borderRadius: 16, margin: 16, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
   lockIcon: { fontSize: 36, marginBottom: 10 },
-  lockTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  lockText: { color: '#8E8E93', fontSize: 13, lineHeight: 20, textAlign: 'center' },
-  lockBtn: { backgroundColor: '#6C5CE7', borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12, marginTop: 16 },
-  lockBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  lockTitle: { color: colors.text, fontSize: 16, fontWeight: '700', marginBottom: 8 },
+  lockText: { color: colors.textDim, fontSize: 13, lineHeight: 20, textAlign: 'center' },
+  lockBtn: { backgroundColor: colors.accentStrong, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12, marginTop: 16, minHeight: touch.min },
+  lockBtnText: { color: colors.onAccent, fontSize: 14, fontWeight: '700' },
 });

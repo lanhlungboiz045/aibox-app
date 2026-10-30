@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import { TokenBadge } from '../components/TokenBadge';
 import { TransactionItem } from '../components/TransactionItem';
 import { formatToken } from '../utils/format';
+import { colors, centeredContent } from '../theme/tokens';
 
 export function PortfolioScreen() {
   const { state } = useApp();
@@ -41,7 +42,7 @@ export function PortfolioScreen() {
     <ScrollView
       style={styles.container}
       // Tab bar bên dưới đã tự chừa insets.bottom → chỉ cần chừa status bar ở trên
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: 20 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: 20 }]}
     >
       <View style={styles.header}>
         <Text style={styles.title}>Portfolio</Text>
@@ -51,8 +52,8 @@ export function PortfolioScreen() {
       <View style={styles.statsGrid}>
         <View style={styles.statCard}><Text style={styles.statLabel}>Token balance</Text><Text style={styles.statValue}>{formatToken(state.user.tokenBalance)} {'\u{1F4B0}'}</Text></View>
         <View style={styles.statCard}><Text style={styles.statLabel}>Portfolio value</Text><Text style={styles.statValue}>{formatToken(Math.round(portfolioValue))} {'\u{1F4B0}'}</Text></View>
-        <View style={styles.statCard}><Text style={styles.statLabel}>Total P&L</Text><Text style={[styles.statValue, { color: totalPnL >= 0 ? '#00CE7E' : '#FF6B6B' }]}>{totalPnL >= 0 ? '+' : ''}{formatToken(Math.round(totalPnL))} {'\u{1F4B0}'}</Text></View>
-        <View style={styles.statCard}><Text style={styles.statLabel}>Spent on AI</Text><Text style={[styles.statValue, { color: '#FF6B6B' }]}>{formatToken(state.user.totalSpentOnAI)} {'\u{1F4B0}'}</Text></View>
+        <View style={styles.statCard}><Text style={styles.statLabel}>Total P&L</Text><Text style={[styles.statValue, { color: totalPnL >= 0 ? colors.success : colors.danger }]}>{totalPnL >= 0 ? '+' : ''}{formatToken(Math.round(totalPnL))} {'\u{1F4B0}'}</Text></View>
+        <View style={styles.statCard}><Text style={styles.statLabel}>Spent on AI</Text><Text style={[styles.statValue, { color: colors.danger }]}>{formatToken(state.user.totalSpentOnAI)} {'\u{1F4B0}'}</Text></View>
       </View>
 
       <View style={styles.section}>
@@ -75,7 +76,7 @@ export function PortfolioScreen() {
                   <View style={styles.posStat}><Text style={styles.posStatLabel}>Shares</Text><Text style={styles.posStatValue}>{p.shares}</Text></View>
                   <View style={styles.posStat}><Text style={styles.posStatLabel}>Avg price</Text><Text style={styles.posStatValue}>{p.avgPrice.toFixed(1)}</Text></View>
                   <View style={styles.posStat}><Text style={styles.posStatLabel}>Current</Text><Text style={styles.posStatValue}>{p.currentPrice.toFixed(1)}</Text></View>
-                  <View style={styles.posStat}><Text style={styles.posStatLabel}>P&L</Text><Text style={[styles.posStatValue, { color: p.pnl >= 0 ? '#00CE7E' : '#FF6B6B' }]}>{p.pnl >= 0 ? '+' : ''}{formatToken(Math.round(p.pnl))}</Text></View>
+                  <View style={styles.posStat}><Text style={styles.posStatLabel}>P&L</Text><Text style={[styles.posStatValue, { color: p.pnl >= 0 ? colors.success : colors.danger }]}>{p.pnl >= 0 ? '+' : ''}{formatToken(Math.round(p.pnl))}</Text></View>
                 </View>
               </View>
             ))}
@@ -105,36 +106,36 @@ export function PortfolioScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
-  title: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
+  title: { color: colors.text, fontSize: 22, fontWeight: '700' },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, gap: 8, marginBottom: 16 },
-  statCard: { width: '48%', flexGrow: 1, backgroundColor: '#1A1D24', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#2A2E36' },
-  statLabel: { color: '#8E8E93', fontSize: 12, marginBottom: 4 },
-  statValue: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', fontFamily: 'monospace' },
+  statCard: { width: '48%', flexGrow: 1, backgroundColor: colors.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.borderSoft },
+  statLabel: { color: colors.textDim, fontSize: 12, marginBottom: 4 },
+  statValue: { color: colors.text, fontSize: 16, fontWeight: '700', fontFamily: 'monospace' },
   section: { marginBottom: 16 },
-  sectionTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '600', paddingHorizontal: 16, marginBottom: 8 },
-  emptyBox: { backgroundColor: '#1A1D24', borderRadius: 12, marginHorizontal: 16, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
+  sectionTitle: { color: colors.text, fontSize: 16, fontWeight: '600', paddingHorizontal: 16, marginBottom: 8 },
+  emptyBox: { backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
   emptyIcon: { fontSize: 32, marginBottom: 8 },
-  emptyText: { color: '#8E8E93', fontSize: 14 },
-  emptySub: { color: '#5C5C5C', fontSize: 12, marginTop: 4 },
+  emptyText: { color: colors.textDim, fontSize: 14 },
+  emptySub: { color: colors.textFaint, fontSize: 12, marginTop: 4 },
   positionsList: { paddingHorizontal: 16, gap: 8 },
-  positionCard: { backgroundColor: '#1A1D24', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#2A2E36' },
+  positionCard: { backgroundColor: colors.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.borderSoft },
   positionTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 8 },
-  positionQuestion: { color: '#FFFFFF', fontSize: 13, fontWeight: '500', flex: 1, lineHeight: 18 },
+  positionQuestion: { color: colors.text, fontSize: 13, fontWeight: '500', flex: 1, lineHeight: 18 },
   positionSideTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  tagYes: { backgroundColor: 'rgba(0, 206, 126, 0.15)' },
-  tagNo: { backgroundColor: 'rgba(255, 107, 107, 0.15)' },
-  tagText: { fontSize: 11, fontWeight: '700' },
+  tagYes: { backgroundColor: colors.successDim },
+  tagNo: { backgroundColor: colors.dangerDim },
+  tagText: { fontSize: 12, fontWeight: '700' },
   positionStats: { flexDirection: 'row', gap: 12 },
   posStat: { flex: 1 },
-  posStatLabel: { color: '#5C5C5C', fontSize: 11 },
-  posStatValue: { color: '#FFFFFF', fontSize: 13, fontWeight: '600', fontFamily: 'monospace', marginTop: 2 },
+  posStatLabel: { color: colors.textFaint, fontSize: 12 },
+  posStatValue: { color: colors.text, fontSize: 13, fontWeight: '600', fontFamily: 'monospace', marginTop: 2 },
   txFilterRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 6, marginBottom: 8 },
-  txFilterChip: { backgroundColor: '#22262E', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, borderWidth: 1, borderColor: '#2A2E36' },
-  txFilterChipActive: { backgroundColor: 'rgba(108, 92, 231, 0.15)', borderColor: '#6C5CE7' },
-  txFilterText: { color: '#8E8E93', fontSize: 12 },
-  txFilterTextActive: { color: '#A78BFA', fontWeight: '600' },
-  txList: { backgroundColor: '#1A1D24', borderRadius: 12, marginHorizontal: 16, overflow: 'hidden' },
-  emptyTextSmall: { color: '#5C5C5C', fontSize: 13, textAlign: 'center', padding: 16 },
+  txFilterChip: { backgroundColor: colors.surfaceAlt, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, borderWidth: 1, borderColor: colors.borderSoft },
+  txFilterChipActive: { backgroundColor: colors.accentDim, borderColor: colors.accent },
+  txFilterText: { color: colors.textDim, fontSize: 12 },
+  txFilterTextActive: { color: colors.accentSoft, fontWeight: '600' },
+  txList: { backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, overflow: 'hidden' },
+  emptyTextSmall: { color: colors.textFaint, fontSize: 13, textAlign: 'center', padding: 16 },
 });

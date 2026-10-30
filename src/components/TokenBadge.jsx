@@ -23,7 +23,7 @@ export function TokenBadge({ size = 'medium' }) {
       accessibilityLabel={`Số dư ${formatToken(balance)} token`}
     >
       <Text style={{ fontSize: s.iconSize }}>{'\u{1F4B0}'}</Text>
-      <Text style={[styles.text, { fontSize: s.fontSize }]} maxFontSizeMultiplier={1.2}>
+      <Text style={[styles.text, { fontSize: s.fontSize }]} maxFontSizeMultiplier={1.5}>
         {formatToken(balance)}
       </Text>
     </View>

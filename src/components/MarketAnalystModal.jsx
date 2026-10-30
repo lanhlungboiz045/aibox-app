@@ -8,6 +8,7 @@ import { useApp } from '../context/AppContext';
 import { getStoreItem } from '../data/storeItems';
 import { formatToken } from '../utils/format';
 import { MIN_AI_CALL_BALANCE } from '../utils/aiCost';
+import { colors, centeredContent, touch } from '../theme/tokens';
 
 // Hiển thị kết quả phân tích: bỏ ký hiệu markdown (**bold**) và làm nổi 3 dòng kết luận/hành động
 function AnalysisText({ text }) {
@@ -82,10 +83,10 @@ export function MarketAnalystModal({ visible, market, onClose }) {
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>{'\u{1F916}'} Hỏi AI về kèo này</Text>
-            <TouchableOpacity onPress={onClose}><Text style={styles.close}>{'\u{2715}'}</Text></TouchableOpacity>
+            <TouchableOpacity accessibilityRole="button" onPress={onClose}><Text style={styles.close}>{'\u{2715}'}</Text></TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[centeredContent, { paddingBottom: 16 }]}>
             <Text style={styles.marketQuestion} numberOfLines={3}>{market.question}</Text>
 
             {!result && (
@@ -94,6 +95,8 @@ export function MarketAnalystModal({ visible, market, onClose }) {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
                   {availableModels.map(m => (
                     <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: m.id === modelId }}
                       key={m.id}
                       style={[styles.modelChip, m.id === modelId && styles.modelChipActive]}
                       onPress={() => { setModelId(m.id); setError(null); }}
@@ -110,6 +113,8 @@ export function MarketAnalystModal({ visible, market, onClose }) {
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
                       {promptPacks.map(item => (
                         <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: extraPrompt === item.prompt }}
                           key={item.id}
                           style={[styles.packChip, extraPrompt === item.prompt && styles.packChipActive]}
                           onPress={() => setExtraPrompt(item.prompt)}
@@ -127,13 +132,13 @@ export function MarketAnalystModal({ visible, market, onClose }) {
                   value={extraPrompt}
                   onChangeText={setExtraPrompt}
                   placeholder="VD: nên vào YES hay NO? rủi ro lớn nhất là gì?"
-                  placeholderTextColor="#5C5C5C"
+                  placeholderTextColor={colors.textFaint}
                   multiline
                 />
 
                 <View style={styles.costRow}>
                   <Text style={styles.costLabel}>Chi phí</Text>
-                  <Text style={[styles.costValue, !canAfford && { color: '#FF6B6B' }]}>
+                  <Text style={[styles.costValue, !canAfford && { color: colors.danger }]}>
                     trừ theo token thật · số dư {formatToken(user.tokenBalance)}
                   </Text>
                 </View>
@@ -141,12 +146,13 @@ export function MarketAnalystModal({ visible, market, onClose }) {
                 {error ? <Text style={styles.error}>{'\u{26A0}'} {error}</Text> : null}
 
                 <TouchableOpacity
+                  accessibilityRole="button"
                   style={[styles.runBtn, (!model || !canAfford || busy) && styles.runBtnDisabled]}
                   onPress={run}
                   disabled={!model || !canAfford || busy}
                 >
                   {busy
-                    ? <ActivityIndicator color="#FFFFFF" />
+                    ? <ActivityIndicator color={colors.onAccent} />
                     : <Text style={styles.runText}>{'\u{2728}'} Phân tích ngay</Text>}
                 </TouchableOpacity>
                 {!canAfford && <Text style={styles.hint}>Không đủ token — cần tối thiểu {MIN_AI_CALL_BALANCE} 💰 để gọi AI.</Text>}
@@ -172,12 +178,13 @@ export function MarketAnalystModal({ visible, market, onClose }) {
                 <AnalysisText text={result.text} />
                 <View style={styles.resultActions}>
                   <TouchableOpacity
+                    accessibilityRole="button"
                     style={styles.secondaryBtn}
                     onPress={() => { setResult(null); setError(null); }}
                   >
                     <Text style={styles.secondaryText}>Hỏi lại</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.primaryBtn} onPress={onClose}>
+                  <TouchableOpacity accessibilityRole="button" style={styles.primaryBtn} onPress={onClose}>
                     <Text style={styles.primaryText}>Xong</Text>
                   </TouchableOpacity>
                 </View>
@@ -191,38 +198,38 @@ export function MarketAnalystModal({ visible, market, onClose }) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.6)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#1A1D24', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 18, maxHeight: '88%', borderWidth: 1, borderColor: '#2A2E36' },
+  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
+  sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 18, maxHeight: '88%', borderWidth: 1, borderColor: colors.borderSoft },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  title: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
-  close: { color: '#8E8E93', fontSize: 16, fontWeight: '700' },
-  marketQuestion: { color: '#A78BFA', fontSize: 13, lineHeight: 18, marginBottom: 6 },
-  label: { color: '#8E8E93', fontSize: 12, marginTop: 14, marginBottom: 8 },
-  modelChip: { backgroundColor: '#22262E', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center', minWidth: 92 },
-  modelChipActive: { borderColor: '#6C5CE7', backgroundColor: 'rgba(108, 92, 231, 0.12)' },
+  title: { color: colors.text, fontSize: 17, fontWeight: '700' },
+  close: { color: colors.textDim, fontSize: 16, fontWeight: '700' },
+  marketQuestion: { color: colors.accentSoft, fontSize: 13, lineHeight: 18, marginBottom: 6 },
+  label: { color: colors.textDim, fontSize: 12, marginTop: 14, marginBottom: 8 },
+  modelChip: { backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center', minWidth: 92, minHeight: touch.min },
+  modelChipActive: { borderColor: colors.accent, backgroundColor: colors.accentDim },
   modelIcon: { fontSize: 16, marginBottom: 2 },
-  modelName: { color: '#8E8E93', fontSize: 12, fontWeight: '600' },
-  modelNameActive: { color: '#FFFFFF' },
-  packChip: { backgroundColor: '#22262E', borderRadius: 8, borderWidth: 1, borderColor: '#2A2E36', paddingHorizontal: 10, paddingVertical: 6 },
-  packChipActive: { borderColor: '#00CE7E' },
-  packText: { color: '#E0E0E0', fontSize: 11 },
-  input: { backgroundColor: '#22262E', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', color: '#FFFFFF', fontSize: 13, paddingHorizontal: 12, paddingVertical: 10, minHeight: 64, textAlignVertical: 'top' },
+  modelName: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
+  modelNameActive: { color: colors.text },
+  packChip: { backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 10, paddingVertical: 6, minHeight: touch.min },
+  packChipActive: { borderColor: colors.success },
+  packText: { color: colors.text, fontSize: 12 },
+  input: { backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 13, paddingHorizontal: 12, paddingVertical: 10, minHeight: 64, textAlignVertical: 'top' },
   costRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
-  costLabel: { color: '#8E8E93', fontSize: 12 },
-  costValue: { color: '#A78BFA', fontSize: 12, fontWeight: '600', fontFamily: 'monospace' },
-  error: { color: '#FF6B6B', fontSize: 12, marginTop: 10, lineHeight: 17 },
-  runBtn: { backgroundColor: '#6C5CE7', borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
+  costLabel: { color: colors.textDim, fontSize: 12 },
+  costValue: { color: colors.accentSoft, fontSize: 12, fontWeight: '600', fontFamily: 'monospace' },
+  error: { color: colors.danger, fontSize: 12, marginTop: 10, lineHeight: 17 },
+  runBtn: { backgroundColor: colors.accentStrong, borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 14, minHeight: touch.min },
   runBtnDisabled: { opacity: 0.4 },
-  runText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  hint: { color: '#FFB74D', fontSize: 11, marginTop: 8, textAlign: 'center' },
-  resultMeta: { backgroundColor: '#22262E', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, alignSelf: 'flex-start', marginTop: 6, marginBottom: 10 },
-  resultMetaText: { color: '#8E8E93', fontSize: 11, fontFamily: 'monospace' },
-  resultText: { color: '#E0E0E0', fontSize: 13, lineHeight: 21 },
-  verdictLine: { color: '#FFFFFF', fontSize: 13, lineHeight: 20, fontWeight: '600', backgroundColor: '#22262E', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 6, overflow: 'hidden' },
+  runText: { color: colors.onAccent, fontSize: 15, fontWeight: '700' },
+  hint: { color: colors.warning, fontSize: 12, marginTop: 8, textAlign: 'center' },
+  resultMeta: { backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, alignSelf: 'flex-start', marginTop: 6, marginBottom: 10 },
+  resultMetaText: { color: colors.textDim, fontSize: 12, fontFamily: 'monospace' },
+  resultText: { color: colors.text, fontSize: 13, lineHeight: 21 },
+  verdictLine: { color: colors.text, fontSize: 13, lineHeight: 20, fontWeight: '600', backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 6, overflow: 'hidden' },
   spacer: { height: 6 },
   resultActions: { flexDirection: 'row', gap: 8, marginTop: 16 },
-  secondaryBtn: { flex: 1, backgroundColor: '#22262E', borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
-  secondaryText: { color: '#8E8E93', fontSize: 14, fontWeight: '600' },
-  primaryBtn: { flex: 1, backgroundColor: '#6C5CE7', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  primaryText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  secondaryBtn: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
+  secondaryText: { color: colors.textDim, fontSize: 14, fontWeight: '600' },
+  primaryBtn: { flex: 1, backgroundColor: colors.accentStrong, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  primaryText: { color: colors.onAccent, fontSize: 14, fontWeight: '700' },
 });

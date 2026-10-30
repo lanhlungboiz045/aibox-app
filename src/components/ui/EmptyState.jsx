@@ -15,7 +15,7 @@ export function EmptyState({
         <AppIcon name={icon} size={compact ? 22 : 28} color={colors.accentSoft} />
       </View>
       {title ? (
-        <Text style={styles.title} maxFontSizeMultiplier={1.4}>{title}</Text>
+        <Text style={styles.title} maxFontSizeMultiplier={1.8}>{title}</Text>
       ) : null}
       {message ? (
         <Text style={styles.message} maxFontSizeMultiplier={1.5}>{message}</Text>

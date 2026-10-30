@@ -25,7 +25,7 @@ export function MiniBanner({ icon = 'info', text, onPress, tone = 'accent' }) {
       hitSlop={{ top: 4, bottom: 4 }}
     >
       <AppIcon name={icon} size={16} color={t.fg} />
-      <Text style={[styles.text, { color: t.fg }]} numberOfLines={1} maxFontSizeMultiplier={1.3}>{text}</Text>
+      <Text style={[styles.text, { color: t.fg }]} numberOfLines={1} maxFontSizeMultiplier={1.6}>{text}</Text>
       <AppIcon name="chevron-right" size={16} color={t.fg} />
     </TouchableOpacity>
   );

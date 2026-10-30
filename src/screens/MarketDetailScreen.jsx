@@ -9,6 +9,7 @@ import { TokenBadge } from '../components/TokenBadge';
 import { MarketAnalystModal } from '../components/MarketAnalystModal';
 import { CommentSection } from '../components/CommentSection';
 import { formatToken, formatTokenShort, formatTimeLeft, formatDate } from '../utils/format';
+import { colors, centeredContent, touch } from '../theme/tokens';
 
 export function MarketDetailScreen({ route, navigation }) {
   const { state } = useApp();
@@ -26,18 +27,18 @@ export function MarketDetailScreen({ route, navigation }) {
   }
 
   const userPosition = state.user?.positions.find(p => p.marketId === market.id);
-  const categoryColors = { sports: '#00CE7E', crypto: '#F7931A', tech: '#4285F4', entertainment: '#FF6B6B', life: '#FFB74D', politics: '#9333EA' };
-  const accent = categoryColors[market.category] || '#6C5CE7';
+  const categoryColors = { sports: colors.success, crypto: '#F7931A', tech: colors.google, entertainment: colors.danger, life: colors.warning, politics: '#9333EA' };
+  const accent = categoryColors[market.category] || colors.accent;
 
   const openTrade = (side) => { setTradeSide(side); setShowTrade(true); };
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 20 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 20 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <TokenBadge size="small" />
       </View>
 
@@ -69,11 +70,12 @@ export function MarketDetailScreen({ route, navigation }) {
       <View style={styles.infoSection}>
         <View style={styles.infoRow}><Text style={styles.infoLabel}>Volume</Text><Text style={styles.infoValue}>{formatTokenShort(market.volume)} {'\u{1F4B0}'}</Text></View>
         <View style={styles.infoRow}><Text style={styles.infoLabel}>Liquidity</Text><Text style={styles.infoValue}>{formatTokenShort(market.liquidity)} {'\u{1F4B0}'}</Text></View>
-        <View style={styles.infoRow}><Text style={styles.infoLabel}>YES price</Text><Text style={[styles.infoValue, { color: '#00CE7E' }]}>{market.yesPrice} {'\u{1F4B0}'}</Text></View>
-        <View style={styles.infoRow}><Text style={styles.infoLabel}>NO price</Text><Text style={[styles.infoValue, { color: '#FF6B6B' }]}>{market.noPrice} {'\u{1F4B0}'}</Text></View>
+        <View style={styles.infoRow}><Text style={styles.infoLabel}>YES price</Text><Text style={[styles.infoValue, { color: colors.success }]}>{market.yesPrice} {'\u{1F4B0}'}</Text></View>
+        <View style={styles.infoRow}><Text style={styles.infoLabel}>NO price</Text><Text style={[styles.infoValue, { color: colors.danger }]}>{market.noPrice} {'\u{1F4B0}'}</Text></View>
       </View>
 
       <TouchableOpacity
+        accessibilityRole="button"
         style={[styles.analystCard, market.resolved && styles.analystCardMuted]}
         onPress={() => setShowAnalyst(true)}
         activeOpacity={0.85}
@@ -104,18 +106,18 @@ export function MarketDetailScreen({ route, navigation }) {
 
       {!market.resolved && (
         <View style={styles.tradeButtons}>
-          <TouchableOpacity style={[styles.tradeBtn, styles.tradeYes]} onPress={() => openTrade('YES')} activeOpacity={0.8}>
+          <TouchableOpacity accessibilityRole="button" style={[styles.tradeBtn, styles.tradeYes]} onPress={() => openTrade('YES')} activeOpacity={0.8}>
             <Text style={styles.tradeBtnLabel}>Mua YES</Text>
             <Text style={styles.tradeBtnPrice}>{market.yesPrice} {'\u{1F4B0}'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.tradeBtn, styles.tradeNo]} onPress={() => openTrade('NO')} activeOpacity={0.8}>
+          <TouchableOpacity accessibilityRole="button" style={[styles.tradeBtn, styles.tradeNo]} onPress={() => openTrade('NO')} activeOpacity={0.8}>
             <Text style={styles.tradeBtnLabel}>Mua NO</Text>
             <Text style={styles.tradeBtnPrice}>{market.noPrice} {'\u{1F4B0}'}</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      <TouchableOpacity style={styles.shareBtn} onPress={() => {}}>
+      <TouchableOpacity accessibilityRole="button" style={styles.shareBtn} onPress={() => {}}>
         <Text style={styles.shareBtnText}>{'\u{1F4E4}'} Share dự đoán</Text>
       </TouchableOpacity>
 
@@ -128,48 +130,48 @@ export function MarketDetailScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 10 },
-  backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600' },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600' },
   questionSection: { paddingHorizontal: 16, marginBottom: 16 },
   questionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   categoryTag: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5 },
-  timeLeft: { color: '#8E8E93', fontSize: 12 },
+  timeLeft: { color: colors.textDim, fontSize: 12 },
   icon: { fontSize: 40, marginBottom: 8 },
-  question: { color: '#FFFFFF', fontSize: 20, fontWeight: '700', lineHeight: 26, marginBottom: 8 },
-  description: { color: '#8E8E93', fontSize: 14, lineHeight: 20, marginBottom: 8 },
-  endDate: { color: '#5C5C5C', fontSize: 12 },
-  creator: { color: '#FFB74D', fontSize: 11, marginTop: 6 },
+  question: { color: colors.text, fontSize: 20, fontWeight: '700', lineHeight: 26, marginBottom: 8 },
+  description: { color: colors.textDim, fontSize: 14, lineHeight: 20, marginBottom: 8 },
+  endDate: { color: colors.textFaint, fontSize: 12 },
+  creator: { color: colors.warning, fontSize: 12, marginTop: 6 },
   resolvedBanner: { marginHorizontal: 16, borderRadius: 10, padding: 12, marginBottom: 16, alignItems: 'center' },
-  resolvedYes: { backgroundColor: 'rgba(0, 206, 126, 0.15)', borderWidth: 1, borderColor: 'rgba(0, 206, 126, 0.3)' },
-  resolvedNo: { backgroundColor: 'rgba(255, 107, 107, 0.15)', borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.3)' },
-  resolvedText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-  chartSection: { backgroundColor: '#1A1D24', borderRadius: 12, marginHorizontal: 16, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#2A2E36' },
-  chartTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '600', marginBottom: 8 },
-  infoSection: { backgroundColor: '#1A1D24', borderRadius: 12, marginHorizontal: 16, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#2A2E36', gap: 8 },
+  resolvedYes: { backgroundColor: colors.successDim, borderWidth: 1, borderColor: colors.successBorder },
+  resolvedNo: { backgroundColor: colors.dangerDim, borderWidth: 1, borderColor: colors.dangerBorder },
+  resolvedText: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  chartSection: { backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: colors.borderSoft },
+  chartTitle: { color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  infoSection: { backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: colors.borderSoft, gap: 8 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  infoLabel: { color: '#8E8E93', fontSize: 13 },
-  infoValue: { color: '#FFFFFF', fontSize: 14, fontWeight: '600', fontFamily: 'monospace' },
-  analystCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 16, marginBottom: 16, padding: 14, borderRadius: 12, backgroundColor: 'rgba(108, 92, 231, 0.1)', borderWidth: 1, borderColor: 'rgba(108, 92, 231, 0.35)' },
-  analystCardMuted: { backgroundColor: '#1A1D24', borderColor: '#2A2E36' },
+  infoLabel: { color: colors.textDim, fontSize: 13 },
+  infoValue: { color: colors.text, fontSize: 14, fontWeight: '600', fontFamily: 'monospace' },
+  analystCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 16, marginBottom: 16, padding: 14, borderRadius: 12, backgroundColor: colors.accentDim, borderWidth: 1, borderColor: colors.accentDim, minHeight: touch.min },
+  analystCardMuted: { backgroundColor: colors.surface, borderColor: colors.borderSoft },
   analystIcon: { fontSize: 26 },
-  analystTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  analystSub: { color: '#8E8E93', fontSize: 11, marginTop: 2, lineHeight: 16 },
-  analystArrow: { color: '#6C5CE7', fontSize: 14 },
+  analystTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  analystSub: { color: colors.textDim, fontSize: 12, marginTop: 2, lineHeight: 16 },
+  analystArrow: { color: colors.accentSoft, fontSize: 14 },
   positionSection: { marginHorizontal: 16, marginBottom: 16 },
-  positionTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '600', marginBottom: 8 },
-  positionCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#1A1D24', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#2A2E36' },
-  positionSide: { color: '#A78BFA', fontSize: 16, fontWeight: '700' },
-  positionShares: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-  positionAvg: { color: '#8E8E93', fontSize: 13 },
-  positionInvested: { color: '#8E8E93', fontSize: 13 },
+  positionTitle: { color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  positionCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: colors.borderSoft },
+  positionSide: { color: colors.accentSoft, fontSize: 16, fontWeight: '700' },
+  positionShares: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  positionAvg: { color: colors.textDim, fontSize: 13 },
+  positionInvested: { color: colors.textDim, fontSize: 13 },
   tradeButtons: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 12 },
   tradeBtn: { flex: 1, alignItems: 'center', paddingVertical: 14, borderRadius: 10, gap: 4 },
-  tradeYes: { backgroundColor: 'rgba(0, 206, 126, 0.15)', borderWidth: 1, borderColor: 'rgba(0, 206, 126, 0.4)' },
-  tradeNo: { backgroundColor: 'rgba(255, 107, 107, 0.15)', borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.4)' },
-  tradeBtnLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  tradeBtnPrice: { fontSize: 13, fontWeight: '600', fontFamily: 'monospace', color: '#FFFFFF' },
-  shareBtn: { marginHorizontal: 16, backgroundColor: '#22262E', borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
-  shareBtnText: { color: '#8E8E93', fontSize: 14 },
-  error: { color: '#FF6B6B', fontSize: 16, textAlign: 'center', marginTop: 100 },
+  tradeYes: { backgroundColor: colors.successDim, borderWidth: 1, borderColor: colors.successBorder },
+  tradeNo: { backgroundColor: colors.dangerDim, borderWidth: 1, borderColor: colors.dangerBorder },
+  tradeBtnLabel: { fontSize: 15, fontWeight: '700', color: colors.text },
+  tradeBtnPrice: { fontSize: 13, fontWeight: '600', fontFamily: 'monospace', color: colors.text },
+  shareBtn: { marginHorizontal: 16, backgroundColor: colors.surfaceAlt, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min },
+  shareBtnText: { color: colors.textDim, fontSize: 14 },
+  error: { color: colors.danger, fontSize: 16, textAlign: 'center', marginTop: 100 },
 });

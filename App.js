@@ -2,18 +2,22 @@
 import React from 'react';
 import { View, Text, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { AppProvider, useApp } from './src/context/AppContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { Skeleton, ToastProvider } from './src/components/ui';
-import { colors, layout, radius, spacing, type } from './src/theme/tokens';
+import { colors, isDark, layout, radius, spacing, type } from './src/theme/tokens';
 
-// Theme điều hướng lấy từ tokens (trước đây hard-code 5 mã màu)
+// Theme điều hướng lấy từ tokens (trước đây hard-code 5 mã màu).
+// Bảng tối dùng DarkTheme, bảng sáng dùng DefaultTheme để các màn hình mặc
+// định của React Navigation (back button, card...) cũng đổi màu theo.
+const baseNavTheme = isDark ? DarkTheme : DefaultTheme;
 const navTheme = {
-  ...DarkTheme,
+  ...baseNavTheme,
+  dark: isDark,
   colors: {
-    ...DarkTheme.colors,
+    ...baseNavTheme.colors,
     background: colors.bg,
     card: colors.surface,
     text: colors.text,
@@ -63,7 +67,7 @@ export default function App() {
       {/* Toast/snackbar toàn cục, phải nằm trong SafeAreaProvider để tránh tai thỏ */}
       <ToastProvider>
         <AppProvider>
-          <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
+          <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.bg} />
           <Root />
         </AppProvider>
       </ToastProvider>

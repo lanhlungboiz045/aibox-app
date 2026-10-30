@@ -5,6 +5,7 @@
 // key theo uid của Firebase để mỗi tài khoản Google có ví riêng trên máy.
 
 import { LEADERBOARD } from './mockData';
+import { colors } from '../theme/tokens';
 
 export const AVATARS = ['\u{1F60E}', '\u{1F985}', '\u{1F9E0}', '\u{1F433}', '\u{1F52E}', '\u{1F43A}', '\u{1F9D9}', '\u{1F3B2}', '\u{1F451}', '\u{1F3AF}', '\u{1F680}', '\u{1F6E1}'];
 
@@ -15,9 +16,9 @@ export const ROLE_LABELS = {
 };
 
 export const ROLE_COLORS = {
-  admin: '#FF6B6B',
-  creator: '#FFB74D',
-  user: '#8E8E93',
+  admin: colors.danger,
+  creator: colors.warning,
+  user: colors.textDim,
 };
 
 export const PROVIDER_LABELS = {

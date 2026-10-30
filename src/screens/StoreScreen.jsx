@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import { STORE_CATEGORIES, STORE_ITEMS } from '../data/storeItems';
 import { ROLE_LABELS } from '../data/accounts';
 import { formatToken, formatTokenShort } from '../utils/format';
+import { colors, centeredContent, touch } from '../theme/tokens';
 
 export function StoreScreen({ navigation }) {
   const { state, purchaseItem, equipItem } = useApp();
@@ -44,10 +45,10 @@ export function StoreScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }}
+      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <Text style={styles.title}>{'\u{1F6D2}'} Store</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -71,6 +72,8 @@ export function StoreScreen({ navigation }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catRow}>
         {STORE_CATEGORIES.map(item => (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ selected: category === item.key }}
             key={item.key}
             style={[styles.catChip, category === item.key && styles.catChipActive]}
             onPress={() => setCategory(item.key)}
@@ -99,17 +102,18 @@ export function StoreScreen({ navigation }) {
             </View>
 
             <View style={styles.itemFooter}>
-              <Text style={[styles.price, !affordable && !isOwned && { color: '#FF6B6B' }]}>
+              <Text style={[styles.price, !affordable && !isOwned && { color: colors.danger }]}>
                 {isOwned ? 'Đã sở hữu' : `${formatToken(item.price)} \u{1F4B0}`}
               </Text>
 
               {isOwned ? (
                 (item.type === 'frame' || item.type === 'nameColor') ? (
                   <TouchableOpacity
+                    accessibilityRole="button"
                     style={[styles.equipBtn, isEquipped && styles.equippedBtn]}
                     onPress={() => equipItem(item.id)}
                   >
-                    <Text style={[styles.equipText, isEquipped && { color: '#00CE7E' }]}>
+                    <Text style={[styles.equipText, isEquipped && { color: colors.success }]}>
                       {isEquipped ? '\u{2713} Đang dùng' : 'Trang bị'}
                     </Text>
                   </TouchableOpacity>
@@ -118,6 +122,7 @@ export function StoreScreen({ navigation }) {
                 )
               ) : (
                 <TouchableOpacity
+                  accessibilityRole="button"
                   style={[styles.buyBtn, !affordable && styles.buyBtnDisabled]}
                   onPress={() => buy(item)}
                   disabled={!affordable}
@@ -138,39 +143,39 @@ export function StoreScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600', width: 50 },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
-  balanceCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1A1D24', borderRadius: 12, marginHorizontal: 16, padding: 16, borderWidth: 1, borderColor: '#2A2E36' },
-  balanceLabel: { color: '#8E8E93', fontSize: 11 },
-  balanceValue: { color: '#A78BFA', fontSize: 20, fontWeight: '700', fontFamily: 'monospace', marginTop: 2 },
-  sinkValue: { color: '#FF6B6B', fontSize: 14, fontWeight: '700', fontFamily: 'monospace', marginTop: 2 },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  balanceCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, padding: 16, borderWidth: 1, borderColor: colors.borderSoft },
+  balanceLabel: { color: colors.textDim, fontSize: 12 },
+  balanceValue: { color: colors.accentSoft, fontSize: 20, fontWeight: '700', fontFamily: 'monospace', marginTop: 2 },
+  sinkValue: { color: colors.danger, fontSize: 14, fontWeight: '700', fontFamily: 'monospace', marginTop: 2 },
   roleRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  roleLabel: { color: '#8E8E93', fontSize: 12 },
-  roleValue: { color: '#FFB74D', fontSize: 12, fontWeight: '700' },
+  roleLabel: { color: colors.textDim, fontSize: 12 },
+  roleValue: { color: colors.warning, fontSize: 12, fontWeight: '700' },
   catRow: { paddingHorizontal: 16, gap: 6, paddingBottom: 12 },
-  catChip: { backgroundColor: '#1A1D24', borderRadius: 8, borderWidth: 1, borderColor: '#2A2E36', paddingHorizontal: 12, paddingVertical: 8, marginRight: 6 },
-  catChipActive: { backgroundColor: 'rgba(108, 92, 231, 0.15)', borderColor: '#6C5CE7' },
-  catText: { color: '#8E8E93', fontSize: 12, fontWeight: '600' },
-  catTextActive: { color: '#FFFFFF' },
-  itemCard: { backgroundColor: '#1A1D24', borderRadius: 12, marginHorizontal: 16, marginBottom: 8, padding: 14, borderWidth: 1, borderColor: '#2A2E36' },
-  roleCard: { borderColor: 'rgba(255, 183, 77, 0.4)', backgroundColor: 'rgba(255, 183, 77, 0.05)' },
+  catChip: { backgroundColor: colors.surface, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 12, paddingVertical: 8, marginRight: 6, minHeight: touch.min },
+  catChipActive: { backgroundColor: colors.accentDim, borderColor: colors.accent },
+  catText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
+  catTextActive: { color: colors.accentSoft },
+  itemCard: { backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, marginBottom: 8, padding: 14, borderWidth: 1, borderColor: colors.borderSoft },
+  roleCard: { borderColor: colors.warningBorder, backgroundColor: colors.warningDim },
   itemHead: { flexDirection: 'row', gap: 12 },
-  itemIconWrap: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#22262E', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2A2E36' },
+  itemIconWrap: { width: 44, height: 44, borderRadius: 10, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderSoft },
   itemIcon: { fontSize: 22 },
-  itemName: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  itemDesc: { color: '#8E8E93', fontSize: 11, lineHeight: 16, marginTop: 3 },
-  itemPrompt: { color: '#5C5C5C', fontSize: 10, fontStyle: 'italic', marginTop: 4, lineHeight: 14 },
-  itemFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#22262E' },
-  price: { color: '#A78BFA', fontSize: 13, fontWeight: '700', fontFamily: 'monospace' },
-  buyBtn: { backgroundColor: '#6C5CE7', borderRadius: 8, paddingHorizontal: 18, paddingVertical: 8 },
+  itemName: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  itemDesc: { color: colors.textDim, fontSize: 12, lineHeight: 16, marginTop: 3 },
+  itemPrompt: { color: colors.textFaint, fontSize: 12, fontStyle: 'italic', marginTop: 4, lineHeight: 14 },
+  itemFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border },
+  price: { color: colors.accentSoft, fontSize: 13, fontWeight: '700', fontFamily: 'monospace' },
+  buyBtn: { backgroundColor: colors.accentStrong, borderRadius: 8, paddingHorizontal: 18, paddingVertical: 8, minHeight: touch.min },
   buyBtnDisabled: { opacity: 0.35 },
-  buyText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  equipBtn: { backgroundColor: '#22262E', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: '#2A2E36' },
-  equippedBtn: { borderColor: 'rgba(0, 206, 126, 0.4)', backgroundColor: 'rgba(0, 206, 126, 0.1)' },
-  equipText: { color: '#8E8E93', fontSize: 12, fontWeight: '600' },
-  ownedTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#22262E' },
-  ownedText: { color: '#8E8E93', fontSize: 11 },
-  footnote: { color: '#5C5C5C', fontSize: 10, lineHeight: 15, paddingHorizontal: 16, marginTop: 12 },
+  buyText: { color: colors.onAccent, fontSize: 13, fontWeight: '700' },
+  equipBtn: { backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min },
+  equippedBtn: { borderColor: colors.successBorder, backgroundColor: colors.successDim },
+  equipText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
+  ownedTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: colors.surfaceAlt },
+  ownedText: { color: colors.textDim, fontSize: 12 },
+  footnote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 12 },
 });
