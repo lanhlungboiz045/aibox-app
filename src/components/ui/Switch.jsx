@@ -5,7 +5,7 @@ import { hapticSelect } from '../../utils/feedback';
 import { colors, spacing, touch, type } from '../../theme/tokens';
 
 export function Switch({
-  value, onValueChange, label, description, disabled = false, style,
+  value, onValueChange, label, description, disabled = false, style, accessibilityLabel,
 }) {
   const toggle = () => {
     if (disabled) return;
@@ -22,7 +22,8 @@ export function Switch({
       thumbColor={value ? colors.onAccent : colors.textFaint}
       ios_backgroundColor={colors.surfaceHi}
       accessibilityRole="switch"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel || label}
+      accessibilityHint={description}
       accessibilityState={{ checked: value, disabled }}
     />
   );

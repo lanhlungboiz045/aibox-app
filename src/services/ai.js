@@ -173,10 +173,20 @@ function describeHttpError(status, data, raw) {
 }
 
 // 1 lần gọi mạng
-async function requestOnce({ baseUrl, apiKey, model, messages, temperature, maxTokens, timeoutMs }) {
+async function requestOnce({ baseUrl, apiKey, model, messages, temperature, maxTokens, timeoutMs, signal }) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const startedAt = Date.now();
+  // Người dùng bấm "Dừng" → huỷ request đang chờ (không trừ token vì chưa có kết quả)
+  let canceled = false;
+  const onAbort = () => {
+    canceled = true;
+    controller.abort();
+  };
+  if (signal) {
+    if (signal.aborted) onAbort();
+    else signal.addEventListener('abort', onAbort);
+  }
 
   try {
     const headers = { 'Content-Type': 'application/json' };
@@ -255,6 +265,15 @@ async function requestOnce({ baseUrl, apiKey, model, messages, temperature, maxT
   } catch (err) {
     const latencyMs = Date.now() - startedAt;
     if (err && err.name === 'AbortError') {
+      if (canceled) {
+        return {
+          ok: false,
+          canceled: true,
+          latencyMs,
+          model,
+          error: 'Bạn đã dừng yêu cầu.',
+        };
+      }
       return {
         ok: false,
         latencyMs,
@@ -272,6 +291,7 @@ async function requestOnce({ baseUrl, apiKey, model, messages, temperature, maxT
     };
   } finally {
     clearTimeout(timer);
+    if (signal) signal.removeEventListener('abort', onAbort);
   }
 }
 
@@ -284,6 +304,8 @@ export async function chatComplete({
   maxTokens = 1500,
   // Model "thinking" có thể lâu hơn; 60s an toàn cho mạng di động
   timeoutMs = 60000,
+  // Cho phép màn hình huỷ giữa chừng (nút Dừng)
+  signal,
 } = {}) {
   const cfg = getAISettings();
   if (!isAIConfigured(cfg)) {
@@ -311,8 +333,11 @@ export async function chatComplete({
       temperature,
       maxTokens,
       timeoutMs,
+      signal,
     });
     if (last.ok) return { ...last, mode: 'live' };
+    // Người dùng đã dừng → không thử model dự phòng
+    if (last.canceled) return { ...last, mode: 'live' };
 
     // Chỉ thử lại khi nghi lỗi tên model, còn lỗi key/mạng thì dừng luôn
     const looksLikeModelError = last.status === 404

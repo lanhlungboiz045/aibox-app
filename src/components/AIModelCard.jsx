@@ -1,41 +1,73 @@
-// components/AIModelCard.jsx
+// components/AIModelCard.jsx — Card model trong AI Hub (Bước 3)
+// Vùng chạm nguyên card (>= 44), đọc được bằng screen reader, token màu/khoảng cách.
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { AppIcon } from './ui/AppIcon';
 import { formatTokenShort } from '../utils/format';
+import { colors, layout, radius, spacing, type } from '../theme/tokens';
 
 export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
+  const capabilities = Array.isArray(model.capabilities) ? model.capabilities : [];
+  const accent = model.accentColor || colors.accent;
+
+  const label = [
+    model.name,
+    model.providerName,
+    `${model.rating} sao`,
+    historyCount > 0 ? `${historyCount} tin nhắn đã lưu` : null,
+  ].filter(Boolean).join(', ');
+
   return (
-    <TouchableOpacity style={[styles.card, compact && styles.cardCompact]} onPress={onPress} activeOpacity={0.7}>
-      <View style={[styles.stripe, { backgroundColor: model.accentColor }]} />
+    <TouchableOpacity
+      style={[styles.card, compact && styles.cardCompact]}
+      onPress={onPress}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint="Mở cuộc trò chuyện với model này"
+    >
+      <View style={[styles.stripe, { backgroundColor: accent }]} />
       <View style={styles.content}>
         <View style={styles.topRow}>
-          <View style={[styles.iconWrap, { backgroundColor: model.accentColor + '22' }]}>
+          <View style={[styles.iconWrap, { backgroundColor: accent + '22' }]}>
             <Text style={styles.icon}>{model.icon}</Text>
           </View>
           <View style={styles.nameCol}>
-            <Text style={styles.name}>{model.name}</Text>
-            <Text style={styles.provider}>{model.providerName}</Text>
+            <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.4}>{model.name}</Text>
+            <Text style={styles.provider} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+              {model.providerName}
+            </Text>
           </View>
           <View style={styles.costWrap}>
             <Text style={styles.costIcon}>{'\u{1F4B0}'}</Text>
-            <Text style={styles.cost}>usage</Text>
+            <Text style={styles.cost} maxFontSizeMultiplier={1.2}>usage</Text>
           </View>
         </View>
-        <Text style={styles.description} numberOfLines={2}>{model.description}</Text>
+
+        <Text style={styles.description} numberOfLines={2} maxFontSizeMultiplier={1.4}>
+          {model.description}
+        </Text>
+
         <View style={styles.bottomRow}>
           <View style={styles.capWrap}>
-            {model.capabilities.slice(0, 3).map(cap => (
+            {capabilities.slice(0, 3).map(cap => (
               <View key={cap} style={styles.capTag}>
-                <Text style={styles.capText}>{cap}</Text>
+                <Text style={styles.capText} numberOfLines={1} maxFontSizeMultiplier={1.2}>{cap}</Text>
               </View>
             ))}
           </View>
           <View style={styles.stats}>
-            {historyCount > 0 && (
-              <Text style={styles.history}>{'\u{1F4AC}'} {historyCount}</Text>
-            )}
-            <Text style={styles.rating}>{'\u{2B50}'} {model.rating}</Text>
-            <Text style={styles.popularity}>{formatTokenShort(model.popularity)} uses</Text>
+            {historyCount > 0 ? (
+              <View style={styles.historyPill}>
+                <AppIcon name="message-square" size={12} color={colors.accentSoft} />
+                <Text style={styles.history} maxFontSizeMultiplier={1.2}>{historyCount}</Text>
+              </View>
+            ) : null}
+            <AppIcon name="star" size={12} color={colors.warning} />
+            <Text style={styles.rating} maxFontSizeMultiplier={1.2}>{model.rating}</Text>
+            <Text style={styles.popularity} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+              {formatTokenShort(model.popularity || 0)} dùng
+            </Text>
           </View>
         </View>
       </View>
@@ -44,26 +76,51 @@ export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#22262E', borderRadius: 12, marginHorizontal: 16, marginVertical: 6, borderWidth: 1, borderColor: '#2A2E36', flexDirection: 'row', overflow: 'hidden' },
-  cardCompact: { width: 240, marginHorizontal: 4 },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    marginHorizontal: layout.gutter,
+    marginVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  cardCompact: { width: 240, marginHorizontal: spacing.xs },
   stripe: { width: 4 },
-  content: { flex: 1, padding: 14 },
-  topRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  iconWrap: { width: 40, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  content: { flex: 1, padding: spacing.md, gap: spacing.sm },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  iconWrap: { width: 40, height: 40, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
   icon: { fontSize: 20 },
-  nameCol: { flex: 1 },
-  name: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
-  provider: { color: '#8E8E93', fontSize: 12, marginTop: 2 },
-  costWrap: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: 'rgba(108, 92, 231, 0.12)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  nameCol: { flex: 1, gap: 2 },
+  name: { ...type.subtitle, color: colors.text },
+  provider: { ...type.small, color: colors.textFaint },
+  costWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.accentDim,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.xs,
+  },
   costIcon: { fontSize: 12 },
-  cost: { color: '#A78BFA', fontSize: 12, fontWeight: '700' },
-  description: { color: '#8E8E93', fontSize: 13, lineHeight: 18, marginBottom: 10 },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  capWrap: { flexDirection: 'row', gap: 4 },
-  capTag: { backgroundColor: '#1A1D24', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 4, borderWidth: 1, borderColor: '#2A2E36' },
-  capText: { color: '#8E8E93', fontSize: 11 },
-  stats: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  history: { color: '#A78BFA', fontSize: 11, fontWeight: '600' },
-  rating: { color: '#FFB74D', fontSize: 12, fontWeight: '600' },
-  popularity: { color: '#5C5C5C', fontSize: 12 },
+  cost: { ...type.smallStrong, color: colors.accentSoft },
+  description: { ...type.body, color: colors.textDim, lineHeight: 19 },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  capWrap: { flexDirection: 'row', gap: spacing.xs, flexShrink: 1 },
+  capTag: {
+    backgroundColor: colors.surfaceAlt,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  capText: { ...type.small, color: colors.textFaint },
+  stats: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  historyPill: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  history: { ...type.smallStrong, color: colors.accentSoft },
+  rating: { ...type.smallStrong, color: colors.warning },
+  popularity: { ...type.small, color: colors.textFaint },
 });

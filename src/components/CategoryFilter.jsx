@@ -1,6 +1,8 @@
-// components/CategoryFilter.jsx
+// components/CategoryFilter.jsx — Hàng chip lọc loại model (Bước 3)
+// Chip cao 32 + hitSlop 6 → vùng chạm 44. Có accessibilityState.selected.
 import React from 'react';
 import { ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { colors, radius, spacing, type } from '../theme/tokens';
 
 export function CategoryFilter({ categories, selected, onSelect }) {
   return (
@@ -9,6 +11,7 @@ export function CategoryFilter({ categories, selected, onSelect }) {
       showsHorizontalScrollIndicator={false}
       style={styles.container}
       contentContainerStyle={styles.content}
+      accessibilityLabel="Lọc theo loại model"
     >
       {categories.map(cat => {
         const isActive = selected === cat.key;
@@ -17,9 +20,16 @@ export function CategoryFilter({ categories, selected, onSelect }) {
             key={cat.key}
             onPress={() => onSelect(cat.key)}
             style={[styles.chip, isActive && styles.chipActive]}
+            activeOpacity={0.8}
+            hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
+            accessibilityRole="button"
+            accessibilityLabel={cat.label}
+            accessibilityState={{ selected: isActive }}
           >
             <Text style={styles.chipIcon}>{cat.icon}</Text>
-            <Text style={[styles.chipText, isActive && styles.chipTextActive]}>{cat.label}</Text>
+            <Text style={[styles.chipText, isActive && styles.chipTextActive]} maxFontSizeMultiplier={1.3}>
+              {cat.label}
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -29,13 +39,21 @@ export function CategoryFilter({ categories, selected, onSelect }) {
 
 const styles = StyleSheet.create({
   container: { flexGrow: 0 },
-  content: { paddingHorizontal: 16, gap: 8 },
+  content: { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingVertical: spacing.xs },
   chip: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20, backgroundColor: '#22262E', borderWidth: 1, borderColor: '#2A2E36', gap: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 32,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.xs,
   },
-  chipActive: { backgroundColor: 'rgba(108, 92, 231, 0.2)', borderColor: '#6C5CE7' },
+  chipActive: { backgroundColor: colors.accentDim, borderColor: colors.accentBorder },
   chipIcon: { fontSize: 14 },
-  chipText: { color: '#8E8E93', fontSize: 13, fontWeight: '500' },
-  chipTextActive: { color: '#A78BFA' },
+  chipText: { ...type.smallStrong, color: colors.textDim },
+  chipTextActive: { color: colors.accentSoft },
 });

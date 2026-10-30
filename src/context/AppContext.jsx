@@ -1348,7 +1348,8 @@ export function AppProvider({ children }) {
   const testAIConnect = useCallback(() => testAIConnection(), []);
 
   // Gửi 1 tin nhắn chat: chỉ trừ token khi AI trả lời thành công
-  const sendAIMessage = useCallback(async ({ modelId, prompt, history = [] } = {}) => {
+  // signal: AbortSignal từ màn hình để bấm "Dừng" → huỷ request, không trừ token
+  const sendAIMessage = useCallback(async ({ modelId, prompt, history = [], signal } = {}) => {
     const current = stateRef.current;
     const user = getCurrentUser(current);
     const model = current.aiModels.find(m => m.id === modelId);
@@ -1382,8 +1383,12 @@ export function AppProvider({ children }) {
     }
 
     const messages = buildChatMessages({ history, prompt: text });
-    const result = await chatComplete({ appModelId: modelId, messages });
+    const result = await chatComplete({ appModelId: modelId, messages, signal });
 
+    // Người dùng bấm "Dừng" → không trừ token, trả nguyên cờ canceled cho màn hình
+    if (result.canceled) {
+      return { ok: false, canceled: true, mode: result.mode || 'live', error: result.error };
+    }
     if (!result.ok) return { ok: false, mode: result.mode || 'live', error: result.error };
 
     // Trừ token theo usage thật của API (fallback ước lượng nếu gateway không trả)

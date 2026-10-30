@@ -1,6 +1,17 @@
-// screens/AIHubScreen.jsx — Marketplace AI models + chat interface
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+// screens/AIHubScreen.jsx — Marketplace AI models + chat (Bước 3)
+//
+// 5 luồng chính ≤ 3 chạm:
+//   Chat: tab Chat → chọn model → nhập & Gửi (3 chạm, đã tính lần mở app).
+//   Dừng trả lời: 1 chạm vào nút ■ (huỷ request, không trừ token).
+//   Xoá lịch sử model: 1 chạm 🗑 → xác nhận (2 chạm).
+// Ghi chú UX:
+// - Chỉ tự cuộn xuống khi người dùng đang ở gần cuối (không cướp vị trí đọc).
+// - Gửi lỗi → bỏ tin nhắn vừa gửi, trả lại nội dung vào ô nhập, hiện lỗi + "Thử lại".
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, FlatList,
+  KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -8,12 +19,26 @@ import { TokenBadge } from '../components/TokenBadge';
 import { AIModelCard } from '../components/AIModelCard';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { ChatBubble } from '../components/ChatBubble';
+import {
+  AppIcon, Chip, EmptyState, ErrorState, IconButton, MiniBanner, useToast,
+} from '../components/ui';
 import { formatToken, generateId } from '../utils/format';
 import { MIN_AI_CALL_BALANCE } from '../utils/aiCost';
 import {
   loadChatHistory, loadModelHistory, saveModelHistory,
   clearModelHistory, clearAllChatHistory, countByModel,
 } from '../services/chatHistory';
+import { colors, layout, radius, spacing, touch, type } from '../theme/tokens';
+
+// Khoảng cách (px) tới cuối danh sách để coi là "đang ở cuối"
+const NEAR_BOTTOM = 120;
+
+// Gợi ý câu hỏi cho lần chat đầu tiên
+const SUGGESTIONS = [
+  'Tóm tắt đoạn văn này giúp tôi',
+  'Viết email xin nghỉ phép 1 ngày',
+  'Giải thích đoạn code này',
+];
 
 // Bong bóng "AI đang trả lời..." với dấu chấm nhấp nháy
 function TypingRow() {
@@ -23,9 +48,10 @@ function TypingRow() {
     return () => clearInterval(timer);
   }, []);
   return (
-    <View style={styles.typingRow}>
+    <View style={styles.typingRow} accessibilityLiveRegion="polite" accessibilityLabel="AI đang trả lời">
       <View style={styles.typingBubble}>
-        <Text style={styles.typingText}>AI đang trả lời{dots}</Text>
+        <ActivityIndicator size="small" color={colors.accentSoft} />
+        <Text style={styles.typingText} maxFontSizeMultiplier={1.3}>AI đang trả lời{dots}</Text>
       </View>
     </View>
   );
@@ -36,6 +62,8 @@ export function AIHubScreen() {
   const insets = useSafeAreaInsets();
   const route = useRoute();
   const navigation = useNavigation();
+  const toast = useToast();
+
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [selectedModel, setSelectedModel] = useState(null);
@@ -43,34 +71,56 @@ export function AIHubScreen() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [lastMeta, setLastMeta] = useState(null);
+  const [sendError, setSendError] = useState(null); // { message, prompt }
   const [historyCounts, setHistoryCounts] = useState({});
   // modelId mà `messages` hiện tại đã được nạp xong từ storage
   const [loadedModelId, setLoadedModelId] = useState(null);
+
   const listRef = useRef(null);
+  // Chỉ tự cuộn khi người dùng đang ở gần cuối danh sách
+  const nearBottomRef = useRef(true);
   // Model đang mở tại thời điểm render — tránh response về muộn ghi nhầm cuộc chat
   const openModelRef = useRef(null);
-  // Tăng mỗi lần xoá lịch sử → bỏ response đang chờ (tránh ghi lại tin nhắn vừa xoá)
+  // Tăng mỗi lần xoá lịch sử / đổi model → bỏ response đang chờ
   const chatEpochRef = useRef(0);
+  // Huỷ request khi bấm Dừng / rời màn hình
+  const abortRef = useRef(null);
+  const mountedRef = useRef(true);
+
   const uid = state.user?.id || null;
+
+  useEffect(() => () => {
+    mountedRef.current = false;
+    abortRef.current?.abort();
+  }, []);
 
   const openModel = (model) => {
     setSelectedModel(model);
     setMessages([]);
     setLastMeta(null);
+    setSendError(null);
+    nearBottomRef.current = true;
   };
 
   const closeModel = () => {
+    // Rời chat → huỷ request đang chờ, không ghi kết quả về muộn
+    chatEpochRef.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
     setSelectedModel(null);
     setMessages([]);
     setLastMeta(null);
+    setSendError(null);
+    setInput('');
+    setSending(false);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     openModelRef.current = selectedModel?.id || null;
   }, [selectedModel?.id]);
 
   // Mở từ Model Catalog: tự chọn model theo param
-  React.useEffect(() => {
+  useEffect(() => {
     const mid = route.params?.modelId;
     if (mid) {
       const m = state.aiModels.find(x => x.id === mid);
@@ -80,23 +130,25 @@ export function AIHubScreen() {
   }, [route.params?.modelId, route.params?.ts]);
 
   // Nạp lại số tin nhắn đã lưu mỗi khi quay lại màn hình
-  const refreshHistoryCounts = React.useCallback(async () => {
+  const refreshHistoryCounts = useCallback(async () => {
     if (!uid) { setHistoryCounts({}); return; }
     const all = await loadChatHistory(uid);
     setHistoryCounts(countByModel(all));
   }, [uid]);
 
-  useFocusEffect(React.useCallback(() => {
+  useFocusEffect(useCallback(() => {
     refreshHistoryCounts();
   }, [refreshHistoryCounts]));
 
   // Mở 1 model → nạp lịch sử đã lưu của đúng user + model
-  React.useEffect(() => {
+  useEffect(() => {
     if (!selectedModel) { setLoadedModelId(null); return undefined; }
     let cancelled = false;
     setLoadedModelId(null);
     setMessages([]);
     setLastMeta(null);
+    setSendError(null);
+    nearBottomRef.current = true;
 
     if (!uid) {
       setLoadedModelId(selectedModel.id);
@@ -113,7 +165,7 @@ export function AIHubScreen() {
   }, [selectedModel?.id, uid]);
 
   // Mọi thay đổi tin nhắn → ghi lại (bỏ qua lúc đang nạp để không ghi đè)
-  React.useEffect(() => {
+  useEffect(() => {
     if (!uid || !selectedModel || loadedModelId !== selectedModel.id) return;
     const modelId = selectedModel.id;
     const count = messages.length;
@@ -133,31 +185,48 @@ export function AIHubScreen() {
   }, [messages, loadedModelId, selectedModel?.id, uid]);
 
   const typeFilters = [
-    { key: 'all', label: 'All', icon: '\u{2728}' },
+    { key: 'all', label: 'Tất cả', icon: '\u{2728}' },
     { key: 'text', label: 'Text', icon: '\u{1F4AC}' },
-    { key: 'image', label: 'Image', icon: '\u{1F3A8}' },
+    { key: 'image', label: 'Ảnh', icon: '\u{1F3A8}' },
     { key: 'code', label: 'Code', icon: '\u{1F4BB}' },
   ];
 
+  const keyword = search.trim().toLowerCase();
   const filteredModels = state.aiModels.filter(m => {
-    const matchSearch = m.name.toLowerCase().includes(search.toLowerCase()) || m.providerName.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !keyword
+      || m.name.toLowerCase().includes(keyword)
+      || m.providerName.toLowerCase().includes(keyword);
     const matchType = filterType === 'all' || m.type === filterType;
     return matchSearch && matchType && m.isAvailable;
   });
 
   const isLoadingHistory = !!selectedModel && !!uid && loadedModelId !== selectedModel.id;
 
-  const handleSend = async () => {
-    // Chờ nạp xong lịch sử để không ghi đè/ghi nhầm cuộc chat
-    if (!input.trim() || !selectedModel || sending || isLoadingHistory) return;
-    const prompt = input.trim();
+  const handleScroll = (e) => {
+    const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+    const distance = contentSize.height - (contentOffset.y + layoutMeasurement.height);
+    nearBottomRef.current = distance < NEAR_BOTTOM;
+  };
+
+  const maybeScrollToEnd = () => {
+    if (nearBottomRef.current) listRef.current?.scrollToEnd({ animated: true });
+  };
+
+  // Gửi 1 prompt. Truyền `override` để nút "Thử lại" gửi lại đúng nội dung lỗi.
+  const handleSend = async (override) => {
+    const draft = String(override ?? input).trim();
+    if (!draft || !selectedModel || sending || isLoadingHistory) return;
     const model = selectedModel;
 
     // Chưa biết trước chi phí thật (trừ theo usage) → chỉ yêu cầu số dư tối thiểu
-    if (state.user.tokenBalance < MIN_AI_CALL_BALANCE) {
+    if ((state.user?.tokenBalance || 0) < MIN_AI_CALL_BALANCE) {
       Alert.alert(
         'Không đủ token',
-        `Cần tối thiểu ${MIN_AI_CALL_BALANCE} token để gọi AI, bạn chỉ có ${formatToken(state.user.tokenBalance)}.`
+        `Cần tối thiểu ${MIN_AI_CALL_BALANCE} token để gọi AI, bạn chỉ có ${formatToken(state.user?.tokenBalance || 0)}.`,
+        [
+          { text: 'Để sau', style: 'cancel' },
+          { text: 'Nạp token', onPress: () => navigation.navigate('CreditsTopup') },
+        ]
       );
       return;
     }
@@ -165,7 +234,7 @@ export function AIHubScreen() {
     const userMsg = {
       id: generateId(),
       role: 'user',
-      content: prompt,
+      content: draft,
       modelId: model.id,
       timestamp: new Date().toISOString(),
       tokenCost: 0,
@@ -178,28 +247,49 @@ export function AIHubScreen() {
       .slice(-20)
       .map(m => ({ role: m.role, content: m.content }));
 
+    const controller = new AbortController();
+    abortRef.current = controller;
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setSending(true);
     setLastMeta(null);
+    setSendError(null);
+    nearBottomRef.current = true; // vừa gửi → luôn cuộn xuống
     const epochAtSend = chatEpochRef.current;
 
-    const res = await sendAIMessage({ modelId: model.id, prompt, history });
+    let res;
+    try {
+      res = await sendAIMessage({
+        modelId: model.id,
+        prompt: draft,
+        history,
+        signal: controller.signal,
+      });
+    } catch (e) {
+      res = { ok: false, error: e?.message || 'Lỗi không xác định khi gọi AI.' };
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
+    }
 
+    if (!mountedRef.current) return;
     setSending(false);
 
     // Người dùng đã thoát/đổi model/xoá lịch sử trong lúc chờ → không ghi nhầm
     if (openModelRef.current !== model.id || epochAtSend !== chatEpochRef.current) return;
 
+    // Bấm Dừng: chưa có kết quả nên không trừ token → trả nội dung lại ô nhập
+    if (res.canceled) {
+      setMessages(prev => prev.filter(m => m.id !== userMsg.id));
+      setInput(draft);
+      toast.info('Đã dừng yêu cầu · chưa trừ token');
+      return;
+    }
+
     if (!res.ok) {
-      setMessages(prev => [...prev, {
-        id: generateId(),
-        role: 'assistant',
-        content: `\u{26A0}\u{FE0F} Không gọi được AI:\n${res.error}`,
-        modelId: model.id,
-        timestamp: new Date().toISOString(),
-        tokenCost: 0,
-      }]);
+      // Không ghi lỗi vào lịch sử: bỏ tin nhắn vừa gửi, trả text để sửa/gửi lại
+      setMessages(prev => prev.filter(m => m.id !== userMsg.id));
+      setInput(prev => (prev.trim() ? prev : draft));
+      setSendError({ message: res.error || 'Không gọi được AI.', prompt: draft });
       return;
     }
 
@@ -221,13 +311,17 @@ export function AIHubScreen() {
     });
   };
 
+  const stopSending = () => {
+    abortRef.current?.abort();
+  };
+
   const totalHistory = Object.values(historyCounts).reduce((sum, n) => sum + n, 0);
 
   // Xoá lịch sử của cuộc chat đang mở
   const clearCurrentHistory = () => {
     if (!selectedModel) return;
     if (!messages.length) {
-      Alert.alert('Chưa có lịch sử', `Chưa có tin nhắn nào với ${selectedModel.name}.`);
+      toast.info(`Chưa có tin nhắn nào với ${selectedModel.name}`);
       return;
     }
     Alert.alert(
@@ -241,8 +335,12 @@ export function AIHubScreen() {
           onPress: async () => {
             const modelId = selectedModel.id;
             chatEpochRef.current += 1;
+            abortRef.current?.abort();
+            abortRef.current = null;
+            setSending(false);
             setMessages([]);
             setLastMeta(null);
+            setSendError(null);
             if (uid) await clearModelHistory(uid, modelId);
             setHistoryCounts(prev => {
               if (!prev[modelId]) return prev;
@@ -270,10 +368,15 @@ export function AIHubScreen() {
           style: 'destructive',
           onPress: async () => {
             chatEpochRef.current += 1;
+            abortRef.current?.abort();
+            abortRef.current = null;
+            setSending(false);
             await clearAllChatHistory(uid);
             setHistoryCounts({});
             setMessages([]);
             setLastMeta(null);
+            setSendError(null);
+            toast.success('Đã xoá toàn bộ lịch sử chat');
           },
         },
       ]
@@ -282,38 +385,49 @@ export function AIHubScreen() {
 
   const openSettings = () => navigation.navigate('AISettings');
 
+  const canSend = !sending && !isLoadingHistory && input.trim().length > 0;
+
+  // ───────────────────────── Chat view ─────────────────────────
   if (selectedModel) {
+    const live = aiConfig?.mode === 'live';
+    const metaText = lastMeta
+      ? [
+        lastMeta.mode === 'live' ? `LIVE · ${lastMeta.model}` : 'Trả lời mô phỏng',
+        lastMeta.latencyMs ? `${lastMeta.latencyMs}ms` : null,
+        lastMeta.cost ? `-${formatToken(lastMeta.cost)} token` : null,
+      ].filter(Boolean).join(' · ')
+      : null;
+
     return (
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={[styles.chatHeader, { paddingTop: insets.top + 12 }]}>
-          <TouchableOpacity onPress={closeModel}>
-            <Text style={styles.backBtn}>{'\u{276C}'} Back</Text>
-          </TouchableOpacity>
-          <View style={styles.chatHeaderInfo}>
-            <Text style={styles.chatHeaderIcon}>{selectedModel.icon}</Text>
-            <View>
-              <Text style={styles.chatHeaderName}>{selectedModel.name}</Text>
-              <Text style={styles.chatHeaderSub}>
-                trừ theo token thực tế ·{' '}
-                {aiConfig?.mode === 'live' ? `LIVE · ${aiConfig.model}` : 'MOCK (chưa có key)'}
-              </Text>
+        <View style={[styles.chatHeader, { paddingTop: insets.top + spacing.sm }]}>
+          <View style={styles.chatHeaderRow}>
+            <IconButton icon="chevron-left" label="Đóng cuộc chat" onPress={closeModel} />
+            <View style={[styles.chatAvatar, { backgroundColor: (selectedModel.accentColor || colors.accent) + '22' }]}>
+              <Text style={styles.chatAvatarText}>{selectedModel.icon}</Text>
             </View>
-          </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.gearBtn}
+            <View style={styles.chatHeaderInfo}>
+              <Text style={styles.chatHeaderName} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+                {selectedModel.name}
+              </Text>
+              <View style={styles.chatHeaderMetaRow}>
+                <View style={[styles.modeDot, { backgroundColor: live ? colors.success : colors.warning }]} />
+                <Text style={styles.chatHeaderSub} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+                  {sending ? 'Đang trả lời…' : live ? `LIVE · ${aiConfig.model}` : 'MOCK · chưa có API key'}
+                </Text>
+              </View>
+            </View>
+            <IconButton
+              icon="trash-2"
+              label="Xoá lịch sử chat"
+              size={18}
+              disabled={sending || messages.length === 0}
               onPress={clearCurrentHistory}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityLabel="Xoá lịch sử chat"
-            >
-              <Text style={styles.gearText}>{'\u{1F5D1}\u{FE0F}'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.gearBtn} onPress={openSettings} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={styles.gearText}>{'\u{2699}\u{FE0F}'}</Text>
-            </TouchableOpacity>
+            />
+            <IconButton icon="settings" label="Cài đặt AI" size={18} onPress={openSettings} />
           </View>
         </View>
 
@@ -322,151 +436,375 @@ export function AIHubScreen() {
           data={sending ? [...messages, { id: '__typing', role: 'assistant', content: '' }] : messages}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (item.id === '__typing' ? <TypingRow /> : <ChatBubble message={item} />)}
-          contentContainerStyle={styles.messagesList}
+          contentContainerStyle={[styles.messagesList, messages.length === 0 && styles.messagesListEmpty]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-          ListEmptyComponent={(
-            <View style={styles.chatEmpty}>
-              <Text style={styles.chatEmptyIcon}>{'\u{1F4AC}'}</Text>
-              <Text style={styles.chatEmptyTitle}>
-                {isLoadingHistory ? 'Đang tải lịch sử chat...' : 'Bắt đầu cuộc trò chuyện'}
-              </Text>
-              {!isLoadingHistory && (
-                <Text style={styles.chatEmptyHint}>
-                  Lịch sử được lưu tự động theo tài khoản và model. Bấm {'\u{1F5D1}\u{FE0F}'} trên đầu để xoá.
-                </Text>
-              )}
-            </View>
-          )}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          onContentSizeChange={maybeScrollToEnd}
+          ListEmptyComponent={
+            isLoadingHistory ? (
+              <View style={styles.historyLoading}>
+                <ActivityIndicator color={colors.accentSoft} />
+                <Text style={styles.historyLoadingText} maxFontSizeMultiplier={1.3}>Đang tải lịch sử chat…</Text>
+              </View>
+            ) : (
+              <View style={styles.chatEmpty}>
+                <EmptyState
+                  icon="message-circle"
+                  title="Bắt đầu trò chuyện"
+                  message={`Hỏi ${selectedModel.name} bất cứ điều gì. Lịch sử được lưu tự động theo tài khoản.`}
+                />
+                <Text style={styles.suggestLabel} maxFontSizeMultiplier={1.3}>Thử một trong các câu này</Text>
+                <View style={styles.suggestWrap}>
+                  {SUGGESTIONS.map(s => (
+                    <Chip key={s} label={s} onPress={() => setInput(s)} />
+                  ))}
+                </View>
+              </View>
+            )
+          }
+          ListFooterComponent={
+            sendError ? (
+              <View style={styles.errorWrap}>
+                <ErrorState
+                  compact
+                  title="Không gửi được tin nhắn"
+                  message={sendError.message}
+                  onRetry={() => handleSend(sendError.prompt)}
+                />
+                <TouchableOpacity
+                  onPress={() => setSendError(null)}
+                  style={styles.errorDismiss}
+                  hitSlop={touch.hitSlop}
+                  accessibilityRole="button"
+                  accessibilityLabel="Bỏ thông báo lỗi"
+                >
+                  <Text style={styles.errorDismissText} maxFontSizeMultiplier={1.3}>Bỏ qua</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null
+          }
         />
 
         {/* Thông tin lần gọi gần nhất (model thật, độ trễ, token usage) */}
-        {lastMeta && !sending && (
+        {metaText && !sending ? (
           <View style={styles.metaBar}>
-            <Text style={styles.metaText} numberOfLines={1}>
-              {lastMeta.mode === 'live' ? `\u{2705} ${lastMeta.model}` : '\u{1F9EA} Trả lời mô phỏng'}
-              {lastMeta.latencyMs ? ` · ${lastMeta.latencyMs}ms` : ''}
-              {lastMeta.cost ? ` · -${formatToken(lastMeta.cost)} token` : ''}
-              {lastMeta.usage && lastMeta.usage.total_tokens
-                ? ` · usage ${lastMeta.usage.total_tokens}${lastMeta.usage.estimated ? ' (ước lượng)' : ''}`
-                : ''}
+            <Text style={styles.metaText} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+              {metaText}
             </Text>
           </View>
-        )}
+        ) : null}
 
-        {selectedModel.type === 'image' && messages.length > 0 && (
-          <View style={styles.imagePlaceholder}>
-            <Text style={styles.imagePlaceholderIcon}>{'\u{1F3A8}'}</Text>
-            <Text style={styles.imagePlaceholderText}>Model ảnh chưa hỗ trợ ở chế độ chat text</Text>
+        {selectedModel.type === 'image' ? (
+          <View style={styles.imageNote}>
+            <AppIcon name="image" size={14} color={colors.textFaint} />
+            <Text style={styles.imageNoteText} maxFontSizeMultiplier={1.3}>
+              Model ảnh chưa hỗ trợ trong khung chat văn bản.
+            </Text>
           </View>
-        )}
+        ) : null}
 
         {/* Tab bar vẫn hiển thị dưới chat nên input bar không cộng thêm insets.bottom */}
-        <View style={[styles.inputBar, { paddingBottom: 10 }]}>
-          <TextInput style={styles.input} value={input} onChangeText={setInput}
-            placeholder={isLoadingHistory ? 'Đang tải lịch sử chat...' : 'Nhập câu hỏi...'}
-            placeholderTextColor="#5C5C5C" multiline editable={!sending && !isLoadingHistory} />
-          <TouchableOpacity style={[styles.sendBtn, (sending || isLoadingHistory || !input.trim()) && styles.sendBtnDisabled]} onPress={handleSend} disabled={sending || isLoadingHistory || !input.trim()}>
-            <Text style={styles.sendBtnText}>{'\u{2793}'}</Text>
-          </TouchableOpacity>
+        <View style={[styles.inputBar, { paddingBottom: spacing.sm }]}>
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={(t) => { setInput(t); if (sendError) setSendError(null); }}
+            placeholder={isLoadingHistory ? 'Đang tải lịch sử…' : 'Nhập câu hỏi…'}
+            placeholderTextColor={colors.textFaint}
+            multiline
+            editable={!isLoadingHistory}
+            accessibilityLabel="Nội dung tin nhắn"
+            accessibilityHint="Nhập câu hỏi rồi bấm Gửi"
+            maxFontSizeMultiplier={1.4}
+          />
+
+          {sending ? (
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.stopBtn]}
+              onPress={stopSending}
+              accessibilityRole="button"
+              accessibilityLabel="Dừng trả lời"
+              accessibilityHint="Huỷ yêu cầu đang chờ, không trừ token"
+            >
+              <AppIcon name="square" size={16} color={colors.danger} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.actionBtn, !canSend && styles.actionBtnDisabled]}
+              onPress={() => handleSend()}
+              disabled={!canSend}
+              accessibilityRole="button"
+              accessibilityLabel="Gửi tin nhắn"
+              accessibilityState={{ disabled: !canSend }}
+            >
+              <AppIcon name="arrow-up" size={20} color={canSend ? colors.onAccent : colors.disabledText} />
+            </TouchableOpacity>
+          )}
         </View>
       </KeyboardAvoidingView>
     );
   }
 
+  // ───────────────────── Danh sách model ─────────────────────
   return (
-    <ScrollView
-      style={styles.container}
-      // Tab bar bên dưới đã tự chừa insets.bottom → chỉ cần chừa status bar ở trên
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: 20 }}
-    >
-      <View style={styles.header}>
-        <Text style={styles.title}>AI Hub</Text>
-        <View style={styles.headerRight}>
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <View style={styles.headerRow}>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.2}>AI Hub</Text>
+            <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+              {totalHistory > 0 ? `${totalHistory} tin nhắn đã lưu` : 'Chọn model để bắt đầu'}
+            </Text>
+          </View>
           <TokenBadge size="medium" />
-          <TouchableOpacity style={styles.gearBtn} onPress={openSettings}>
-            <Text style={styles.gearText}>{'\u{2699}\u{FE0F}'}</Text>
-          </TouchableOpacity>
+          {totalHistory > 0 ? (
+            <IconButton icon="trash-2" label="Xoá toàn bộ lịch sử chat" size={18} onPress={clearAllHistory} />
+          ) : null}
+          <IconButton icon="settings" label="Cài đặt AI" size={18} onPress={openSettings} />
         </View>
       </View>
 
-      {/* Lịch sử chat đã lưu → cho xoá nhanh toàn bộ */}
-      {totalHistory > 0 && (
-        <TouchableOpacity style={styles.clearAllBtn} onPress={clearAllHistory} activeOpacity={0.8}>
-          <Text style={styles.clearAllText}>
-            {'\u{1F5D1}\u{FE0F}'} Xoá lịch sử chat ({totalHistory} tin nhắn)
-          </Text>
-        </TouchableOpacity>
-      )}
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: spacing.xxl }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Chưa cấu hình key → nhắc ngay trên đầu danh sách */}
+        {aiConfig?.mode !== 'live' ? (
+          <View style={styles.bannerWrap}>
+            <MiniBanner
+              icon="alert-triangle"
+              tone="warning"
+              text="Chưa cấu hình AI thật — đang trả lời mô phỏng"
+              onPress={openSettings}
+            />
+          </View>
+        ) : null}
 
-      {/* Chưa cấu hình key → nhắc ngay trên đầu danh sách */}
-      {aiConfig?.mode !== 'live' && (
-        <TouchableOpacity style={styles.mockBanner} onPress={openSettings} activeOpacity={0.85}>
-          <Text style={styles.mockBannerText}>
-            {'\u{26A0}\u{FE0F}'} Chưa cấu hình AI thật — app đang trả lời mô phỏng. Bấm để nhập API key.
-          </Text>
-        </TouchableOpacity>
-      )}
-
-      <View style={styles.searchWrap}>
-        <TextInput style={styles.search} value={search} onChangeText={setSearch} placeholder="Tìm model hoặc provider..." placeholderTextColor="#5C5C5C" />
-      </View>
-      <CategoryFilter categories={typeFilters} selected={filterType} onSelect={setFilterType} />
-      <View style={{ marginTop: 8 }}>
-        {filteredModels.map(model => (
-          <AIModelCard
-            key={model.id}
-            model={model}
-            historyCount={historyCounts[model.id] || 0}
-            onPress={() => openModel(model)}
+        <View style={styles.searchWrap}>
+          <AppIcon name="search" size={16} color={colors.textFaint} />
+          <TextInput
+            style={styles.search}
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Tìm model hoặc provider…"
+            placeholderTextColor={colors.textFaint}
+            returnKeyType="search"
+            accessibilityLabel="Tìm model"
+            maxFontSizeMultiplier={1.4}
           />
-        ))}
-      </View>
-      {filteredModels.length === 0 && <Text style={styles.empty}>Không tìm thấy model nào</Text>}
-    </ScrollView>
+          {search ? (
+            <IconButton icon="x" label="Xoá từ khoá tìm kiếm" size={16} onPress={() => setSearch('')} />
+          ) : null}
+        </View>
+
+        <CategoryFilter categories={typeFilters} selected={filterType} onSelect={setFilterType} />
+
+        <View style={styles.modelList}>
+          {filteredModels.map(model => (
+            <AIModelCard
+              key={model.id}
+              model={model}
+              historyCount={historyCounts[model.id] || 0}
+              onPress={() => openModel(model)}
+            />
+          ))}
+        </View>
+
+        {filteredModels.length === 0 ? (
+          <EmptyState
+            icon="search"
+            title="Không tìm thấy model nào"
+            message={keyword ? `Không có model khớp "${search.trim()}".` : 'Bộ lọc này chưa có model nào.'}
+            actionLabel="Xoá bộ lọc"
+            onAction={() => { setSearch(''); setFilterType('all'); }}
+          />
+        ) : null}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
-  title: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
-  searchWrap: { paddingHorizontal: 16, marginBottom: 12 },
-  search: { backgroundColor: '#22262E', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', color: '#FFFFFF', fontSize: 14, paddingHorizontal: 14, paddingVertical: 10 },
-  empty: { color: '#5C5C5C', fontSize: 13, textAlign: 'center', padding: 20 },
-  chatHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#1A1D24', borderBottomWidth: 1, borderBottomColor: '#2A2E36' },
-  backBtn: { color: '#6C5CE7', fontSize: 14, fontWeight: '600' },
-  chatHeaderInfo: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  chatHeaderIcon: { fontSize: 18 },
-  chatHeaderName: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
-  chatHeaderSub: { color: '#8E8E93', fontSize: 10, marginTop: 1 },
-  gearBtn: { paddingHorizontal: 6, paddingVertical: 4 },
-  gearText: { fontSize: 17 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  clearAllBtn: { marginHorizontal: 16, marginBottom: 10, backgroundColor: 'rgba(255, 107, 107, 0.08)', borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.3)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, alignSelf: 'flex-start' },
-  clearAllText: { color: '#FF6B6B', fontSize: 11, fontWeight: '600' },
-  chatEmpty: { alignItems: 'center', paddingHorizontal: 32, paddingVertical: 48 },
-  chatEmptyIcon: { fontSize: 34, marginBottom: 10 },
-  chatEmptyTitle: { color: '#E0E0E0', fontSize: 15, fontWeight: '600', textAlign: 'center' },
-  chatEmptyHint: { color: '#5C5C5C', fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 8 },
-  mockBanner: { marginHorizontal: 16, marginBottom: 10, backgroundColor: 'rgba(255, 183, 77, 0.10)', borderWidth: 1, borderColor: 'rgba(255, 183, 77, 0.3)', borderRadius: 10, padding: 10 },
-  mockBannerText: { color: '#FFB74D', fontSize: 11, lineHeight: 16 },
-  typingRow: { alignItems: 'flex-start', marginBottom: 12, paddingHorizontal: 16 },
-  typingBubble: { backgroundColor: '#22262E', borderWidth: 1, borderColor: '#2A2E36', borderRadius: 12, borderBottomLeftRadius: 4, paddingHorizontal: 12, paddingVertical: 10 },
-  typingText: { color: '#8E8E93', fontSize: 13, fontStyle: 'italic' },
-  metaBar: { paddingHorizontal: 16, paddingVertical: 6, backgroundColor: '#0F1115' },
-  metaText: { color: '#5C5C5C', fontSize: 10, fontFamily: 'monospace' },
-  costPill: { backgroundColor: 'rgba(108, 92, 231, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  costPillText: { color: '#A78BFA', fontSize: 12, fontWeight: '600', fontFamily: 'monospace' },
-  messagesList: { paddingVertical: 12 },
-  imagePlaceholder: { alignItems: 'center', padding: 20, backgroundColor: '#1A1D24', marginHorizontal: 16, borderRadius: 12, borderWidth: 1, borderColor: '#2A2E36', borderStyle: 'dashed' },
-  imagePlaceholderIcon: { fontSize: 36, marginBottom: 8 },
-  imagePlaceholderText: { color: '#8E8E93', fontSize: 13 },
-  inputBar: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#1A1D24', borderTopWidth: 1, borderTopColor: '#2A2E36', gap: 8 },
-  input: { flex: 1, backgroundColor: '#22262E', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', color: '#FFFFFF', fontSize: 14, paddingHorizontal: 14, paddingVertical: 10, maxHeight: 100 },
-  sendBtn: { backgroundColor: '#6C5CE7', width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  sendBtnDisabled: { opacity: 0.45 },
-  sendBtnText: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  container: { flex: 1, backgroundColor: colors.bg },
+
+  // ── Danh sách model ──
+  header: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  headerRow: {
+    height: layout.headerHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  headerTitleWrap: { flex: 1, gap: 2 },
+  title: { ...type.h1, color: colors.text },
+  headerMeta: { ...type.small, color: colors.textFaint },
+  bannerWrap: { paddingHorizontal: layout.gutter, paddingTop: spacing.md },
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginHorizontal: layout.gutter,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    paddingLeft: spacing.md,
+    paddingRight: spacing.xs,
+    minHeight: touch.min + 4,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+  },
+  search: {
+    flex: 1,
+    color: colors.text,
+    fontSize: type.subtitle.fontSize,
+    paddingVertical: spacing.sm,
+  },
+  modelList: { marginTop: spacing.sm },
+
+  // ── Chat: header ──
+  chatHeader: {
+    backgroundColor: colors.bg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  chatHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingBottom: spacing.sm,
+  },
+  chatAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatAvatarText: { fontSize: 18 },
+  chatHeaderInfo: { flex: 1, gap: 2, paddingLeft: spacing.xs },
+  chatHeaderName: { ...type.subtitle, color: colors.text },
+  chatHeaderMetaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  modeDot: { width: 6, height: 6, borderRadius: 3 },
+  chatHeaderSub: { ...type.small, color: colors.textFaint, flex: 1 },
+
+  // ── Chat: body ──
+  messagesList: { paddingVertical: spacing.md, paddingHorizontal: 0 },
+  messagesListEmpty: { flexGrow: 1, justifyContent: 'center' },
+  historyLoading: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xxxl },
+  historyLoadingText: { ...type.body, color: colors.textFaint },
+  chatEmpty: { paddingHorizontal: spacing.lg, gap: spacing.md },
+  suggestLabel: {
+    ...type.smallStrong,
+    color: colors.textFaint,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  suggestWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  metaBar: {
+    paddingHorizontal: layout.gutter,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.bg,
+  },
+  metaText: { ...type.small, color: colors.textFaint, ...type.mono },
+  imageNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginHorizontal: layout.gutter,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.borderSoft,
+  },
+  imageNoteText: { ...type.small, color: colors.textFaint, flex: 1 },
+
+  // ── Chat: lỗi gửi ──
+  errorWrap: {
+    marginHorizontal: layout.gutter,
+    marginTop: spacing.md,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.dangerDim,
+    borderWidth: 1,
+    borderColor: colors.dangerBorder,
+    borderRadius: radius.lg,
+  },
+  errorDismiss: {
+    alignSelf: 'center',
+    minHeight: touch.min,
+    minWidth: touch.min,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorDismissText: { ...type.smallStrong, color: colors.textDim },
+
+  // ── Chat: nhập & gửi ──
+  inputBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: layout.gutter,
+    paddingTop: spacing.md,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    gap: spacing.sm,
+  },
+  input: {
+    flex: 1,
+    minHeight: touch.min + 4,
+    maxHeight: 120,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    color: colors.text,
+    fontSize: type.subtitle.fontSize,
+    lineHeight: 22,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+  },
+  actionBtn: {
+    width: touch.min,
+    height: touch.min,
+    borderRadius: radius.pill,
+    backgroundColor: colors.accentStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionBtnDisabled: { backgroundColor: colors.disabledBg },
+  stopBtn: {
+    backgroundColor: colors.dangerDim,
+    borderWidth: 1,
+    borderColor: colors.dangerBorder,
+  },
+
+  // ── Chat: đang trả lời ──
+  typingRow: { alignItems: 'flex-start', marginBottom: spacing.md, paddingHorizontal: spacing.lg },
+  typingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    borderBottomLeftRadius: radius.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  typingText: { ...type.small, color: colors.textDim },
 });
