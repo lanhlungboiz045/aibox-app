@@ -4,13 +4,13 @@
 // Bộ lọc áp dụng ngay (không cần bấm "Áp dụng"), trạng thái rỗng riêng cho
 // "chưa có request" và "không khớp bộ lọc".
 import React, { useMemo, useState } from 'react';
-import { View, Text, FlatList, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, FlatList, ScrollView, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatDate, formatToken, formatRelativeTime } from '../utils/format';
 import { copyText } from '../utils/clipboard';
 import {
-  BottomSheet, Button, Chip, EmptyState, IconButton, ListRow, Row, AppIcon, useToast,
+  BottomSheet, Button, Chip, EmptyState, FadeIn, IconButton, ListRow, Row, AppIcon, useToast,
 } from '../components/ui';
 import { colors, layout, radius, spacing, touch, type } from '../theme/tokens';
 
@@ -133,22 +133,24 @@ export function LogsScreen({ navigation }) {
         style={styles.listBody}
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing.xxl }]}
         ListHeaderComponent={logs.length ? (
-          <View style={styles.summary}>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue} maxFontSizeMultiplier={1.2}>{formatToken(totalTokens)}</Text>
-              <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.2}>token đã dùng</Text>
+          <FadeIn>
+            <View style={styles.summary}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryValue} maxFontSizeMultiplier={1.2}>{formatToken(totalTokens)}</Text>
+                <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.2}>token đã dùng</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryValue} maxFontSizeMultiplier={1.2}>{logs.length}</Text>
+                <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.2}>request</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryValue} maxFontSizeMultiplier={1.2}>{formatToken(avgTokens)}</Text>
+                <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.2}>TB / request</Text>
+              </View>
             </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue} maxFontSizeMultiplier={1.2}>{logs.length}</Text>
-              <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.2}>request</Text>
-            </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue} maxFontSizeMultiplier={1.2}>{formatToken(avgTokens)}</Text>
-              <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.2}>TB / request</Text>
-            </View>
-          </View>
+          </FadeIn>
         ) : null}
         ListEmptyComponent={
           allLogs.length === 0 ? (
@@ -170,6 +172,12 @@ export function LogsScreen({ navigation }) {
           )
         }
         ItemSeparatorComponent={() => <View style={styles.divider} />}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        initialNumToRender={12}
+        maxToRenderPerBatch={10}
+        windowSize={9}
+        removeClippedSubviews={Platform.OS === 'android'}
         renderItem={({ item }) => (
           <ListRow
             icon="zap"

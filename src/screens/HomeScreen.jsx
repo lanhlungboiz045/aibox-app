@@ -11,7 +11,8 @@ import { QUESTS } from '../data/quests';
 import { AppDrawer } from '../components/AppDrawer';
 import { DailyRewardModal } from '../components/DailyRewardModal';
 import { AppIcon, MiniBanner, SectionHeader, ListRow, StatTile, Sparkline, IconButton, EmptyState } from '../components/ui';
-import { colors, layout, radius, spacing, type } from '../theme/tokens';
+import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { colors, layout, radius, spacing, touch, type } from '../theme/tokens';
 
 // Ngưỡng coi là "số dư thấp" để hiện banner nhắc nạp thêm
 const LOW_BALANCE = 1000;
@@ -33,6 +34,7 @@ export function HomeScreen({ navigation }) {
   const [showDrawer, setShowDrawer] = useState(false);
 
   const user = state.user;
+  const { isOffline, refresh: refreshNetwork } = useNetworkStatus();
   const balance = user?.tokenBalance || 0;
   const claimedQuests = questState?.claimed?.length || 0;
   const unclaimedQuests = Math.max(QUESTS.length - claimedQuests, 0);
@@ -54,8 +56,16 @@ export function HomeScreen({ navigation }) {
       : `${spend.deltaPct >= 0 ? '\u{25B2}' : '\u{25BC}'} ${Math.abs(spend.deltaPct)}% so với 7 ngày trước`;
   const deltaColor = spend.deltaPct === null || spend.deltaPct <= 0 ? colors.textFaint : colors.warning;
 
-  // Banner chỉ hiện 1 dòng, ưu tiên: thưởng ngày > số dư thấp > nhiệm vụ
+  // Banner chỉ hiện 1 dòng, ưu tiên: mất mạng > thưởng ngày > số dư thấp > nhiệm vụ
   const banner = (() => {
+    if (isOffline) {
+      return {
+        icon: 'wifi-off',
+        tone: 'warning',
+        text: 'Không có kết nối mạng — đang hiện dữ liệu lưu trên máy',
+        onPress: refreshNetwork,
+      };
+    }
     if (canClaimDaily) {
       return {
         icon: 'gift',
@@ -300,24 +310,24 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   balanceText: { color: colors.accentSoft, fontSize: 12, fontWeight: '700', flexShrink: 1 },
-  iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: touch.min, height: touch.min, alignItems: 'center', justifyContent: 'center' },
   bellBadge: {
     position: 'absolute',
     top: 0,
     right: -2,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: colors.dangerBg,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
-  bellBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
+  bellBadgeText: { color: colors.onAccent, fontSize: 12, fontWeight: '800' },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: touch.min,
+    height: touch.min,
+    borderRadius: touch.min / 2,
     backgroundColor: colors.surfaceHi,
     borderWidth: 1,
     borderColor: colors.accentBorder,

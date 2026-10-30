@@ -12,6 +12,15 @@ export const MAX_API_KEYS = 10;
 
 const keyOf = (uid) => `${STORAGE_PREFIX}${uid}`;
 
+// Cache RAM: mở lại màn API Keys hiện ngay danh sách cũ (không nháy skeleton),
+// sau đó vẫn đọc AsyncStorage để đồng bộ.
+const memoryCache = new Map();
+
+export function peekApiKeys(uid) {
+  if (!uid) return null;
+  return memoryCache.has(uid) ? memoryCache.get(uid) : null;
+}
+
 // Hàng đợi ghi: tránh 2 thao tác (tạo + xoá) chồng nhau làm mất dữ liệu
 let writeQueue = Promise.resolve();
 function enqueue(task) {
@@ -60,6 +69,14 @@ function sortNewest(list) {
 export async function loadApiKeys(uid) {
   if (!uid) return [];
   const raw = await AsyncStorage.getItem(keyOf(uid));
+  const list = parseList(raw);
+  // Đồng bộ cache RAM để lần mở sau hiện ngay, không nháy skeleton
+  memoryCache.set(uid, list);
+  return list;
+}
+
+// Tách riêng để loadApiKeys & peek dùng chung cách chuẩn hoá dữ liệu
+function parseList(raw) {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
@@ -72,6 +89,8 @@ export async function loadApiKeys(uid) {
 }
 
 function persist(uid, list) {
+  // Cập nhật cache ngay (UI thấy kết quả tức thì), rồi mới ghi xuống đĩa
+  memoryCache.set(uid, list);
   return enqueue(async () => {
     await AsyncStorage.setItem(keyOf(uid), JSON.stringify({ updatedAt: new Date().toISOString(), keys: list }));
   });

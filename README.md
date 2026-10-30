@@ -222,6 +222,18 @@ Khi chưa cấu hình AI thật, `src/utils/analyst.js` sinh bản MOCK: ước 
 (giá lệch xa 50 khi thanh khoản mỏng → kéo về gần 50), từ đó chọn YES/NO, tính edge, độ tin cậy,
 vùng giá vào, chốt lời; kèm 3 yếu tố cần soi theo đúng danh mục của kèo.
 
+## 5.4. Trạng thái mạng, cache & hiệu năng
+
+- `src/hooks/useNetworkStatus.js` theo dõi mạng bằng `@react-native-community/netinfo` (có sẵn
+  trong Expo Go). Khi mất mạng, Home và AI Hub hiện dải cảnh báo kèm nút **Thử lại**.
+- Chế độ **live** chặn gửi tin nhắn mới khi offline (giữ nguyên câu hỏi trong ô nhập); chế độ
+  **mô phỏng** vẫn chat được vì không cần mạng.
+- Cache RAM: danh sách API key và lịch sử chat theo `(uid, modelId)` được giữ trong bộ nhớ để
+  mở lại màn hình hiện ngay, không nháy khung xương; dữ liệu vẫn ghi AsyncStorage như cũ.
+- Màn khởi động dùng `BootSkeleton`, danh sách chat/log dùng `FlatList` với `initialNumToRender`,
+  `maxToRenderPerBatch`, `windowSize`, `removeClippedSubviews` (Android) để cuộn mượt.
+- Animation mount (`FadeIn`) và skeleton tôn trọng cài đặt **giảm chuyển động** của hệ điều hành.
+
 ## 6. Cấu trúc project
 
 ```
@@ -248,8 +260,9 @@ aibox-app/
 - React Native (Expo SDK 52) + Expo Dev Client
 - Firebase Auth (Google) + Cloud Firestore (`firebase@10.14.1` — bản có RN persistence)
 - `@react-native-google-signin/google-signin`
-- React Navigation (bottom tabs + stack)
+- React Navigation (drawer + stack, điều hướng bằng header — không dùng bottom tab bar)
 - AsyncStorage (ví token, markets, quests, comments theo uid)
+- `@react-native-community/netinfo` (trạng thái mạng), `expo-haptics`, `expo-clipboard`
 - React Native SVG (charts), Dark mode UI
 
 ## Disclaimer

@@ -1,4 +1,4 @@
-// screens/AIHubScreen.jsx — Marketplace AI models + chat (Bước 3)
+// screens/AIHubScreen.jsx — Marketplace AI models + chat (Bước 3 + 4)
 //
 // 5 luồng chính ≤ 3 chạm:
 //   Chat: tab Chat → chọn model → nhập & Gửi (3 chạm, đã tính lần mở app).
@@ -7,6 +7,8 @@
 // Ghi chú UX:
 // - Chỉ tự cuộn xuống khi người dùng đang ở gần cuối (không cướp vị trí đọc).
 // - Gửi lỗi → bỏ tin nhắn vừa gửi, trả lại nội dung vào ô nhập, hiện lỗi + "Thử lại".
+// Bước 4: dải cảnh báo offline, chặn gửi khi live + offline, cache RAM lịch sử chat,
+// khung xương bong bóng chat thay spinner, FlatList tối ưu, FadeIn cho danh sách model.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, FlatList,
@@ -20,10 +22,12 @@ import { AIModelCard } from '../components/AIModelCard';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { ChatBubble } from '../components/ChatBubble';
 import {
-  AppIcon, Chip, EmptyState, ErrorState, IconButton, MiniBanner, useToast,
+  AppIcon, Chip, EmptyState, ErrorState, FadeIn, IconButton, MiniBanner, OfflineBar, Skeleton, useToast,
 } from '../components/ui';
 import { formatToken, generateId } from '../utils/format';
 import { MIN_AI_CALL_BALANCE } from '../utils/aiCost';
+import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { hapticError } from '../utils/feedback';
 import {
   loadChatHistory, loadModelHistory, saveModelHistory,
   clearModelHistory, clearAllChatHistory, countByModel,
@@ -57,6 +61,22 @@ function TypingRow() {
   );
 }
 
+// Khung xương lịch sử chat: đúng hình bong bóng (trái/phải) thay cho spinner
+function HistorySkeleton() {
+  return (
+    <View style={styles.historySkeleton} accessibilityLabel="Đang tải lịch sử chat">
+      <View style={styles.historySkeletonLeft}>
+        <Skeleton width="72%" height={54} br={radius.lg} />
+        <Skeleton width="48%" height={40} br={radius.lg} />
+      </View>
+      <View style={styles.historySkeletonRight}>
+        <Skeleton width="60%" height={44} br={radius.lg} />
+        <Skeleton width="80%" height={62} br={radius.lg} />
+      </View>
+    </View>
+  );
+}
+
 export function AIHubScreen() {
   const { state, sendAIMessage, aiConfig } = useApp();
   const insets = useSafeAreaInsets();
@@ -75,6 +95,9 @@ export function AIHubScreen() {
   const [historyCounts, setHistoryCounts] = useState({});
   // modelId mà `messages` hiện tại đã được nạp xong từ storage
   const [loadedModelId, setLoadedModelId] = useState(null);
+  // Lỗi đọc lịch sử đã lưu (storage) — hiện ErrorState thay vì treo khung xương
+  const [historyError, setHistoryError] = useState(null);
+  const [historyReloadKey, setHistoryReloadKey] = useState(0);
 
   const listRef = useRef(null);
   // Chỉ tự cuộn khi người dùng đang ở gần cuối danh sách
@@ -86,8 +109,14 @@ export function AIHubScreen() {
   // Huỷ request khi bấm Dừng / rời màn hình
   const abortRef = useRef(null);
   const mountedRef = useRef(true);
+  // Cache RAM lịch sử chat theo "uid:modelId" → mở lại model không nháy skeleton
+  const historyCacheRef = useRef(new Map());
+  // Người dùng đã thay đổi tin nhắn khi storage còn đang đọc → không ghi đè
+  const chatDirtyRef = useRef(false);
 
   const uid = state.user?.id || null;
+  const { isOffline, refresh: refreshNetwork } = useNetworkStatus();
+  const live = aiConfig?.mode === 'live';
 
   useEffect(() => () => {
     mountedRef.current = false;
@@ -95,10 +124,15 @@ export function AIHubScreen() {
   }, []);
 
   const openModel = (model) => {
+    // Có cache RAM của model này → hiện ngay tin nhắn cũ, không nháy khung xương
+    const cached = uid ? historyCacheRef.current.get(`${uid}:${model.id}`) : null;
+    chatDirtyRef.current = false;
     setSelectedModel(model);
-    setMessages([]);
+    setMessages(cached || []);
+    setLoadedModelId(cached ? model.id : null);
     setLastMeta(null);
     setSendError(null);
+    setHistoryError(null);
     nearBottomRef.current = true;
   };
 
@@ -111,6 +145,7 @@ export function AIHubScreen() {
     setMessages([]);
     setLastMeta(null);
     setSendError(null);
+    setHistoryError(null);
     setInput('');
     setSending(false);
   };
@@ -124,8 +159,7 @@ export function AIHubScreen() {
     const mid = route.params?.modelId;
     if (mid) {
       const m = state.aiModels.find(x => x.id === mid);
-      if (m) openModelRef.current = m.id;
-      if (m) setSelectedModel(m);
+      if (m) openModel(m);
     }
   }, [route.params?.modelId, route.params?.ts]);
 
@@ -144,8 +178,17 @@ export function AIHubScreen() {
   useEffect(() => {
     if (!selectedModel) { setLoadedModelId(null); return undefined; }
     let cancelled = false;
-    setLoadedModelId(null);
-    setMessages([]);
+    const cacheKey = uid ? `${uid}:${selectedModel.id}` : null;
+    const cached = cacheKey ? historyCacheRef.current.get(cacheKey) : null;
+    // Đọc lại từ storage cho model này → cho phép áp dữ liệu (trừ khi user vừa gửi)
+    chatDirtyRef.current = false;
+    setHistoryError(null);
+
+    // Không có cache → khung xương; có cache thì đã hiện sẵn tin nhắn cũ
+    if (!cached) {
+      setLoadedModelId(null);
+      setMessages([]);
+    }
     setLastMeta(null);
     setSendError(null);
     nearBottomRef.current = true;
@@ -157,17 +200,30 @@ export function AIHubScreen() {
 
     loadModelHistory(uid, selectedModel.id).then(saved => {
       if (cancelled) return;
-      setMessages(saved);
+      // Người dùng đã gửi/ xoá trong lúc đọc → giữ nguyên trạng thái mới hơn
+      if (chatDirtyRef.current) return;
+      historyCacheRef.current.set(cacheKey, saved);
+      // Chỉ set lại khi khác cache để không render thừa
+      if (saved !== cached) setMessages(saved);
+      setLoadedModelId(selectedModel.id);
+    }).catch(e => {
+      if (cancelled) return;
+      // Không treo khung xương mãi: báo lỗi + cho chat tiếp (dữ liệu cũ vẫn giữ nếu có cache)
+      setHistoryError(e?.message || 'Không đọc được lịch sử chat đã lưu.');
       setLoadedModelId(selectedModel.id);
     });
 
     return () => { cancelled = true; };
-  }, [selectedModel?.id, uid]);
+  }, [selectedModel?.id, uid, historyReloadKey]);
 
   // Mọi thay đổi tin nhắn → ghi lại (bỏ qua lúc đang nạp để không ghi đè)
   useEffect(() => {
     if (!uid || !selectedModel || loadedModelId !== selectedModel.id) return;
     const modelId = selectedModel.id;
+    const cacheKey = `${uid}:${modelId}`;
+    // Vừa đọc từ cache/storage ra → không cần ghi lại y nguyên
+    if (historyCacheRef.current.get(cacheKey) === messages) return;
+    historyCacheRef.current.set(cacheKey, messages);
     const count = messages.length;
 
     saveModelHistory(uid, modelId, messages).then(() => {
@@ -218,6 +274,17 @@ export function AIHubScreen() {
     if (!draft || !selectedModel || sending || isLoadingHistory) return;
     const model = selectedModel;
 
+    // Offline: chế độ live không thể gọi API → giữ nguyên câu hỏi trong ô nhập.
+    // Chế độ mô phỏng vẫn cho gửi vì không cần mạng.
+    if (isOffline && live) {
+      setSendError({
+        message: 'Không có kết nối mạng. Kết nối lại rồi bấm Thử lại — câu hỏi của bạn vẫn được giữ.',
+        prompt: draft,
+      });
+      hapticError();
+      return;
+    }
+
     // Chưa biết trước chi phí thật (trừ theo usage) → chỉ yêu cầu số dư tối thiểu
     if ((state.user?.tokenBalance || 0) < MIN_AI_CALL_BALANCE) {
       Alert.alert(
@@ -249,6 +316,7 @@ export function AIHubScreen() {
 
     const controller = new AbortController();
     abortRef.current = controller;
+    chatDirtyRef.current = true;
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setSending(true);
@@ -342,6 +410,8 @@ export function AIHubScreen() {
             setLastMeta(null);
             setSendError(null);
             if (uid) await clearModelHistory(uid, modelId);
+            historyCacheRef.current.delete(`${uid}:${modelId}`);
+            chatDirtyRef.current = true;
             setHistoryCounts(prev => {
               if (!prev[modelId]) return prev;
               const next = { ...prev };
@@ -372,6 +442,8 @@ export function AIHubScreen() {
             abortRef.current = null;
             setSending(false);
             await clearAllChatHistory(uid);
+            historyCacheRef.current.clear();
+            chatDirtyRef.current = true;
             setHistoryCounts({});
             setMessages([]);
             setLastMeta(null);
@@ -389,7 +461,6 @@ export function AIHubScreen() {
 
   // ───────────────────────── Chat view ─────────────────────────
   if (selectedModel) {
-    const live = aiConfig?.mode === 'live';
     const metaText = lastMeta
       ? [
         lastMeta.mode === 'live' ? `LIVE · ${lastMeta.model}` : 'Trả lời mô phỏng',
@@ -431,6 +502,27 @@ export function AIHubScreen() {
           </View>
         </View>
 
+        {historyError ? (
+          <View style={styles.bannerWrap}>
+            <MiniBanner
+              icon="alert-triangle"
+              tone="warning"
+              text="Không đọc được lịch sử đã lưu — chạm để thử lại"
+              onPress={() => { setHistoryError(null); setHistoryReloadKey(k => k + 1); }}
+            />
+          </View>
+        ) : null}
+
+        {isOffline ? (
+          <OfflineBar
+            text={live
+              ? 'Mất mạng — không gửi được tin nhắn mới. Tin nhắn đã lưu vẫn xem được.'
+              : 'Mất mạng — vẫn chat được ở chế độ mô phỏng.'}
+            onRetry={refreshNetwork}
+            style={styles.offlineBar}
+          />
+        ) : null}
+
         <FlatList
           ref={listRef}
           data={sending ? [...messages, { id: '__typing', role: 'assistant', content: '' }] : messages}
@@ -439,14 +531,25 @@ export function AIHubScreen() {
           contentContainerStyle={[styles.messagesList, messages.length === 0 && styles.messagesListEmpty]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           onScroll={handleScroll}
           scrollEventThrottle={16}
           onContentSizeChange={maybeScrollToEnd}
+          initialNumToRender={14}
+          maxToRenderPerBatch={12}
+          windowSize={9}
+          removeClippedSubviews={Platform.OS === 'android'}
           ListEmptyComponent={
             isLoadingHistory ? (
-              <View style={styles.historyLoading}>
-                <ActivityIndicator color={colors.accentSoft} />
-                <Text style={styles.historyLoadingText} maxFontSizeMultiplier={1.3}>Đang tải lịch sử chat…</Text>
+              <HistorySkeleton />
+            ) : historyError ? (
+              <View style={styles.historyErrorWrap}>
+                <ErrorState
+                  compact
+                  title="Không đọc được lịch sử chat"
+                  message={historyError}
+                  onRetry={() => { setHistoryError(null); setHistoryReloadKey(k => k + 1); }}
+                />
               </View>
             ) : (
               <View style={styles.chatEmpty}>
@@ -566,6 +669,10 @@ export function AIHubScreen() {
         </View>
       </View>
 
+      {isOffline ? (
+        <OfflineBar onRetry={refreshNetwork} style={styles.offlineBar} />
+      ) : null}
+
       <ScrollView
         contentContainerStyle={{ paddingBottom: spacing.xxl }}
         showsVerticalScrollIndicator={false}
@@ -603,13 +710,14 @@ export function AIHubScreen() {
         <CategoryFilter categories={typeFilters} selected={filterType} onSelect={setFilterType} />
 
         <View style={styles.modelList}>
-          {filteredModels.map(model => (
-            <AIModelCard
-              key={model.id}
-              model={model}
-              historyCount={historyCounts[model.id] || 0}
-              onPress={() => openModel(model)}
-            />
+          {filteredModels.map((model, index) => (
+            <FadeIn key={model.id} delay={Math.min(index * 25, 120)}>
+              <AIModelCard
+                model={model}
+                historyCount={historyCounts[model.id] || 0}
+                onPress={() => openModel(model)}
+              />
+            </FadeIn>
           ))}
         </View>
 
@@ -700,8 +808,11 @@ const styles = StyleSheet.create({
   // ── Chat: body ──
   messagesList: { paddingVertical: spacing.md, paddingHorizontal: 0 },
   messagesListEmpty: { flexGrow: 1, justifyContent: 'center' },
-  historyLoading: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xxxl },
-  historyLoadingText: { ...type.body, color: colors.textFaint },
+  historySkeleton: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.lg },
+  historySkeletonLeft: { gap: spacing.sm },
+  historySkeletonRight: { gap: spacing.sm, alignItems: 'flex-end' },
+  historyErrorWrap: { paddingHorizontal: layout.gutter },
+  offlineBar: { marginHorizontal: layout.gutter, marginTop: spacing.sm },
   chatEmpty: { paddingHorizontal: spacing.lg, gap: spacing.md },
   suggestLabel: {
     ...type.smallStrong,

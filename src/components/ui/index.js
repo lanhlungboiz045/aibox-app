@@ -19,3 +19,5 @@ export { Skeleton, SkeletonText, SkeletonRow, SkeletonList } from './Skeleton';
 export { EmptyState } from './EmptyState';
 export { ErrorState } from './ErrorState';
 export { ToastProvider, useToast } from './Toast';
+export { OfflineBar } from './OfflineBar';
+export { FadeIn } from './FadeIn';

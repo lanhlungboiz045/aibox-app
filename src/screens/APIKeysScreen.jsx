@@ -9,13 +9,13 @@ import { View, Text, ScrollView, StyleSheet, RefreshControl } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import {
-  Button, EmptyState, ErrorState, IconButton, Input, SkeletonList, Switch, BottomSheet, useToast,
+  Button, EmptyState, ErrorState, FadeIn, IconButton, Input, SkeletonList, Switch, BottomSheet, useToast,
 } from '../components/ui';
 import { formatDate, formatToken } from '../utils/format';
 import { copyText } from '../utils/clipboard';
 import { hapticError, hapticSuccess } from '../utils/feedback';
 import {
-  createApiKey, loadApiKeys, removeApiKey, restoreApiKey, setApiKeyActive, MAX_API_KEYS,
+  createApiKey, loadApiKeys, peekApiKeys, removeApiKey, restoreApiKey, setApiKeyActive, MAX_API_KEYS,
 } from '../services/apiKeys';
 import { colors, layout, motion, radius, spacing, type } from '../theme/tokens';
 
@@ -25,8 +25,10 @@ export function APIKeysScreen({ navigation }) {
   const toast = useToast();
   const uid = state.user?.id || null;
 
-  const [keys, setKeys] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Có cache RAM → hiện danh sách cũ ngay, không nháy skeleton mỗi lần mở lại
+  const cached = peekApiKeys(uid);
+  const [keys, setKeys] = useState(() => cached || []);
+  const [loading, setLoading] = useState(() => cached === null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
@@ -188,46 +190,48 @@ export function APIKeysScreen({ navigation }) {
             onAction={openCreate}
           />
         ) : (
-          keys.map(item => (
-            <View key={item.id} style={[styles.card, !item.active && styles.cardOff]}>
-              <View style={styles.cardTop}>
-                <View style={[styles.dot, { backgroundColor: item.active ? colors.success : colors.textFaint }]} />
-                <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.3}>{item.name}</Text>
-                <Switch
-                  value={item.active}
-                  onValueChange={next => handleToggle(item, next)}
-                  accessibilityLabel={`${item.active ? 'Tắt' : 'Bật'} key ${item.name}`}
-                />
-              </View>
+          keys.map((item, index) => (
+            <FadeIn key={item.id} delay={Math.min(index * 30, 150)}>
+              <View style={[styles.card, !item.active && styles.cardOff]}>
+                <View style={styles.cardTop}>
+                  <View style={[styles.dot, { backgroundColor: item.active ? colors.success : colors.textFaint }]} />
+                  <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.3}>{item.name}</Text>
+                  <Switch
+                    value={item.active}
+                    onValueChange={next => handleToggle(item, next)}
+                    accessibilityLabel={`${item.active ? 'Tắt' : 'Bật'} key ${item.name}`}
+                  />
+                </View>
 
-              <View style={styles.keyRow}>
-                <Text style={styles.keyMask} numberOfLines={1} maxFontSizeMultiplier={1.2}>{item.mask}</Text>
-                <IconButton
-                  icon="copy"
-                  label={`Sao chép key ${item.name}`}
-                  size={18}
-                  variant="surface"
-                  onPress={() => handleCopy(item.key)}
-                />
-                <IconButton
-                  icon="trash-2"
-                  label={`Xoá key ${item.name}`}
-                  size={18}
-                  color={colors.danger}
-                  onPress={() => handleDelete(item)}
-                />
-              </View>
+                <View style={styles.keyRow}>
+                  <Text style={styles.keyMask} numberOfLines={1} maxFontSizeMultiplier={1.2}>{item.mask}</Text>
+                  <IconButton
+                    icon="copy"
+                    label={`Sao chép key ${item.name}`}
+                    size={18}
+                    variant="surface"
+                    onPress={() => handleCopy(item.key)}
+                  />
+                  <IconButton
+                    icon="trash-2"
+                    label={`Xoá key ${item.name}`}
+                    size={18}
+                    color={colors.danger}
+                    onPress={() => handleDelete(item)}
+                  />
+                </View>
 
-              <View style={styles.metaRow}>
-                <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.2}>
-                  Tạo {formatDate(item.createdAt)}
-                </Text>
-                <Text style={styles.metaDot}>·</Text>
-                <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.2}>
-                  {item.monthlyLimit ? `Hạn mức ${formatToken(item.monthlyLimit)}/tháng` : 'Không giới hạn'}
-                </Text>
+                <View style={styles.metaRow}>
+                  <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+                    Tạo {formatDate(item.createdAt)}
+                  </Text>
+                  <Text style={styles.metaDot}>·</Text>
+                  <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.2}>
+                    {item.monthlyLimit ? `Hạn mức ${formatToken(item.monthlyLimit)}/tháng` : 'Không giới hạn'}
+                  </Text>
+                </View>
               </View>
-            </View>
+            </FadeIn>
           ))
         )}
 
