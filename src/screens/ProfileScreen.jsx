@@ -1,6 +1,5 @@
 // screens/ProfileScreen.jsx — Hồ sơ người dùng (Firebase Auth + Firestore)
 import React, { useState } from 'react';
-import { BackButton } from '../components/ui/BackButton';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, TextInput, Image,
 } from 'react-native';
@@ -8,8 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { ROLE_LABELS, ROLE_COLORS, PROVIDER_LABELS, AVATARS } from '../data/accounts';
 import { formatToken, formatDate } from '../utils/format';
-import { colors, centeredContent, touch } from '../theme/tokens';
+import { colors, centeredContent, touch, spacing } from '../theme/tokens';
 import { AppIcon } from '../components/ui/AppIcon';
+import { AppHeader, Button, TokenIcon } from '../components/ui';
 
 // Ảnh Google có thể lỗi (mạng/không có ảnh) → fallback emoji avatar
 function UserAvatar({ user, size = 96 }) {
@@ -33,7 +33,7 @@ function UserAvatar({ user, size = 96 }) {
 export function ProfileScreen({ navigation }) {
   const {
     state, resetToken, canClaimDaily, claimDailyReward, nextDailyReward,
-    signOut, updateMyProfile, unreadNotifications, myCopyTrades, questState, aiConfig,
+    signOut, updateMyProfile, unreadNotifications, questState, aiConfig,
   } = useApp();
   const insets = useSafeAreaInsets();
   const [editing, setEditing] = useState(false);
@@ -45,17 +45,14 @@ export function ProfileScreen({ navigation }) {
   if (!user) return null;
 
   const isAdmin = user.role === 'admin';
-  const canCreateMarket = isAdmin || user.role === 'creator';
 
-  const totalTrades = user.transactions.filter(t => ['BUY', 'SELL'].includes(t.type)).length;
-  const resolveTxs = user.transactions.filter(t => t.type === 'RESOLVE');
-  const wins = resolveTxs.filter(t => t.amount > 0).length;
-  const winRate = resolveTxs.length > 0 ? Math.round((wins / resolveTxs.length) * 100) : 0;
+  const taiXiuTxs = user.transactions.filter(t => t.type === 'TAIXIU');
+  const wins = taiXiuTxs.filter(t => t.amount > 0).length;
+  const winRate = taiXiuTxs.length > 0 ? Math.round((wins / taiXiuTxs.length) * 100) : 0;
   const aiCalls = user.transactions.filter(t => t.type === 'AI_CALL').length;
   const transfers = user.transactions.filter(t => t.type === 'TRANSFER_OUT').length;
 
   const claimedQuests = questState?.claimed?.length || 0;
-  const shortUid = user.id ? `${user.id.slice(0, 6)}…${user.id.slice(-4)}` : '—';
 
   const startEdit = () => {
     setDraftName(user.username);
@@ -93,7 +90,7 @@ export function ProfileScreen({ navigation }) {
   };
 
   const handleReset = () => {
-    Alert.alert('Reset token', 'Bạn có chắc muốn reset về 10,000 token? Tất cả positions và transactions của tài khoản này sẽ bị xóa.',
+    Alert.alert('Reset token', 'Bạn có chắc muốn reset về 10,000 token? Lịch sử giao dịch của tài khoản này sẽ bị xóa.',
       [{ text: 'Hủy', style: 'cancel' }, { text: 'Reset', style: 'destructive', onPress: () => { resetToken(); Alert.alert('Đã reset', 'Token đã về 10,000.'); } }]);
   };
 
@@ -128,16 +125,33 @@ export function ProfileScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 20 }]}
+      stickyHeaderIndices={[0]}
+      contentContainerStyle={[centeredContent, { paddingBottom: insets.bottom + 32 }]}
     >
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Profile</Text>
-        <View style={{ width: 50 }} />
+      <AppHeader navigation={navigation} title="Hồ sơ" />
+      <View style={styles.primaryStats}>
+        <View style={styles.primaryStat}>
+          <Text style={styles.primaryStatLabel}>Số dư token</Text>
+          <View style={styles.primaryStatValueRow}>
+            <Text style={styles.primaryStatValue}>{formatToken(user.tokenBalance)}</Text>
+            <TokenIcon size={12} />
+          </View>
+        </View>
+        <View style={styles.primaryStat}>
+          <Text style={styles.primaryStatLabel}>Lượt gọi AI</Text>
+          <Text style={styles.primaryStatValue}>{aiCalls}</Text>
+        </View>
+        <View style={styles.primaryStat}>
+          <Text style={styles.primaryStatLabel}>Đã dùng cho AI</Text>
+          <View style={styles.primaryStatValueRow}>
+            <Text style={styles.primaryStatValue}>{formatToken(user.totalSpentOnAI)}</Text>
+            <TokenIcon size={12} color={colors.textDim} />
+          </View>
+        </View>
       </View>
 
       <View style={styles.profileCard}>
-        <UserAvatar user={editing ? { ...user, avatar: draftAvatar, photoURL: null } : user} />
+        <UserAvatar user={editing ? { ...user, avatar: draftAvatar, photoURL: null } : user} size={64} />
 
         {editing ? (
           <View style={styles.editBlock}>
@@ -165,12 +179,8 @@ export function ProfileScreen({ navigation }) {
               ))}
             </View>
             <View style={styles.editActions}>
-              <TouchableOpacity accessibilityRole="button" style={styles.cancelBtn} onPress={() => setEditing(false)} disabled={saving}>
-                <Text style={styles.cancelBtnText}>Hủy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity accessibilityRole="button" style={styles.saveBtn} onPress={saveEdit} disabled={saving}>
-                <Text style={styles.saveBtnText}>{saving ? 'Đang lưu…' : 'Lưu'}</Text>
-              </TouchableOpacity>
+              <Button label="Hủy" variant="secondary" style={styles.editAction} onPress={() => setEditing(false)} disabled={saving} />
+              <Button label="Lưu" style={styles.editAction} onPress={saveEdit} loading={saving} disabled={saving} />
             </View>
           </View>
         ) : (
@@ -186,27 +196,12 @@ export function ProfileScreen({ navigation }) {
 
             <Text style={styles.email} numberOfLines={1}>{user.email}</Text>
 
-            <TouchableOpacity accessibilityRole="button" style={styles.editBtn} onPress={startEdit}>
-              <View style={styles.buttonContent}>
-                <AppIcon name="edit-2" size={14} color={colors.accentSoft} />
-                <Text style={styles.editBtnText}>Sửa hồ sơ</Text>
-              </View>
-            </TouchableOpacity>
+            <Button label="Sửa hồ sơ" variant="secondary" icon="edit-2" onPress={startEdit} />
 
-            <View style={styles.rankRow}>
-              <Text style={styles.rank}>Rank #{user.rank}</Text>
+            <View style={styles.joinedRow}>
               <Text style={styles.joined}>Tham gia: {formatDate(user.joinedDate)}</Text>
             </View>
 
-            <View style={styles.balanceRow}>
-              <Text style={styles.balanceLabel}>Token balance</Text>
-              <Text style={styles.balanceValue}>{formatToken(user.tokenBalance)} token</Text>
-            </View>
-
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Firebase UID</Text>
-              <Text style={styles.metaValue}>{shortUid}</Text>
-            </View>
             <View style={styles.metaRow}>
               <Text style={styles.metaLabel}>Trạng thái</Text>
               <Text style={[styles.metaValue, { color: user.status === 'banned' ? colors.danger : colors.success }]}>
@@ -216,15 +211,6 @@ export function ProfileScreen({ navigation }) {
           </>
         )}
       </View>
-
-      {state.demoMode && (
-        <View style={styles.demoBox}>
-          <Text style={styles.demoBoxText}>
-            Chế độ demo (Expo Go): ví và dữ liệu chỉ lưu trên máy này,
-            không đồng bộ Firebase. Bấm đăng xuất để thoát, hoặc build dev client để đăng nhập Google thật.
-          </Text>
-        </View>
-      )}
 
       {state.profileSync && (
         <View style={styles.syncWarn}>
@@ -260,38 +246,34 @@ export function ProfileScreen({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Thống kê</Text>
         <View style={styles.statsGrid}>
-          <View style={styles.statCard}><Text style={styles.statValue}>{totalTrades}</Text><Text style={styles.statLabel}>Trades</Text></View>
-          <View style={styles.statCard}><Text style={[styles.statValue, { color: winRate >= 50 ? colors.success : colors.danger }]}>{winRate}%</Text><Text style={styles.statLabel}>Win rate</Text></View>
-          <View style={styles.statCard}><Text style={styles.statValue}>{aiCalls}</Text><Text style={styles.statLabel}>AI calls</Text></View>
-          <View style={styles.statCard}><Text style={styles.statValue}>{transfers}</Text><Text style={styles.statLabel}>Transfers</Text></View>
+          <View style={styles.statCard}><Text style={styles.statValue}>{taiXiuTxs.length}</Text><Text style={styles.statLabel}>Ván Tài Xỉu</Text></View>
+          <View style={styles.statCard}><Text style={[styles.statValue, { color: winRate >= 50 ? colors.success : colors.danger }]}>{winRate}%</Text><Text style={styles.statLabel}>Tỷ lệ thắng</Text></View>
+          <View style={styles.statCard}><Text style={styles.statValue}>{transfers}</Text><Text style={styles.statLabel}>Lượt chuyển</Text></View>
         </View>
       </View>
 
       {isAdmin && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>System Admin</Text>
-          {link('settings', 'Admin Dashboard', () => navigation.navigate('AdminHome'), { hint: 'Markets, AI models, users, rủi ro dòng tiền' })}
+          <Text style={styles.sectionTitle}>Quản trị hệ thống</Text>
+          {link('settings', 'Trang quản trị', () => navigation.navigate('AdminHome'), { hint: 'Mô hình AI, người dùng và rủi ro dòng tiền' })}
         </View>
       )}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Công cụ</Text>
-        {canCreateMarket && link('plus-circle', 'Tạo market', () => navigation.navigate('CreateMarket'), {
-          hint: user.role === 'creator' ? 'Bạn là Market Creator · nhận 2% fee' : 'Tạo kèo với tư cách admin',
-        })}
+        {link('info', 'Về bản demo', () => navigation.navigate('DemoAbout'), { hint: 'Thông tin về dữ liệu và các tính năng thử nghiệm' })}
         {isAdmin && link('cpu', 'Cấu hình AI', () => navigation.navigate('AISettings'), {
           hint: aiConfig?.mode === 'live'
             ? `LIVE · ${aiConfig.model}`
             : 'Chưa có API key · đang trả lời mô phỏng',
           badge: aiConfig?.mode === 'live' ? 'LIVE' : 'MOCK',
         })}
-        {link('shopping-bag', 'Store', () => navigation.navigate('Store'), { hint: 'Khung avatar, màu tên, prompt, Creator Pass' })}
         {link('target', 'Nhiệm vụ ngày', () => navigation.navigate('Quests'), { hint: `${claimedQuests} nhiệm vụ đã nhận hôm nay` })}
+        {link('list', 'Lịch sử giao dịch', () => navigation.navigate('Transactions'), { hint: 'Xem biến động token của bạn' })}
         {link('bell', 'Thông báo', () => navigation.navigate('Notifications'), {
-          hint: 'Kết quả kèo, transfer, copy trade',
+          hint: 'Tài khoản, chuyển token và phần thưởng',
           badge: unreadNotifications > 0 ? String(unreadNotifications) : null,
         })}
-        {link('copy', 'Copy Trade', () => navigation.navigate('CopyTrade'), { hint: `${myCopyTrades.length} trader đang theo dõi` })}
         {link('send', 'Chuyển token', () => navigation.navigate('Transfer'), { hint: 'Gửi token cho người dùng khác' })}
       </View>
 
@@ -302,30 +284,26 @@ export function ProfileScreen({ navigation }) {
       </View>
 
       <View style={styles.disclaimer}>
-        <Text style={styles.disclaimerText}>AIBox là nền tảng giải trí. Token là credit nội bộ, không có giá trị tiền tệ và không thể đổi tiền thật. Prediction market là game dự đoán, không phải cá cược.</Text>
+        <Text style={styles.disclaimerText}>AIBox cung cấp công cụ AI và trò chơi Tài Xỉu. Token là credit nội bộ, không có giá trị tiền tệ và không thể đổi thành tiền thật.</Text>
       </View>
-      <Text style={styles.mockNote}>
-        Đăng nhập bằng Google qua Firebase Authentication. Hồ sơ (tên, avatar, quyền) lưu ở Firestore;
-        ví token và dữ liệu game lưu trên thiết bị theo UID Firebase.
-      </Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 10 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
-  headerTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
-  profileCard: { backgroundColor: colors.surface, borderRadius: 16, marginHorizontal: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft, marginBottom: 12 },
+  primaryStats: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginTop: 12, marginBottom: 10 },
+  primaryStat: { flex: 1, minWidth: 0, backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, padding: 10 },
+  primaryStatLabel: { color: colors.textDim, fontSize: 11, marginBottom: 4 },
+  primaryStatValueRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  primaryStatValue: { color: colors.text, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  profileCard: { backgroundColor: colors.surface, borderRadius: 16, marginHorizontal: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft, marginBottom: 12 },
   avatarWrap: { backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginBottom: 10, overflow: 'hidden' },
   username: { color: colors.text, fontSize: 22, fontWeight: '700', marginBottom: 6 },
   badgeRow: { flexDirection: 'row', gap: 6, marginBottom: 6, flexWrap: 'wrap', justifyContent: 'center' },
   roleBadge: { fontSize: 12, fontWeight: '700', borderWidth: 1, borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2, overflow: 'hidden' },
   providerBadge: { color: colors.textDim, fontSize: 12, fontWeight: '600', backgroundColor: colors.surfaceAlt, borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2, overflow: 'hidden' },
   email: { color: colors.textDim, fontSize: 12, marginBottom: 10, maxWidth: '90%' },
-  editBtn: { backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 14, minHeight: touch.min },
-  editBtnText: { color: colors.accentSoft, fontSize: 12, fontWeight: '600' },
   buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   editBlock: { width: '100%', marginTop: 4 },
   nameInput: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.borderSoft, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: colors.text, fontSize: 15, textAlign: 'center' },
@@ -335,23 +313,14 @@ const styles = StyleSheet.create({
   avatarOptionActive: { borderColor: colors.accent, backgroundColor: colors.accentDim },
   avatarOptionText: { fontSize: 19 },
   editActions: { flexDirection: 'row', gap: 8, marginTop: 14 },
-  cancelBtn: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
-  cancelBtnText: { color: colors.textDim, fontSize: 13, fontWeight: '600' },
-  saveBtn: { flex: 1, backgroundColor: colors.accentStrong, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
-  saveBtnText: { color: colors.onAccent, fontSize: 13, fontWeight: '700' },
-  rankRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  rank: { color: colors.warning, fontSize: 13, fontWeight: '600' },
+  editAction: { flex: 1 },
+  joinedRow: { flexDirection: 'row', marginBottom: 8 },
   joined: { color: colors.textFaint, fontSize: 12 },
-  balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.bg, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, width: '100%', justifyContent: 'center' },
-  balanceLabel: { color: colors.textDim, fontSize: 14 },
-  balanceValue: { color: colors.accentSoft, fontSize: 18, fontWeight: '700', fontFamily: 'monospace' },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border },
   metaLabel: { color: colors.textFaint, fontSize: 12 },
-  metaValue: { color: colors.textDim, fontSize: 12, fontWeight: '600', fontFamily: 'monospace' },
+  metaValue: { color: colors.textDim, fontSize: 12, fontWeight: '600', fontVariant: ['tabular-nums'] },
   syncWarn: { backgroundColor: colors.warningDim, borderWidth: 1, borderColor: colors.warningBorder, borderRadius: 10, marginHorizontal: 16, marginBottom: 12, padding: 12 },
   syncWarnText: { color: colors.warning, fontSize: 12, lineHeight: 17 },
-  demoBox: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.borderSoft, borderRadius: 10, marginHorizontal: 16, marginBottom: 12, padding: 12 },
-  demoBoxText: { color: colors.textDim, fontSize: 12, lineHeight: 17 },
   dailyBtn: { backgroundColor: colors.warningDim, marginHorizontal: 16, marginBottom: 16, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.warningBorder, minHeight: touch.min },
   dailyBtnText: { color: colors.warning, fontSize: 14, fontWeight: '600' },
   dailyBtnDone: { backgroundColor: colors.surface, marginHorizontal: 16, marginBottom: 16, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min },
@@ -360,14 +329,13 @@ const styles = StyleSheet.create({
   sectionTitle: { color: colors.text, fontSize: 16, fontWeight: '600', marginBottom: 8 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   statCard: { width: '48%', flexGrow: 1, backgroundColor: colors.surface, borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
-  statValue: { color: colors.text, fontSize: 22, fontWeight: '700', fontFamily: 'monospace' },
+  statValue: { color: colors.text, fontSize: 22, fontWeight: '700', fontVariant: ['tabular-nums'] },
   statLabel: { color: colors.textDim, fontSize: 12, marginTop: 4 },
   actionBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 10, padding: 14, borderWidth: 1, borderColor: colors.borderSoft, marginBottom: 6, gap: 12, minHeight: touch.min },
   dangerBtn: { borderColor: colors.dangerBorder },
   actionText: { color: colors.text, fontSize: 14, fontWeight: '500' },
   actionHint: { color: colors.textFaint, fontSize: 12, marginTop: 2 },
   actionBadge: { color: colors.onAccent, fontSize: 12, fontWeight: '700', backgroundColor: colors.accentStrong, borderRadius: 9, minWidth: 18, textAlign: 'center', paddingHorizontal: 5, paddingVertical: 1, overflow: 'hidden' },
-  disclaimer: { backgroundColor: colors.warningDim, borderRadius: 10, marginHorizontal: 16, padding: 14, borderWidth: 1, borderColor: colors.warningBorder },
-  disclaimerText: { color: colors.warning, fontSize: 12, lineHeight: 18 },
-  mockNote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 10 },
+  disclaimer: { backgroundColor: colors.warningDim, borderRadius: 10, marginHorizontal: 16, marginBottom: 8, padding: 16, borderWidth: 1, borderColor: colors.warningBorder },
+  disclaimerText: { color: colors.warning, fontSize: 13, lineHeight: 20 },
 });

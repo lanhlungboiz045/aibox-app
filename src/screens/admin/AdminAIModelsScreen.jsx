@@ -1,11 +1,11 @@
 // screens/admin/AdminAIModelsScreen.jsx — Quản lý AI model (bật/tắt) & thống kê usage
 import React from 'react';
-import { BackButton } from '../../components/ui/BackButton';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
-import { formatTokenShort } from '../../utils/format';
+import { formatToken } from '../../utils/format';
 import { AppIcon } from '../../components/ui/AppIcon';
+import { AppHeader } from '../../components/ui';
 import { AIProviderLogo } from '../../components/AIProviderLogo';
 import { colors, centeredContent, touch } from '../../theme/tokens';
 
@@ -30,13 +30,10 @@ export function AdminAIModelsScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
+      stickyHeaderIndices={[0]}
+      contentContainerStyle={[centeredContent, { paddingBottom: insets.bottom + 24 }]}
     >
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.title}>Mô hình AI</Text>
-        <View style={{ width: 50 }} />
-      </View>
+      <AppHeader navigation={navigation} title="Mô hình AI" />
 
       <View style={styles.summaryRow}>
         <View style={styles.summaryCard}>
@@ -44,7 +41,7 @@ export function AdminAIModelsScreen({ navigation }) {
           <Text style={styles.summaryLabel}>Lượt gọi AI</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={[styles.summaryValue, { color: colors.warning }]}>{formatTokenShort(totalSpent)}</Text>
+          <Text style={[styles.summaryValue, { color: colors.warning }]}>{formatToken(totalSpent)}</Text>
           <Text style={styles.summaryLabel}>Token thu được</Text>
         </View>
       </View>
@@ -67,7 +64,7 @@ export function AdminAIModelsScreen({ navigation }) {
                 <Text style={styles.provider}>{model.providerName}</Text>
               </View>
               <Text style={styles.meta}>
-                {item.calls} lượt · thu {formatTokenShort(item.spent)} {'\u{1F4B0}'} · theo usage
+                {item.calls} lượt · thu {formatToken(item.spent)} token · theo mức sử dụng
               </Text>
             </View>
             <TouchableOpacity
@@ -85,21 +82,15 @@ export function AdminAIModelsScreen({ navigation }) {
         );
       })}
 
-      <Text style={styles.footnote}>
-        Số token bị trừ lấy từ usage của nhà cung cấp AI; nếu gateway không trả usage thì app ước lượng ~4 ký tự/token.
-      </Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minWidth: 50, minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
-  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   summaryRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 10 },
   summaryCard: { flex: 1, backgroundColor: colors.surface, borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
-  summaryValue: { color: colors.text, fontSize: 18, fontWeight: '700', fontFamily: 'monospace' },
+  summaryValue: { color: colors.text, fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
   summaryLabel: { color: colors.textDim, fontSize: 12, marginTop: 2 },
   hint: { color: colors.textFaint, fontSize: 12, paddingHorizontal: 16, marginBottom: 10, lineHeight: 16 },
   card: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, marginBottom: 6, padding: 12, borderWidth: 1, borderColor: colors.borderSoft },
@@ -107,10 +98,9 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: { color: colors.text, fontSize: 13, fontWeight: '600' },
   provider: { color: colors.textFaint, fontSize: 12 },
-  meta: { color: colors.textDim, fontSize: 12, marginTop: 3, fontFamily: 'monospace' },
+  meta: { color: colors.textDim, fontSize: 12, marginTop: 3, fontVariant: ['tabular-nums'] },
   toggle: { minWidth: touch.min, paddingHorizontal: 10, minHeight: touch.min, justifyContent: 'center', alignItems: 'center', borderRadius: 6, borderWidth: 1 },
   toggleOn: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
   toggleOff: { backgroundColor: colors.surfaceAlt, borderColor: colors.borderSoft },
   toggleText: { fontSize: 12, fontWeight: '700' },
-  footnote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 16 },
 });

@@ -62,9 +62,6 @@ export const darkColors = {
   openai: '#10A37F',
   claude: '#D97757',
   gold: '#C9A66B',
-  marketCrypto: '#FDBA74',
-  marketTech: '#93C5FD',
-  marketPolitics: '#C4B5FD',
   shadow: '#000000' };
 
 // ─────────────────────────── Sáng ───────────────────────────
@@ -122,7 +119,4 @@ export const lightColors = {
   openai: '#10A37F',
   claude: '#D97757',
   gold: '#8A6A2F', // bản sáng đậm hơn để đọc được trên nền trắng
-  marketCrypto: '#9A4D00',
-  marketTech: '#1D4ED8',
-  marketPolitics: '#7E22CE',
   shadow: '#000000' };

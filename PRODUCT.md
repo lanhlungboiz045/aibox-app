@@ -8,18 +8,16 @@ android
 
 ## Users
 
-**Chính:** sinh viên và người mới tìm hiểu đầu tư, dùng điện thoại Android hằng ngày (một tay, cầm dọc),
-thường tranh thủ xem thị trường và hỏi AI trong lúc rảnh. Họ chưa có (hoặc chưa dám dùng) tiền thật, cần
-một chỗ để **tập đọc kèo, thử quyết định và hiểu chi phí của việc hỏi AI** mà không mất tiền.
+**Chính:** sinh viên và người mới sử dụng AI, dùng điện thoại Android hằng ngày (một tay, cầm dọc),
+cần một nơi để thử nhiều model, theo dõi chi phí và quản lý credit nội bộ.
 
 **Phụ (theo ngữ cảnh đồ án):** giảng viên/hội đồng chấm quan sát luồng chính trên máy — nên luồng đầu tiên
 phải tự giải thích được mà không cần thuyết trình kèm.
 
 ## Product Purpose
 
-AIBox là app mô phỏng đầu tư: xem thị trường, đặt kèo, theo dõi danh mục, xếp hạng, làm nhiệm vụ — cộng
-một trợ lý AI gọi model thật và một ví token nội bộ dùng chung cho mọi tính năng. Thành công là người mới
-hiểu một kèo nhanh hơn, biết một câu hỏi AI tốn bao nhiêu, và không bao giờ bị bất ngờ vì số dư.
+AIBox là ứng dụng chat với nhiều model AI, quản lý usage bằng ví token nội bộ, và cung cấp trò chơi Tài Xỉu
+giải trí. Thành công là người dùng hiểu chi phí mỗi lần gọi AI và luôn biết số dư của mình.
 
 ## Positioning
 
@@ -32,19 +30,18 @@ gọi API.
 ## Operating Context
 
 - Đồ án học phần (Semester 7), chạy/test bằng **Expo Go trên Android**; build APK dev client là đường phụ.
-- Đăng nhập **chỉ bằng Google**; hồ sơ người dùng ở Firestore `users/{uid}`.
+- Đăng nhập bằng **email/mật khẩu hoặc Google**; hồ sơ người dùng ở Firestore `users/{uid}`.
 - Không có Firebase/AI key vẫn phải chạy được ở **demo mode** (AsyncStorage), không crash.
-- Ví, token, positions, quests, lịch sử chat lưu **AsyncStorage theo uid**; admin xác định bằng
+- Ví token, lịch sử giao dịch, quests và lịch sử chat lưu **AsyncStorage theo uid**; admin xác định bằng
   `EXPO_PUBLIC_ADMIN_EMAILS`.
 - Người dùng có thể đang **offline hoặc mạng chậm**; game Tài xỉu chạy local nên vẫn chơi được.
 - Cấu hình (Firebase, AI base URL/model, theme, ngôn ngữ) đổi bằng `.env`, không sửa code.
 
 ## Capabilities and Constraints
 
-- **Có:** Home tổng quan, Markets + chi tiết kèo, Portfolio + lịch sử giao dịch, Leaderboard, AI Hub
-  (chat theo model, streaming/stop, lịch sử 40 tin/model), API Keys, Logs, Usage Dashboard, Model Catalog,
-  Credits/Topup, Quests, Store, Transfer, Copy Trade, Trader Profile, Notifications, Profile, admin CMS,
-  Onboarding 3 slide, game Tài xỉu 3 xúc xắc.
+- **Có:** Home tổng quan, AI Hub (chat theo model, streaming/stop, lịch sử 40 tin/model), lịch sử giao dịch,
+  API Keys, Logs, Usage Dashboard, Model Catalog, Credits/Topup, Quests, Transfer, Notifications, Profile,
+  admin CMS, Onboarding 3 slide và game Tài Xỉu 3 xúc xắc.
 - **Token:** trừ khi AI trả lời thành công; lỗi/timeout/huỷ không trừ; tối thiểu 10 token để gọi AI.
   Nạp token là **thanh toán mô phỏng** (BANK demo), không nối cổng thật.
 - **Game Tài xỉu:** token là credit nội bộ, **không nạp/rút/đổi ra tiền thật**, nội dung 18+; luật công
@@ -54,7 +51,7 @@ gọi API.
   `StyleSheet`, không hard-code màu/cỡ chữ/khoảng cách ngoài token.
 - **i18n:** tiếng Việt mặc định, có tiếng Anh; chốt bằng `EXPO_PUBLIC_LANG`.
 - **Theme:** tối mặc định + bảng sáng; chọn lúc module load theo hệ thống, ép bằng `EXPO_PUBLIC_THEME`.
-- **Không được bịa** dữ liệu thị trường, người dùng, đánh giá, hay số liệu hiệu năng.
+- **Không được bịa** dữ liệu người dùng, đánh giá, hay số liệu hiệu năng.
 
 ## Brand Commitments
 

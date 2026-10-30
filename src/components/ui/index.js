@@ -1,6 +1,8 @@
 // components/ui/index.js — Gom export để màn hình import 1 dòng
 // Bộ cơ bản (đã có từ trước)
 export { AppIcon } from './AppIcon';
+export { AppHeader } from './AppHeader';
+export { TokenIcon } from './TokenIcon';
 export { SectionHeader } from './SectionHeader';
 export { StatTile } from './StatTile';
 export { MiniBanner } from './MiniBanner';

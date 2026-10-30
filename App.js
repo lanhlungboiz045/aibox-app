@@ -45,7 +45,7 @@ function BootSkeleton() {
 }
 
 // Chờ 2 việc xong mới mount navigator:
-//   1. state.isLoading  → AsyncStorage (ví, markets, quests...)
+//   1. state.isLoading  → AsyncStorage (ví, quests...)
 //   2. state.authReady  → Firebase Auth đã restore phiên + đọc users/{uid}
 // Tránh flash màn login rồi nhảy vào app khi Firebase còn đang restore session.
 // Bước 6: thêm cờ onboarding (lần mở app đầu tiên) — xong 3 slide mới tới đăng nhập.

@@ -22,14 +22,6 @@ export const isDark = activeScheme === 'dark';
 
 // Tên `colors` giữ nguyên để toàn bộ màn hình cũ không phải sửa import.
 export const colors = isDark ? darkColors : lightColors;
-export const marketCategoryColors = {
-  sports: colors.success,
-  crypto: colors.marketCrypto,
-  tech: colors.marketTech,
-  entertainment: colors.danger,
-  life: colors.warning,
-  politics: colors.marketPolitics,
-};
 
 // ─────────────────────── Bo góc & đổ bóng ───────────────────────
 export const radius = {
@@ -88,17 +80,18 @@ export const typeScale = {
 
 // Style object dùng trực tiếp trong StyleSheet
 export const type = {
-  display: { fontSize: 32, lineHeight: 38, fontWeight: '800', letterSpacing: -0.6 },
-  h1: { fontSize: 24, lineHeight: 30, fontWeight: '700', letterSpacing: -0.4 },
-  section: { fontSize: 18, lineHeight: 24, fontWeight: '700', letterSpacing: -0.2 },
-  subtitle: { fontSize: 16, lineHeight: 22, fontWeight: '600' },
-  body: { fontSize: 14, lineHeight: 20 },
-  bodyStrong: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
-  small: { fontSize: 12, lineHeight: 16 },
-  smallStrong: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
+  display: { fontSize: 32, lineHeight: 38, fontWeight: '800', letterSpacing: -0.6, fontVariant: ['tabular-nums'] },
+  h1: { fontSize: 24, lineHeight: 30, fontWeight: '700', letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
+  section: { fontSize: 18, lineHeight: 24, fontWeight: '700', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
+  subtitle: { fontSize: 16, lineHeight: 22, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  body: { fontSize: 14, lineHeight: 20, fontVariant: ['tabular-nums'] },
+  bodyStrong: { fontSize: 14, lineHeight: 20, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  small: { fontSize: 12, lineHeight: 16, fontVariant: ['tabular-nums'] },
+  smallStrong: { fontSize: 12, lineHeight: 16, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  numeric: { fontVariant: ['tabular-nums'] },
   mono: { fontFamily: 'monospace' },
   // Alias cũ (giữ để không phải sửa màn hình đang dùng)
-  title: { fontSize: 16, lineHeight: 22, fontWeight: '600' } };
+  title: { fontSize: 16, lineHeight: 22, fontWeight: '600', fontVariant: ['tabular-nums'] } };
 
 // ─────────────────── Chuyển động ───────────────────
 export const motion = {

@@ -1,20 +1,19 @@
 // screens/admin/AdminUsersScreen.jsx — Ban/unban + phân quyền
 // Nguồn dữ liệu: Firestore users/{uid} (xem src/services/users.js).
-// Ví token / số trade vẫn lấy từ player record local (AsyncStorage) để hiển thị.
+// Ví token / số giao dịch lấy từ player record local (AsyncStorage) để hiển thị.
 import React, { useCallback, useEffect, useState } from 'react';
-import { BackButton } from '../../components/ui/BackButton';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppIcon } from '../../components/ui/AppIcon';
+import { AppHeader } from '../../components/ui';
 import { useApp } from '../../context/AppContext';
 import { ROLE_LABELS, ROLE_COLORS, PROVIDER_LABELS } from '../../data/accounts';
-import { formatTokenShort } from '../../utils/format';
+import { formatToken } from '../../utils/format';
 import { colors, centeredContent, touch } from '../../theme/tokens';
 
 const ROLE_FILTERS = [
   { key: 'all', label: 'Tất cả' },
   { key: 'user', label: 'User' },
-  { key: 'creator', label: 'Creator' },
   { key: 'admin', label: 'Admin' },
   { key: 'banned', label: 'Bị khoá' },
 ];
@@ -53,7 +52,7 @@ export function AdminUsersScreen({ navigation }) {
       email: profile.email || '',
       username: profile.username || profile.displayName || 'Người dùng',
       avatar: profile.avatar || local?.avatar || '\u{1F464}',
-      role: profile.role || 'user',
+      role: profile.role === 'admin' ? 'admin' : 'user',
       status: profile.status || 'active',
       provider: profile.provider || 'google',
       tokenBalance: local?.tokenBalance ?? 0,
@@ -113,9 +112,8 @@ export function AdminUsersScreen({ navigation }) {
       `Hiện tại: ${ROLE_LABELS[account.role]}`,
       [
         { text: 'Hủy', style: 'cancel' },
-        { text: 'Standard User', onPress: () => applyRole(account, 'user') },
-        { text: 'Market Creator', onPress: () => applyRole(account, 'creator') },
-        { text: 'System Admin', onPress: () => applyRole(account, 'admin') },
+        { text: 'Người dùng', onPress: () => applyRole(account, 'user') },
+        { text: 'Quản trị hệ thống', onPress: () => applyRole(account, 'admin') },
       ]
     );
   };
@@ -145,11 +143,11 @@ export function AdminUsersScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
+      stickyHeaderIndices={[0]}
+      contentContainerStyle={[centeredContent, { paddingBottom: insets.bottom + 24 }]}
     >
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.title}>Người dùng</Text>
+      <AppHeader navigation={navigation} title="Người dùng" />
+      <View style={styles.headerActions}>
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel="Tải lại danh sách người dùng"
@@ -195,9 +193,6 @@ export function AdminUsersScreen({ navigation }) {
       {error && (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
-          <Text style={styles.errorHint}>
-            Danh sách này đọc từ Firestore — cần deploy firestore.rules và bật Firestore Database.
-          </Text>
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Thử tải lại danh sách người dùng"
@@ -214,7 +209,7 @@ export function AdminUsersScreen({ navigation }) {
       {visible.map(account => {
         const banned = account.status === 'banned';
         const isMe = account.id === me.id;
-        const trades = account.transactions.filter(tx => ['BUY', 'SELL'].includes(tx.type)).length;
+        const aiCalls = account.transactions.filter(tx => tx.type === 'AI_CALL').length;
 
         return (
           <View key={account.id} style={[styles.card, banned && styles.cardBanned]}>
@@ -231,7 +226,7 @@ export function AdminUsersScreen({ navigation }) {
                 </View>
                 <Text style={styles.email} numberOfLines={1}>{account.email}</Text>
                 <Text style={styles.meta}>
-                  {PROVIDER_LABELS[account.provider] || account.provider} · {formatTokenShort(account.tokenBalance)} token · {trades} trades
+                  {PROVIDER_LABELS[account.provider] || account.provider} · {formatToken(account.tokenBalance)} token · {aiCalls} lượt gọi AI
                 </Text>
               </View>
             </View>
@@ -260,19 +255,13 @@ export function AdminUsersScreen({ navigation }) {
         <Text style={styles.empty}>Chưa có người dùng nào đăng nhập bằng Google.</Text>
       )}
 
-      <Text style={styles.footnote}>
-        Role và trạng thái lưu ở Firestore users/{'{uid}'} nên admin đổi là mọi máy cập nhật ngay.
-        Số dư token/trade là dữ liệu local của thiết bị này.
-      </Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minWidth: 50, minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
-  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  headerActions: { alignItems: 'flex-end', paddingHorizontal: 16, paddingTop: 4 },
   refreshButton: { width: touch.min, minHeight: touch.min, alignItems: 'flex-end', justifyContent: 'center' },
   refreshBtn: { color: colors.accentSoft, fontSize: 18, fontWeight: '700', width: 40, textAlign: 'center' },
   searchWrap: { paddingHorizontal: 16, marginBottom: 10 },
@@ -298,7 +287,7 @@ const styles = StyleSheet.create({
   roleTag: { fontSize: 12, fontWeight: '700', borderWidth: 1, borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1, overflow: 'hidden' },
   bannedTag: { color: colors.danger, fontSize: 12, fontWeight: '800' },
   email: { color: colors.textDim, fontSize: 12, marginTop: 2 },
-  meta: { color: colors.textFaint, fontSize: 12, marginTop: 3, fontFamily: 'monospace' },
+  meta: { color: colors.textFaint, fontSize: 12, marginTop: 3, fontVariant: ['tabular-nums'] },
   actions: { flexDirection: 'row', gap: 8, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border },
   roleBtn: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 8, minHeight: touch.min, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
   roleBtnText: { color: colors.accentSoft, fontSize: 12, fontWeight: '600' },
@@ -306,5 +295,4 @@ const styles = StyleSheet.create({
   unbanBtn: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
   banBtnText: { color: colors.danger, fontSize: 12, fontWeight: '600' },
   empty: { color: colors.textFaint, fontSize: 13, textAlign: 'center', padding: 24 },
-  footnote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 16 },
 });

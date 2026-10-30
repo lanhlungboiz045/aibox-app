@@ -31,12 +31,12 @@ export function DailyRewardModal({ visible, onClose }) {
             <>
               <Text style={styles.amount}>{formatToken(reward)} token miễn phí</Text>
               {nextStreak > 1 && (
-                <Text style={styles.streak}>Streak {nextStreak} ngày</Text>
+                <Text style={styles.streak}>Chuỗi {nextStreak} ngày</Text>
               )}
               {nextStreak >= DAILY_REWARD_BONUS_AT_STREAK && (
-                <Text style={styles.bonus}>(+{formatToken(DAILY_REWARD_STREAK_BONUS)} bonus streak {DAILY_REWARD_BONUS_AT_STREAK} ngày!)</Text>
+                <Text style={styles.bonus}>(+{formatToken(DAILY_REWARD_STREAK_BONUS)} thưởng chuỗi {DAILY_REWARD_BONUS_AT_STREAK} ngày!)</Text>
               )}
-              <Text style={styles.hint}>Quay lại mỗi ngày để nhận thưởng và giữ streak!</Text>
+              <Text style={styles.hint}>Quay lại mỗi ngày để nhận thưởng và duy trì chuỗi ngày!</Text>
               <TouchableOpacity accessibilityRole="button" style={styles.claimBtn} onPress={handleClaim}>
                 <Text style={styles.claimBtnText}>Nhận ngay</Text>
               </TouchableOpacity>
@@ -44,7 +44,7 @@ export function DailyRewardModal({ visible, onClose }) {
           ) : (
             <>
               <Text style={styles.claimedText}>Bạn đã nhận thưởng hôm nay!</Text>
-              <Text style={styles.hint}>Quay lại sau 24h để nhận tiếp. Streak: {state.user.dailyStreak} ngày</Text>
+              <Text style={styles.hint}>Quay lại sau 24 giờ để nhận tiếp. Chuỗi hiện tại: {state.user.dailyStreak} ngày</Text>
               <TouchableOpacity accessibilityRole="button" style={styles.closeBtn} onPress={onClose}>
                 <Text style={styles.closeBtnText}>Đóng</Text>
               </TouchableOpacity>
@@ -61,9 +61,9 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderRadius: 20, padding: 28, alignItems: 'center', width: '85%', borderWidth: 1, borderColor: colors.borderSoft },
   icon: { marginBottom: 12 },
   title: { color: colors.text, fontSize: 20, fontWeight: '700', marginBottom: 8 },
-  amount: { color: colors.warning, fontSize: 22, fontWeight: '700', fontFamily: 'monospace', marginBottom: 4 },
-  streak: { color: colors.danger, fontSize: 14, fontWeight: '600', marginBottom: 2 },
-  bonus: { color: colors.success, fontSize: 12, marginBottom: 12 },
+  amount: { color: colors.warning, fontSize: 22, fontWeight: '700', fontVariant: ['tabular-nums'], marginBottom: 4 },
+  streak: { color: colors.danger, fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'], marginBottom: 2 },
+  bonus: { color: colors.success, fontSize: 12, fontVariant: ['tabular-nums'], marginBottom: 12 },
   hint: { color: colors.textDim, fontSize: 12, textAlign: 'center', marginBottom: 16, lineHeight: 18 },
   claimBtn: { backgroundColor: colors.warningBg, paddingVertical: 12, paddingHorizontal: 32, borderRadius: 10, minHeight: touch.min },
   claimBtnText: { color: colors.onBright, fontSize: 15, fontWeight: '700' },

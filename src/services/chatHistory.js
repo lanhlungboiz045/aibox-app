@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const KEY_PREFIX = '@aibox_chat_history_v1:';
 // Giới hạn để không phình storage: 40 tin nhắn gần nhất / model
 export const MAX_STORED_MESSAGES = 40;
-// Cắt bớt nội dung quá dài (reply Market Analyst có thể ~4k ký tự)
+// Cắt bớt nội dung quá dài để giới hạn dung lượng lưu trữ.
 const MAX_CONTENT_CHARS = 8000;
 
 const keyOf = (uid, modelId) => `${KEY_PREFIX}${uid}:${modelId}`;

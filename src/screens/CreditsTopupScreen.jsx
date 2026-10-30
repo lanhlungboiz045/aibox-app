@@ -14,7 +14,7 @@ import {
 import { copyText } from '../utils/clipboard';
 import { hapticError, hapticSuccess } from '../utils/feedback';
 import {
-  AppIcon, BottomSheet, Button, EmptyState, IconButton, Row, useToast,
+  AppIcon, AppHeader, BottomSheet, Button, EmptyState, Row, TokenIcon, useToast,
 } from '../components/ui';
 import { centeredContent, colors, layout, radius, spacing, type } from '../theme/tokens';
 import { t } from '../i18n';
@@ -94,16 +94,8 @@ export function CreditsTopupScreen({ navigation }) {
   const totalTopup = topups.reduce((sum, item) => sum + Math.abs(item.amount || 0), 0);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <IconButton icon="chevron-left" label="Quay lại" onPress={() => navigation.goBack()} />
-        <View style={styles.headerBody}>
-          <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.6}>{t('screen.topup')}</Text>
-          <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
-            Trả theo usage · giá tốt hơn mua lẻ
-          </Text>
-        </View>
-      </View>
+    <View style={styles.container}>
+      <AppHeader navigation={navigation} title={t('screen.topup')} subtitle="Trả theo mức sử dụng" />
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxl }]}>
         <View style={styles.balanceCard}>
@@ -113,10 +105,12 @@ export function CreditsTopupScreen({ navigation }) {
               <Text style={styles.balancePillText} maxFontSizeMultiplier={1.5}>Đã nạp {formatToken(totalTopup)}</Text>
             </View>
           </View>
-          <Text style={styles.balanceValue} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.5}>
-            {formatToken(user?.tokenBalance || 0)}
-            <Text style={styles.balanceUnit}> {'\u{1F4B0}'}</Text>
-          </Text>
+          <View style={styles.balanceValueRow}>
+            <Text style={styles.balanceValue} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.5}>
+              {formatToken(user?.tokenBalance || 0)}
+            </Text>
+            <TokenIcon size={18} color={colors.accentSoft} />
+          </View>
           <Text style={styles.balanceHint} maxFontSizeMultiplier={1.6}>
             1 token = 1 token AI xử lý. Mỗi lượt chat tốn ~{formatToken(TOKENS_PER_CHAT_MIN)}–{formatToken(TOKENS_PER_CHAT_MAX)} token;
             gói {PACKAGES[0].label} ≈ {chatsRange(PACKAGES[0].tokens + PACKAGES[0].bonus)} câu hỏi AI.
@@ -195,7 +189,10 @@ export function CreditsTopupScreen({ navigation }) {
                 </Text>
               </View>
               <View style={styles.txRight}>
-                <Text style={styles.txAmount} maxFontSizeMultiplier={1.5}>+{formatToken(Math.abs(t.amount || 0))}</Text>
+                <View style={styles.txAmountRow}>
+                  <Text style={styles.txAmount} maxFontSizeMultiplier={1.5}>+{formatToken(Math.abs(t.amount || 0))}</Text>
+                  <TokenIcon size={12} color={colors.success} />
+                </View>
                 <Text style={styles.txStatus} maxFontSizeMultiplier={1.5}>Thành công</Text>
               </View>
             </View>
@@ -231,9 +228,12 @@ export function CreditsTopupScreen({ navigation }) {
             <Text style={styles.doneTitle} maxFontSizeMultiplier={1.6}>
               +{formatToken(order?.tokens || 0)} token
             </Text>
-            <Text style={styles.doneText} maxFontSizeMultiplier={1.8}>
-              Số dư mới: {formatToken(user?.tokenBalance || 0)} {'\u{1F4B0}'}
-            </Text>
+            <View style={styles.doneBalance}>
+              <Text style={styles.doneText} maxFontSizeMultiplier={1.8}>
+                Số dư mới: {formatToken(user?.tokenBalance || 0)}
+              </Text>
+              <TokenIcon size={14} />
+            </View>
             <Text style={styles.doneHint} maxFontSizeMultiplier={1.6}>
               Giao dịch đã được ghi vào lịch sử nạp bên dưới.
             </Text>
@@ -318,18 +318,6 @@ function StatusSteps({ step }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    minHeight: layout.headerHeight + 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xs,
-    gap: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  headerBody: { flex: 1, gap: 2 },
-  title: { ...type.subtitle, color: colors.text, fontWeight: '700' },
-  headerMeta: { ...type.small, color: colors.textFaint },
   content: { ...centeredContent, padding: spacing.lg, gap: spacing.lg },
   balanceCard: {
     backgroundColor: colors.surface,
@@ -347,9 +335,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
-  balancePillText: { ...type.small, color: colors.success, fontWeight: '600' },
-  balanceValue: { ...type.display, color: colors.text },
-  balanceUnit: { fontSize: 20, fontWeight: '600' },
+  balancePillText: { ...type.small, ...type.numeric, color: colors.success, fontWeight: '600' },
+  balanceValueRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  balanceValue: { ...type.display, ...type.numeric, color: colors.text },
   balanceHint: { ...type.small, color: colors.textFaint, lineHeight: 18 },
   sectionTitle: { ...type.section, color: colors.text },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },
@@ -370,7 +358,7 @@ const styles = StyleSheet.create({
   pkgCardActive: { borderColor: colors.accentBorder, backgroundColor: colors.accentDim },
   pkgTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.xs },
   pkgName: { ...type.smallStrong, color: colors.textDim },
-  pkgTokens: { ...type.h1, color: colors.text, marginTop: spacing.xs },
+  pkgTokens: { ...type.h1, ...type.numeric, color: colors.text, marginTop: spacing.xs },
   pkgUnit: { ...type.small, color: colors.textFaint },
   pkgChats: { ...type.small, color: colors.accentSoft },
   pkgPrice: { ...type.smallStrong, color: colors.warning, marginTop: spacing.xs },
@@ -398,7 +386,8 @@ const styles = StyleSheet.create({
   txDesc: { ...type.bodyStrong, color: colors.text },
   txTime: { ...type.small, color: colors.textFaint },
   txRight: { alignItems: 'flex-end', gap: 2 },
-  txAmount: { ...type.bodyStrong, color: colors.success },
+  txAmountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  txAmount: { ...type.bodyStrong, ...type.numeric, color: colors.success },
   txStatus: { ...type.small, color: colors.textFaint },
   payBody: { gap: spacing.lg },
   steps: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm },
@@ -428,7 +417,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   amountLabel: { ...type.small, color: colors.textDim },
-  amountValue: { ...type.h1, color: colors.text },
+  amountValue: { ...type.h1, ...type.numeric, color: colors.text },
   amountNote: { ...type.small, color: colors.textFaint },
   qrBox: {
     alignItems: 'center',
@@ -463,5 +452,6 @@ const styles = StyleSheet.create({
   },
   doneTitle: { ...type.h1, color: colors.success },
   doneText: { ...type.body, color: colors.text },
+  doneBalance: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
   doneHint: { ...type.small, color: colors.textFaint, textAlign: 'center', lineHeight: 18 },
 });

@@ -87,9 +87,7 @@ export const AI_PRESETS = [
 
 export const DEFAULT_SYSTEM_PROMPT =
   'Bạn là AIBox Assistant — trợ lý AI trong app AIBox, trả lời bằng tiếng Việt, '
-  + 'ngắn gọn, có cấu trúc, thân thiện. Khi được hỏi về prediction market, hãy nêu '
-  + 'luận điểm 2 phía YES/NO, rủi ro và gợi ý quản trị vốn. Không hứa hẹn lợi nhuận, '
-  + 'không đưa lời khuyên đầu tư chắc chắn.';
+  + 'ngắn gọn, có cấu trúc, thân thiện. Không hứa hẹn lợi nhuận hoặc đưa ra cam kết tài chính.';
 
 // Cấu hình đọc từ .env (dùng làm default, có thể bị override trong app)
 export const envAIConfig = {

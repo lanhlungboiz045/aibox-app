@@ -2,23 +2,21 @@
 // Hiển thị danh sách model theo nhà cung cấp, chi phí trừ theo usage, context, capability.
 // Nút "Thử ngay" chuyển sang AI Hub với model đã chọn.
 import React, { useState, useMemo } from 'react';
-import { BackButton } from '../components/ui/BackButton';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, FlatList, Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
-import { TokenBadge } from '../components/TokenBadge';
-import { AppIcon } from '../components/ui/AppIcon';
+import { AppHeader, AppIcon, Button } from '../components/ui';
 import { AIProviderLogo } from '../components/AIProviderLogo';
 import { formatToken } from '../utils/format';
 import { centeredContent, colors, touch } from '../theme/tokens';
 
 const TYPE_FILTERS = [
   { key: 'all', label: 'Tất cả' },
-  { key: 'text', label: 'Text' },
-  { key: 'image', label: 'Image' },
-  { key: 'code', label: 'Code' },
+  { key: 'text', label: 'Văn bản' },
+  { key: 'image', label: 'Hình ảnh' },
+  { key: 'code', label: 'Mã nguồn' },
 ];
 
 export function ModelCatalogScreen({ navigation }) {
@@ -59,15 +57,15 @@ export function ModelCatalogScreen({ navigation }) {
           <Text style={styles.provider}>{item.providerName}</Text>
         </View>
         <View style={styles.priceBox}>
-          <Text style={styles.price}>usage</Text>
-          <Text style={styles.priceUnit}>token thật</Text>
+          <Text style={styles.price}>Theo mức dùng</Text>
+          <Text style={styles.priceUnit}>token thực tế</Text>
         </View>
       </View>
 
       <Text style={styles.desc}>{item.description}</Text>
 
       <View style={styles.metaRow}>
-        <Text style={styles.meta}>Context: {item.inputLimit.toLocaleString('vi-VN')}</Text>
+        <Text style={styles.meta}>Ngữ cảnh: {formatToken(item.inputLimit)} token</Text>
         <Text style={styles.meta}>⭐ {item.rating}</Text>
         <Text style={styles.meta}>🔥 {item.popularity.toLocaleString('vi-VN')}</Text>
       </View>
@@ -81,23 +79,15 @@ export function ModelCatalogScreen({ navigation }) {
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity accessibilityRole="button" style={styles.detailBtn} onPress={() => setDetail(item)} activeOpacity={0.8}>
-          <Text style={styles.detailBtnText}>Chi tiết</Text>
-        </TouchableOpacity>
-        <TouchableOpacity accessibilityRole="button" style={styles.tryBtn} onPress={() => tryNow(item)} activeOpacity={0.85}>
-          <Text style={styles.tryBtnText}>Thử ngay</Text>
-        </TouchableOpacity>
+        <Button label="Chi tiết" variant="secondary" onPress={() => setDetail(item)} />
+        <Button label="Thử ngay" onPress={() => tryNow(item)} />
       </View>
     </View>
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <BackButton label="Quay lại" onPress={() => navigation.goBack()} />
-        <Text style={styles.title}>Catalog mô hình AI</Text>
-        <Text style={styles.sub}>OpenAI-compatible · thanh toán theo usage</Text>
-      </View>
+    <View style={styles.container}>
+      <AppHeader navigation={navigation} title="Mô hình AI" subtitle="Danh mục và bộ lọc" />
 
       <View style={styles.searchBox}>
         <TextInput
@@ -163,7 +153,7 @@ export function ModelCatalogScreen({ navigation }) {
                 <Text style={styles.modalDesc}>{detail.description}</Text>
                 <View style={styles.modalMeta}>
                   <Text style={styles.modalMetaText}>Giá: trừ theo token API báo về (usage)</Text>
-                  <Text style={styles.modalMetaText}>Context: {detail.inputLimit.toLocaleString('vi-VN')} token</Text>
+                  <Text style={styles.modalMetaText}>Ngữ cảnh: {formatToken(detail.inputLimit)} token</Text>
                   <Text style={styles.modalMetaText}>Đánh giá: {detail.rating} / 5</Text>
                   <Text style={styles.modalMetaText}>Lượt dùng: {detail.popularity.toLocaleString('vi-VN')}</Text>
                   <Text style={styles.modalMetaText}>Capabilities: {detail.capabilities.join(', ')}</Text>

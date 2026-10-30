@@ -2,10 +2,10 @@
 //
 // Collection: users/{uid}
 //   uid, email, displayName, username, avatar, photoURL,
-//   role: 'user' | 'creator' | 'admin', status: 'active' | 'banned',
+//   role: 'user' | 'admin', status: 'active' | 'banned',
 //   provider: 'google' | 'email', createdAt, lastLoginAt
 //
-// Role/status là nguồn sự thật ở Firestore. Ví token / positions / quests vẫn
+// Role/status là nguồn sự thật ở Firestore. Ví token / giao dịch / quests vẫn
 // nằm local (AsyncStorage) để demo offline, key theo uid của Firebase.
 
 import {
@@ -88,7 +88,7 @@ export async function ensureUserProfile(fbUser) {
     const data = snap.data();
     const emailAdmin = defaultRoleFor(fields.email) === 'admin';
     // Whitelist .env luôn thắng: đảm bảo admin không tự mất quyền khi rules chặn update
-    const role = emailAdmin ? 'admin' : (data.role || 'user');
+    const role = emailAdmin ? 'admin' : (data.role === 'admin' ? 'admin' : 'user');
 
     const patch = {
       email: fields.email,

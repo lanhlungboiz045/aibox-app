@@ -1,22 +1,20 @@
 // context/AppContext.jsx — Global state cho AIBox (JavaScript, không TypeScript)
-// Quản lý: token, AI calls, trading, transfer, daily reward, quests, comments,
-// notifications, store, copy trade, admin CMS, AsyncStorage
+// Quản lý: token, AI calls, transfer, Tài Xỉu, daily reward, quests,
+// notifications, admin CMS, AsyncStorage
 //
 // AUTH: Firebase Authentication (Google) — xem src/services/auth.js
 // USER INFO: Firestore users/{uid} (role/status/username/avatar) — xem src/services/users.js
-// Ví token / positions / quests vẫn lưu local theo uid để demo offline.
+// Ví token / giao dịch / quests vẫn lưu local theo uid để demo offline.
 
 import React, { createContext, useContext, useReducer, useEffect, useRef, useState, useCallback } from 'react';
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MARKETS, AI_MODELS, MOCK_AI_RESPONSES } from '../data/mockData';
+import { AI_MODELS, MOCK_AI_RESPONSES } from '../data/mockData';
 import { DEMO_ACCOUNTS } from '../data/demoAccounts';
-import { SEED_ACCOUNTS, createAccount, createWallet, ROLE_LABELS, pickAvatar } from '../data/accounts';
-import { STORE_ITEMS, getStoreItem } from '../data/storeItems';
-import { QUESTS, ensureQuestState, getQuestProgress } from '../data/quests';
-import { clamp, generateId, toDayKey, daysBetween } from '../utils/format';
+import { createAccount, createWallet, ROLE_LABELS, pickAvatar } from '../data/accounts';
+import { QUESTS, createEmptyCounters, ensureQuestState, getQuestProgress } from '../data/quests';
+import { generateId, toDayKey, daysBetween } from '../utils/format';
 import { getDailyReward } from '../utils/rewards';
-import { buildMarketAnalysis, buildMarketPrompt, ANALYST_SYSTEM_PROMPT } from '../utils/analyst';
 import { MIN_AI_CALL_BALANCE, costFromUsage, chargeTokens } from '../utils/aiCost';
 import {
   MIN_STAKE, SIDES, SIDE_LABELS, getValidStake, rollDice, settleTaiXiu,
@@ -49,17 +47,13 @@ import {
 } from '../services/ai';
 
 const STORAGE_KEY = '@aibox_state';
-// Key của format cũ (2 key, không version) — chỉ đọc 1 lần để migrate markets
-const LEGACY_MARKETS_KEY = '@aibox_markets_state';
-const STORAGE_VERSION = 4;
+const STORAGE_VERSION = 5;
 // uid cố định cho chế độ demo (chỉ dev) — không trùng uid Firebase nào
 const DEMO_UID = 'demo-expo-go';
 const PERSIST_DEBOUNCE_MS = 400;
 // Giới hạn lịch sử để JSON.stringify không phình dần theo thời gian
 export const MAX_TRANSACTIONS = 200;
 const MAX_NOTIFICATIONS = 80;
-const MAX_COMMENTS_PER_MARKET = 100;
-export const CREATOR_FEE_PCT = 2;
 
 // ============ SANITIZE / MIGRATE ============
 
@@ -68,75 +62,61 @@ function sanitizeAccount(raw) {
   if (!raw || typeof raw !== 'object' || !raw.id) return null;
   const wallet = createWallet();
   const num = (value, fallback) => (Number.isFinite(value) ? value : fallback);
+  const account = { ...raw };
+  ['positions', 'inventory', 'equipped', 'following', 'rank', 'totalSpentOnStore', 'creatorEarnings']
+    .forEach(key => delete account[key]);
   return {
     ...wallet,
-    ...raw,
+    ...account,
     tokenBalance: num(raw.tokenBalance, wallet.tokenBalance),
     totalEarned: num(raw.totalEarned, wallet.totalEarned),
     totalSpentOnAI: num(raw.totalSpentOnAI, wallet.totalSpentOnAI),
-    totalSpentOnStore: num(raw.totalSpentOnStore, wallet.totalSpentOnStore),
-    creatorEarnings: num(raw.creatorEarnings, 0),
-    rank: num(raw.rank, wallet.rank),
     dailyStreak: num(raw.dailyStreak, wallet.dailyStreak),
-    positions: Array.isArray(raw.positions) ? raw.positions : [],
     transactions: Array.isArray(raw.transactions) ? raw.transactions : [],
-    inventory: Array.isArray(raw.inventory) ? raw.inventory : [],
-    equipped: raw.equipped && typeof raw.equipped === 'object' ? { frame: null, nameColor: null, ...raw.equipped } : { frame: null, nameColor: null },
-    following: Array.isArray(raw.following) ? raw.following : [],
-    role: ['admin', 'creator', 'user'].includes(raw.role) ? raw.role : 'user',
+    role: raw.role === 'admin' ? 'admin' : 'user',
     status: raw.status === 'banned' ? 'banned' : 'active',
   };
 }
 
-// Luôn merge tài khoản seed (trader nền) để không mất dữ liệu transfer/copy trade
 function sanitizeAccounts(raw) {
-  const persisted = Array.isArray(raw) ? raw.map(sanitizeAccount).filter(Boolean) : [];
-  const byId = new Map(persisted.map(account => [account.id, account]));
-  const seed = SEED_ACCOUNTS.map(account => ({ ...account, ...(byId.get(account.id) || {}) }));
-  const extra = persisted.filter(account => !SEED_ACCOUNTS.some(d => d.id === account.id));
-  return [...seed, ...extra];
-}
-
-// Markets: giữ giá/trạng thái đã lưu nhưng vẫn nhận market mới thêm trong mockData
-function sanitizeMarkets(raw) {
-  const defaults = MARKETS.map(m => ({ ...m }));
-  if (!Array.isArray(raw) || raw.length === 0) return defaults;
-  const persisted = new Map(raw.filter(m => m && m.id).map(m => [m.id, m]));
-  const merged = defaults.map(m => ({ ...m, ...(persisted.get(m.id) || {}) }));
-  // Market do user tạo (không có trong mockData) vẫn phải giữ
-  const extra = raw.filter(m => m && m.id && !defaults.some(d => d.id === m.id));
-  return [...merged, ...extra];
-}
-
-function sanitizeComments(raw) {
-  if (!raw || typeof raw !== 'object') return {};
-  const result = {};
-  Object.entries(raw).forEach(([marketId, list]) => {
-    if (Array.isArray(list)) result[marketId] = list.filter(c => c && c.id && c.userId);
-  });
-  return result;
+  return Array.isArray(raw)
+    ? raw.map(sanitizeAccount).filter(account => account && account.provider !== 'system')
+    : [];
 }
 
 function sanitizeNotifications(raw) {
-  return Array.isArray(raw) ? raw.filter(n => n && n.id && n.userId).slice(0, MAX_NOTIFICATIONS) : [];
-}
-
-function sanitizeCopyTrades(raw) {
-  return Array.isArray(raw) ? raw.filter(c => c && c.id && c.followerId && c.leaderId) : [];
+  const removedTypes = new Set(['MARKET_RESOLVED', 'CREATOR_FEE', 'COPY_TRADE', 'ROLE_UPGRADE']);
+  return Array.isArray(raw)
+    ? raw.filter(n => n && n.id && n.userId && !removedTypes.has(n.type)).slice(0, MAX_NOTIFICATIONS)
+    : [];
 }
 
 function sanitizeQuests(raw) {
   if (!raw || typeof raw !== 'object') return {};
   const result = {};
   Object.entries(raw).forEach(([userId, questState]) => {
-    if (questState && questState.counters) result[userId] = ensureQuestState(questState);
+    if (!questState?.counters) return;
+    const current = ensureQuestState(questState);
+    const counters = Object.fromEntries(
+      Object.keys(createEmptyCounters()).map(metric => [
+        metric,
+        Number.isFinite(current.counters[metric]) ? Math.max(0, current.counters[metric]) : 0,
+      ]),
+    );
+    const activeQuestIds = new Set(QUESTS.map(quest => quest.id));
+    result[userId] = {
+      ...current,
+      counters,
+      claimed: (Array.isArray(current.claimed) ? current.claimed : [])
+        .filter(id => activeQuestIds.has(id)),
+    };
   });
   return result;
 }
 
 function createInitialState() {
   return {
-    accounts: SEED_ACCOUNTS.map(account => ({ ...account })),
+    accounts: [],
     // Auth do Firebase quản lý: firebaseUser = Firebase User đã rút gọn
     firebaseUser: null,
     // profile = document users/{uid} trên Firestore (role, status, username...)
@@ -147,11 +127,8 @@ function createInitialState() {
     // Chế độ demo CHỈ dùng khi dev (Expo Go không có native Google Sign-In).
     // Không tạo tài khoản Firebase, chỉ tạo ví local để test UI.
     demoMode: false,
-    markets: MARKETS.map(m => ({ ...m })),
     aiModels: AI_MODELS,
-    comments: {},
     notifications: [],
-    copyTrades: [],
     quests: {},
     isLoading: true,
   };
@@ -163,24 +140,17 @@ async function loadPersistedState() {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.v === STORAGE_VERSION) {
+      if (parsed && (parsed.v === STORAGE_VERSION || parsed.v === 4)) {
         return {
           accounts: sanitizeAccounts(parsed.accounts),
-          markets: sanitizeMarkets(parsed.markets),
-          comments: sanitizeComments(parsed.comments),
           notifications: sanitizeNotifications(parsed.notifications),
-          copyTrades: sanitizeCopyTrades(parsed.copyTrades),
           quests: sanitizeQuests(parsed.quests),
         };
       }
-      // Version cũ (1/2/3) gắn với tài khoản mock có mật khẩu local.
-      // Sang Firebase, uid mới nên không map được → chỉ giữ lại markets.
-      return { markets: sanitizeMarkets(parsed && parsed.markets) };
+      return null;
     }
 
-    const legacyMarkets = await AsyncStorage.getItem(LEGACY_MARKETS_KEY);
-    if (!legacyMarkets) return null;
-    return { markets: sanitizeMarkets(JSON.parse(legacyMarkets)) };
+    return null;
   } catch (e) {
     if (__DEV__) console.warn('[AppContext] Không đọc được state đã lưu:', e);
     return null;
@@ -194,7 +164,7 @@ function getCurrentUser(state) {
   return state.accounts.find(account => account.id === state.firebaseUser.uid) || null;
 }
 
-// Username hiển thị không được trùng với trader nền / người dùng khác
+// Username hiển thị không được trùng với người dùng khác
 function ensureUniqueUsername(accounts, desired, uid) {
   const base = String(desired || 'Người dùng').trim() || 'Người dùng';
   let name = base;
@@ -236,50 +206,6 @@ function bumpQuestCounters(state, userId, metric, amount = 1) {
   return { ...state, quests: { ...state.quests, [userId]: { ...questState, counters } } };
 }
 
-// Tính toán mua shares cho 1 account bất kỳ (dùng chung cho user và copy trade)
-function buyForAccount(state, account, market, side, shares) {
-  if (!Number.isSafeInteger(shares) || shares <= 0 || (side !== 'YES' && side !== 'NO')) return null;
-  const price = side === 'YES' ? market.yesPrice : market.noPrice;
-  const cost = shares * price;
-  if (!Number.isFinite(cost) || cost <= 0 || account.tokenBalance < cost) return null;
-
-  const existingPos = account.positions.find(p => p.marketId === market.id && p.side === side);
-  let positions;
-  if (existingPos) {
-    const totalShares = existingPos.shares + shares;
-    const totalInvested = existingPos.invested + cost;
-    positions = account.positions.map(p =>
-      p === existingPos ? { ...p, shares: totalShares, invested: totalInvested, avgPrice: totalInvested / totalShares } : p
-    );
-  } else {
-    positions = [...account.positions, { marketId: market.id, side, shares, avgPrice: price, invested: cost }];
-  }
-
-  return {
-    ...account,
-    tokenBalance: account.tokenBalance - cost,
-    positions,
-    transactions: addTransaction(account, {
-      type: 'BUY',
-      description: `Mua ${shares} shares ${side}: ${market.question}`,
-      amount: -cost,
-      marketId: market.id,
-    }),
-  };
-}
-
-function applyMarketPrice(state, marketId, side, shares, amount) {
-  return {
-    ...state,
-    markets: state.markets.map(m => {
-      if (m.id !== marketId) return m;
-      const yesAdj = side === 'YES' ? shares * 0.01 : -shares * 0.01;
-      const newYes = clamp(m.yesPrice + yesAdj, 1, 99);
-      return { ...m, yesPrice: newYes, noPrice: 100 - newYes, volume: m.volume + amount };
-    }),
-  };
-}
-
 // ============ REDUCER ============
 
 function reducer(state, action) {
@@ -289,10 +215,7 @@ function reducer(state, action) {
       return {
         ...state,
         accounts: payload.accounts || state.accounts,
-        markets: payload.markets || state.markets,
-        comments: payload.comments || {},
         notifications: payload.notifications || [],
-        copyTrades: payload.copyTrades || [],
         quests: payload.quests || {},
         isLoading: false,
       };
@@ -322,7 +245,7 @@ function reducer(state, action) {
         photoURL: hasProfilePhotoField
           ? (profile.photoURL || null)
           : (firebaseUser.photoURL || existing?.photoURL || null),
-        role: profile?.role || 'user',
+        role: profile?.role === 'admin' ? 'admin' : 'user',
         status: profile?.status || 'active',
         provider: profile?.provider || firebaseUser.provider || 'google',
       };
@@ -335,7 +258,7 @@ function reducer(state, action) {
         ...state,
         accounts,
         firebaseUser,
-        profile: { ...(profile || {}), username },
+        profile: { ...(profile || {}), role: account.role, username },
         profileSync: profileError || null,
         authReady: true,
         authNotice: null,
@@ -357,7 +280,8 @@ function reducer(state, action) {
     // Chế độ demo (chỉ dev): giả lập phiên đăng nhập bằng ví local để test UI
     // trên Expo Go — nơi không có Google Sign-In native và không có Firestore.
     case 'DEMO_SESSION': {
-      const { id = DEMO_UID, email = 'demo@expo-go.local', username = 'Demo Expo Go', role = 'admin' } = action.payload || {};
+      const { id = DEMO_UID, email = 'demo@expo-go.local', username = 'Demo Expo Go' } = action.payload || {};
+      const role = action.payload?.role === 'user' ? 'user' : 'admin';
       const existing = state.accounts.find(a => a.id === id);
       const account = {
         ...(existing || createAccount({
@@ -410,6 +334,9 @@ function reducer(state, action) {
       Object.entries(action.payload.patch || {}).forEach(([key, value]) => {
         if (value !== undefined) patch[key] = value;
       });
+      if (Object.prototype.hasOwnProperty.call(patch, 'role')) {
+        patch.role = patch.role === 'admin' ? 'admin' : 'user';
+      }
       return {
         ...state,
         profile: state.profile ? { ...state.profile, ...patch } : state.profile,
@@ -419,163 +346,6 @@ function reducer(state, action) {
 
     case 'AUTH_NOTICE':
       return { ...state, authNotice: action.payload };
-
-    // ---------- TRADING ----------
-    case 'BUY_SHARES': {
-      const user = getCurrentUser(state);
-      const { marketId, side, shares } = action.payload;
-      const market = state.markets.find(m => m.id === marketId);
-      if (!user || !market || market.resolved) return state;
-
-      const updated = buyForAccount(state, user, market, side, shares);
-      if (!updated) return state;
-
-      const next = withAccount(state, updated);
-      const priced = applyMarketPrice(next, marketId, side, shares, shares * (side === 'YES' ? market.yesPrice : market.noPrice));
-      return bumpQuestCounters(priced, user.id, 'trades');
-    }
-
-    case 'SELL_SHARES': {
-      const user = getCurrentUser(state);
-      const { marketId, side, shares } = action.payload;
-      const market = state.markets.find(m => m.id === marketId);
-      const position = user?.positions.find(p => p.marketId === marketId && p.side === side);
-      if (!user || !market || !position || market.resolved
-        || !Number.isSafeInteger(shares) || shares <= 0
-        || shares > position.shares
-        || (side !== 'YES' && side !== 'NO')) return state;
-
-      const price = side === 'YES' ? market.yesPrice : market.noPrice;
-      const revenue = shares * price;
-
-      let positions;
-      if (position.shares - shares <= 0) {
-        positions = user.positions.filter(p => p !== position);
-      } else {
-        positions = user.positions.map(p =>
-          p === position ? { ...p, shares: p.shares - shares, invested: p.invested - (p.invested / p.shares) * shares } : p
-        );
-      }
-
-      const updated = {
-        ...user,
-        tokenBalance: user.tokenBalance + revenue,
-        positions,
-        transactions: addTransaction(user, {
-          type: 'SELL',
-          description: `Bán ${shares} shares ${side}: ${market.question}`,
-          amount: +revenue,
-          marketId,
-        }),
-      };
-
-      return applyMarketPrice(withAccount(state, updated), marketId, side, -shares, revenue);
-    }
-
-    // Admin quyết định kết quả — trả thưởng cho TẤT CẢ account giữ vị thế
-    case 'RESOLVE_MARKET': {
-      const { marketId, outcome } = action.payload;
-      const market = state.markets.find(m => m.id === marketId);
-      if (!market || market.resolved) return state;
-
-      let totalWinningShares = 0;
-      state.accounts.forEach(account => {
-        account.positions.forEach(p => {
-          if (p.marketId === marketId && p.side === outcome) totalWinningShares += p.shares;
-        });
-      });
-
-      // Fee cho creator (2% volume) + payout lấy từ liquidity của market → không bơm token vô hạn
-      const creator = market.createdBy ? state.accounts.find(a => a.id === market.createdBy) : null;
-      const fee = creator ? Math.round((market.volume || 0) * CREATOR_FEE_PCT / 100) : 0;
-      const pool = Math.max(0, (market.liquidity || 0) - fee);
-      const perShare = totalWinningShares > 0 ? Math.min(100, pool / totalWinningShares) : 0;
-
-      let next = state;
-      let totalPaid = 0;
-
-      const accounts = state.accounts.map(account => {
-        const positions = account.positions.filter(p => p.marketId === marketId);
-        if (positions.length === 0) return account;
-
-        let updated = { ...account };
-        positions.forEach(position => {
-          if (position.side === outcome) {
-            const payout = Math.round(position.shares * perShare);
-            totalPaid += payout;
-            updated = {
-              ...updated,
-              tokenBalance: updated.tokenBalance + payout,
-              totalEarned: updated.totalEarned + payout,
-              transactions: addTransaction(updated, {
-                type: 'RESOLVE',
-                description: `Thắng ${payout} token: ${market.question}`,
-                amount: +payout,
-                marketId,
-              }),
-            };
-            next = pushNotification(next, {
-              userId: account.id,
-              type: 'MARKET_RESOLVED',
-              title: `Kèo đã có kết quả: ${outcome}`,
-              body: `Bạn thắng ${payout} token ở "${market.question}".`,
-            });
-          } else {
-            updated = {
-              ...updated,
-              transactions: addTransaction(updated, {
-                type: 'RESOLVE',
-                description: `Thua ${position.invested} token: ${market.question}`,
-                amount: 0,
-                marketId,
-              }),
-            };
-            next = pushNotification(next, {
-              userId: account.id,
-              type: 'MARKET_RESOLVED',
-              title: `Kèo đã có kết quả: ${outcome}`,
-              body: `Bạn thua ở "${market.question}".`,
-            });
-          }
-        });
-
-        updated = { ...updated, positions: account.positions.filter(p => p.marketId !== marketId) };
-        return updated;
-      });
-
-      // Trả fee cho creator
-      if (creator && fee > 0) {
-        const index = accounts.findIndex(a => a.id === creator.id);
-        if (index >= 0) {
-          const creatorAccount = accounts[index];
-          accounts[index] = {
-            ...creatorAccount,
-            tokenBalance: creatorAccount.tokenBalance + fee,
-            creatorEarnings: creatorAccount.creatorEarnings + fee,
-            transactions: addTransaction(creatorAccount, {
-              type: 'CREATOR_FEE',
-              description: `Creator fee ${CREATOR_FEE_PCT}% market "${market.question}"`,
-              amount: +fee,
-              marketId,
-            }),
-          };
-        }
-        next = pushNotification(next, {
-          userId: creator.id,
-          type: 'CREATOR_FEE',
-          title: 'Nhận creator fee',
-          body: `+${fee} token từ market "${market.question}".`,
-        });
-      }
-
-      const markets = next.markets.map(m =>
-        m.id === marketId
-          ? { ...m, resolved: true, outcome, resolvedAt: new Date().toISOString(), liquidity: Math.max(0, (m.liquidity || 0) - fee - totalPaid) }
-          : m
-      );
-
-      return { ...next, accounts, markets };
-    }
 
     // ---------- AI ----------
     case 'AI_CALL': {
@@ -703,7 +473,7 @@ function reducer(state, action) {
         }),
       };
 
-      return withAccount(state, updated);
+      return bumpQuestCounters(withAccount(state, updated), user.id, 'taiXiuRounds');
     }
 
     // ---------- DAILY REWARD ----------
@@ -766,74 +536,6 @@ function reducer(state, action) {
       return { ...withAccount(state, updated), quests };
     }
 
-    // ---------- COMMENTS ----------
-    case 'ADD_COMMENT': {
-      const user = getCurrentUser(state);
-      const { marketId, content } = action.payload;
-      const text = String(content || '').trim();
-      if (!user || !text) return state;
-      if (!state.markets.some(m => m.id === marketId)) return state;
-
-      const comment = {
-        id: generateId(),
-        marketId,
-        userId: user.id,
-        username: user.username,
-        avatar: user.avatar,
-        role: user.role,
-        frame: user.equipped?.frame || null,
-        nameColor: user.equipped?.nameColor || null,
-        content: text.substring(0, 500),
-        likes: 0,
-        likedBy: [],
-        createdAt: new Date().toISOString(),
-      };
-
-      const list = [comment, ...(state.comments[marketId] || [])].slice(0, MAX_COMMENTS_PER_MARKET);
-      return bumpQuestCounters(
-        { ...state, comments: { ...state.comments, [marketId]: list } },
-        user.id,
-        'comments'
-      );
-    }
-
-    case 'LIKE_COMMENT': {
-      const user = getCurrentUser(state);
-      const { marketId, commentId } = action.payload;
-      if (!user) return state;
-      const list = state.comments[marketId];
-      if (!Array.isArray(list)) return state;
-
-      const comments = list.map(comment => {
-        if (comment.id !== commentId) return comment;
-        const liked = comment.likedBy.includes(user.id);
-        return {
-          ...comment,
-          likes: liked ? comment.likes - 1 : comment.likes + 1,
-          likedBy: liked ? comment.likedBy.filter(id => id !== user.id) : [...comment.likedBy, user.id],
-        };
-      });
-
-      return { ...state, comments: { ...state.comments, [marketId]: comments } };
-    }
-
-    case 'DELETE_COMMENT': {
-      const user = getCurrentUser(state);
-      const { marketId, commentId } = action.payload;
-      if (!user) return state;
-      const list = state.comments[marketId];
-      if (!Array.isArray(list)) return state;
-
-      const target = list.find(comment => comment.id === commentId);
-      if (!target) return state;
-      if (target.userId !== user.id && user.role !== 'admin') return state;
-
-      return {
-        ...state,
-        comments: { ...state.comments, [marketId]: list.filter(comment => comment.id !== commentId) },
-      };
-    }
-
     // ---------- NOTIFICATIONS ----------
     case 'NOTIFICATIONS_READ': {
       const user = getCurrentUser(state);
@@ -844,71 +546,6 @@ function reducer(state, action) {
           n.userId === user.id ? { ...n, read: true } : n
         ),
       };
-    }
-
-    // ---------- STORE ----------
-    case 'PURCHASE_ITEM': {
-      const user = getCurrentUser(state);
-      const item = getStoreItem(action.payload.itemId);
-      if (!user || !item) return state;
-      if (user.tokenBalance < item.price) return state;
-
-      // Creator pass: nâng role, chỉ mua 1 lần
-      if (item.type === 'role') {
-        if (user.role !== 'user') return state;
-        const updated = {
-          ...user,
-          role: 'creator',
-          tokenBalance: user.tokenBalance - item.price,
-          totalSpentOnStore: user.totalSpentOnStore + item.price,
-          transactions: addTransaction(user, {
-            type: 'STORE_PURCHASE',
-            description: `Mua ${item.name} — nâng cấp Market Creator`,
-            amount: -item.price,
-          }),
-        };
-        return pushNotification(withAccount(state, updated), {
-          userId: user.id,
-          type: 'ROLE_UPGRADE',
-          title: 'Bạn đã là Market Creator',
-          body: 'Giờ bạn có thể tự tạo market và nhận 2% fee trên volume.',
-        });
-      }
-
-      if (user.inventory.includes(item.id)) return state;
-
-      const updated = {
-        ...user,
-        tokenBalance: user.tokenBalance - item.price,
-        totalSpentOnStore: user.totalSpentOnStore + item.price,
-        inventory: [...user.inventory, item.id],
-        // Trang bị ngay để thấy hiệu ứng
-        equipped: item.type === 'frame'
-          ? { ...user.equipped, frame: item.id }
-          : item.type === 'nameColor'
-            ? { ...user.equipped, nameColor: item.id }
-            : user.equipped,
-        transactions: addTransaction(user, {
-          type: 'STORE_PURCHASE',
-          description: `Mua ${item.name}`,
-          amount: -item.price,
-        }),
-      };
-
-      return withAccount(state, updated);
-    }
-
-    case 'EQUIP_ITEM': {
-      const user = getCurrentUser(state);
-      const item = getStoreItem(action.payload.itemId);
-      if (!user || !item || !user.inventory.includes(item.id)) return state;
-      const slot = item.type === 'frame' ? 'frame' : item.type === 'nameColor' ? 'nameColor' : null;
-      if (!slot) return state;
-
-      return withAccount(state, {
-        ...user,
-        equipped: { ...user.equipped, [slot]: user.equipped[slot] === item.id ? null : item.id },
-      });
     }
 
     // ---------- ADMIN ----------
@@ -925,7 +562,7 @@ function reducer(state, action) {
       const { userId, role } = action.payload;
       if (!actor || actor.role !== 'admin') return state;
       if (userId === actor.id) return state;
-      if (!['admin', 'creator', 'user'].includes(role)) return state;
+      if (!['admin', 'user'].includes(role)) return state;
       return withAccounts(state, state.accounts.map(a => (a.id === userId ? { ...a, role } : a)));
     }
 
@@ -940,131 +577,11 @@ function reducer(state, action) {
       };
     }
 
-    // ---------- MARKET CREATION ----------
-    case 'CREATE_MARKET': {
-      const user = getCurrentUser(state);
-      if (!user || !['admin', 'creator'].includes(user.role)) return state;
-
-      const { question, description, category, icon, endDate } = action.payload;
-      const yesPrice = clamp(Math.round(Number(action.payload.yesPrice) || 50), 5, 95);
-
-      const market = {
-        id: action.payload.marketId || `m_${generateId()}`,
-        question,
-        description,
-        category: category || 'life',
-        endDate,
-        resolved: false,
-        outcome: null,
-        yesPrice,
-        noPrice: 100 - yesPrice,
-        volume: 0,
-        // Platform tài trợ liquidity ban đầu để market mới có thể trả thưởng
-        liquidity: 10000,
-        icon: icon || '\u{1F52E}',
-        priceHistory: [yesPrice],
-        createdBy: user.id,
-        creatorName: user.username,
-        createdAt: new Date().toISOString(),
-      };
-
-      return { ...state, markets: [...state.markets, market] };
-    }
-
-    // ---------- COPY TRADE ----------
-    case 'FOLLOW_TRADER': {
-      const user = getCurrentUser(state);
-      const { leaderId, leaderName, maxPerTrade } = action.payload;
-      if (!user || leaderId === user.id) return state;
-      if (state.copyTrades.some(c => c.followerId === user.id && c.leaderId === leaderId)) return state;
-
-      const config = {
-        id: generateId(),
-        followerId: user.id,
-        leaderId,
-        leaderName,
-        maxPerTrade: clamp(Math.round(Number(maxPerTrade) || 1000), 100, 100000),
-        enabled: true,
-        createdAt: new Date().toISOString(),
-      };
-
-      return {
-        ...state,
-        copyTrades: [...state.copyTrades, config],
-        accounts: state.accounts.map(a => (a.id === user.id ? { ...a, following: [...a.following, leaderId] } : a)),
-      };
-    }
-
-    case 'UNFOLLOW_TRADER': {
-      const user = getCurrentUser(state);
-      if (!user) return state;
-      const { leaderId } = action.payload;
-      return {
-        ...state,
-        copyTrades: state.copyTrades.filter(c => !(c.followerId === user.id && c.leaderId === leaderId)),
-        accounts: state.accounts.map(a =>
-          a.id === user.id ? { ...a, following: a.following.filter(id => id !== leaderId) } : a
-        ),
-      };
-    }
-
-    case 'TOGGLE_COPY_TRADE': {
-      const user = getCurrentUser(state);
-      if (!user) return state;
-      return {
-        ...state,
-        copyTrades: state.copyTrades.map(c =>
-          c.id === action.payload.id && c.followerId === user.id ? { ...c, enabled: !c.enabled } : c
-        ),
-      };
-    }
-
-    // Mô phỏng: leader vừa mở lệnh → các follower đang bật copy trade mua theo
-    case 'SIMULATE_COPY_TRADE': {
-      const { leaderId, marketId, side, shares } = action.payload;
-      const market = state.markets.find(m => m.id === marketId);
-      if (!market || market.resolved) return state;
-
-      const configs = state.copyTrades.filter(c => c.leaderId === leaderId && c.enabled);
-      if (configs.length === 0) return state;
-
-      const price = side === 'YES' ? market.yesPrice : market.noPrice;
-      let next = state;
-
-      configs.forEach(config => {
-        const follower = next.accounts.find(a => a.id === config.followerId);
-        if (!follower) return;
-        const budget = Math.min(config.maxPerTrade, follower.tokenBalance);
-        const qty = Math.floor(budget / price);
-        if (qty <= 0) {
-          next = pushNotification(next, {
-            userId: follower.id,
-            type: 'COPY_TRADE',
-            title: 'Copy trade bị bỏ qua',
-            body: `Không đủ token để copy lệnh ${side} ở "${market.question}".`,
-          });
-          return;
-        }
-        const updated = buyForAccount(next, follower, market, side, qty);
-        if (!updated) return;
-        next = withAccount(next, updated);
-        next = pushNotification(next, {
-          userId: follower.id,
-          type: 'COPY_TRADE',
-          title: `Copy trade: ${side} ${qty} shares`,
-          body: `${config.leaderName} vừa mở ${side} ở "${market.question}".`,
-        });
-      });
-
-      return applyMarketPrice(next, marketId, side, shares, shares * price);
-    }
-
     // ---------- DEMO RESET ----------
     case 'RESET_TOKEN': {
       const user = getCurrentUser(state);
       if (!user) return state;
       const fresh = {
-        ...user,
         ...createWallet({ tokenBalance: 10000 }),
         id: user.id,
         email: user.email,
@@ -1075,9 +592,6 @@ function reducer(state, action) {
         provider: user.provider,
         photoURL: user.photoURL,
         joinedDate: user.joinedDate,
-        // giữ đồ đã mua + tiến trình quest trong ngày
-        inventory: user.inventory,
-        equipped: user.equipped,
       };
       return withAccount(state, fresh);
     }
@@ -1116,8 +630,7 @@ export function AppProvider({ children }) {
       dispatch({
         type: 'INIT',
         payload: persisted || {
-          accounts: SEED_ACCOUNTS.map(account => ({ ...account })),
-          markets: MARKETS.map(m => ({ ...m })),
+          accounts: [],
         },
       });
     })();
@@ -1135,10 +648,7 @@ export function AppProvider({ children }) {
     const payload = JSON.stringify({
       v: STORAGE_VERSION,
       accounts: current.accounts,
-      markets: current.markets,
-      comments: current.comments,
       notifications: current.notifications,
-      copyTrades: current.copyTrades,
       quests: current.quests,
     });
     AsyncStorage.setItem(STORAGE_KEY, payload).catch((e) => {
@@ -1146,12 +656,12 @@ export function AppProvider({ children }) {
     });
   }, []);
 
-  // Debounce: mua/bán/chat liên tục không ghi storage liên tục
+  // Debounce: chat liên tục không ghi storage liên tục
   useEffect(() => {
     if (state.isLoading) return undefined;
     persistTimer.current = setTimeout(persist, PERSIST_DEBOUNCE_MS);
     return () => clearTimeout(persistTimer.current);
-  }, [state.accounts, state.markets, state.comments, state.notifications, state.copyTrades, state.quests, state.isLoading, persist]);
+  }, [state.accounts, state.notifications, state.quests, state.isLoading, persist]);
 
   // Flush khi app xuống background hoặc provider bị unmount → không mất thay đổi cuối
   useEffect(() => {
@@ -1360,36 +870,10 @@ export function AppProvider({ children }) {
 
   // ---------- APP ACTIONS ----------
 
-  const buyShares = useCallback((marketId, side, shares) => {
-    dispatch({ type: 'BUY_SHARES', payload: { marketId, side, shares } });
-  }, []);
-
-  const sellShares = useCallback((marketId, side, shares) => {
-    dispatch({ type: 'SELL_SHARES', payload: { marketId, side, shares } });
-  }, []);
-
   const topUpTokens = useCallback((amount, label) => {
     dispatch({ type: 'TOPUP', payload: { amount, label } });
   }, []);
 
-  const resolveMarket = useCallback((marketId, outcome) => {
-    const current = stateRef.current;
-    if (getCurrentUser(current)?.role !== 'admin') {
-      return { ok: false, error: 'Chỉ System Admin mới được resolve market.' };
-    }
-    const market = current.markets.find(m => m.id === marketId);
-    if (!market) return { ok: false, error: 'Market không tồn tại.' };
-    if (market.resolved) return { ok: false, error: 'Market này đã được resolve rồi.' };
-    if (outcome !== 'YES' && outcome !== 'NO') {
-      return { ok: false, error: 'Kết quả không hợp lệ (chỉ YES hoặc NO).' };
-    }
-    dispatch({ type: 'RESOLVE_MARKET', payload: { marketId, outcome } });
-    return { ok: true };
-  }, []);
-
-  // ---------- AI THẬT (OpenAI-compatible) ----------
-
-  // Lưu cấu hình AI từ màn Cấu hình (AsyncStorage) + cập nhật UI
   const saveAIConfig = useCallback(async (patch) => {
     await saveAISettings(patch);
     const status = getAIStatus();
@@ -1465,71 +949,6 @@ export function AppProvider({ children }) {
     };
   }, []);
 
-  // AI Market Analyst thật: đưa dữ liệu kèo vào prompt, tính phí như 1 lần gọi AI
-  const analyzeMarketAI = useCallback(async ({ marketId, modelId, extraPrompt = '' } = {}) => {
-    const current = stateRef.current;
-    const user = getCurrentUser(current);
-    const market = current.markets.find(m => m.id === marketId);
-    const model = current.aiModels.find(m => m.id === modelId);
-
-    if (!user) return { ok: false, error: 'Bạn cần đăng nhập.' };
-    if (!market) return { ok: false, error: 'Market không tồn tại.' };
-    if (!model) return { ok: false, error: 'Model không tồn tại.' };
-    if (!model.isAvailable) return { ok: false, error: 'Model đang tạm bảo trì.' };
-    if (user.tokenBalance < MIN_AI_CALL_BALANCE) {
-      return {
-        ok: false,
-        error: `Cần tối thiểu ${MIN_AI_CALL_BALANCE} token để gọi AI, bạn chỉ có ${user.tokenBalance}.`,
-      };
-    }
-
-    const prompt = `Phân tích kèo: ${market.question}`;
-
-    if (!isLiveMode()) {
-      const mockText = buildMarketAnalysis(market, model, extraPrompt);
-      const cost = costFromUsage({ prompt, reply: mockText });
-      dispatch({ type: 'AI_CALL', payload: { modelId, prompt, cost } });
-      return {
-        ok: true,
-        mode: 'mock',
-        text: mockText,
-        cost,
-        usage: { total_tokens: cost, estimated: true },
-      };
-    }
-
-    // Prompt ép ra NHẬN ĐỊNH CỤ THỂ (YES/NO + xác suất + edge), không chỉ khuyên chung chung.
-    // Đặt kết luận ở đầu để câu trả lời không bị mất ý chính khi bị cắt token.
-    const marketPrompt = buildMarketPrompt(market, extraPrompt);
-
-    const messages = [
-      { role: 'system', content: ANALYST_SYSTEM_PROMPT },
-      { role: 'user', content: marketPrompt },
-    ];
-
-    const result = await chatComplete({
-      appModelId: modelId,
-      messages,
-      temperature: 0.4,
-      // Đủ chỗ cho câu trả lời dài + token suy luận của model mới
-      maxTokens: 1600,
-    });
-
-    if (!result.ok) return { ok: false, mode: 'live', error: result.error };
-
-    const cost = costFromUsage({ usage: result.usage, messages, reply: result.text });
-
-    dispatch({ type: 'AI_CALL', payload: { modelId, prompt, cost } });
-    return {
-      ok: true,
-      mode: 'live',
-      text: result.text,
-      model: result.model,
-      usage: result.usage,
-      cost,
-    };
-  }, []);
-
   const transfer = useCallback((recipient, amount, note) => {
     const current = stateRef.current;
     const user = getCurrentUser(current);
@@ -1581,71 +1000,13 @@ export function AppProvider({ children }) {
     dispatch({ type: 'CLAIM_QUEST', payload: { questId } });
   }, []);
 
-  const addComment = useCallback((marketId, content) => {
-    dispatch({ type: 'ADD_COMMENT', payload: { marketId, content } });
-  }, []);
-
-  const likeComment = useCallback((marketId, commentId) => {
-    dispatch({ type: 'LIKE_COMMENT', payload: { marketId, commentId } });
-  }, []);
-
-  const deleteComment = useCallback((marketId, commentId) => {
-    dispatch({ type: 'DELETE_COMMENT', payload: { marketId, commentId } });
-  }, []);
-
   const markNotificationsRead = useCallback(() => {
     dispatch({ type: 'NOTIFICATIONS_READ' });
   }, []);
 
-  const purchaseItem = useCallback((itemId) => {
-    const current = stateRef.current;
-    const user = getCurrentUser(current);
-    const item = getStoreItem(itemId);
-    if (!user || !item) return { ok: false, error: 'Không tìm thấy vật phẩm.' };
-    if (user.tokenBalance < item.price) return { ok: false, error: 'Không đủ token.' };
-    if (item.type === 'role' && user.role !== 'user') return { ok: false, error: 'Bạn đã có đặc quyền này.' };
-    if (item.type !== 'role' && user.inventory.includes(item.id)) return { ok: false, error: 'Bạn đã sở hữu vật phẩm này.' };
-    dispatch({ type: 'PURCHASE_ITEM', payload: { itemId } });
-
-    // Creator Pass: quyền lưu ở Firestore (users/{uid}.role) để máy khác cũng thấy
-    if (item.type === 'role') {
-      dispatch({ type: 'PROFILE_PATCH', payload: { patch: { role: 'creator' } } });
-      updateUserRole(user.id, 'creator').catch((e) => {
-        if (__DEV__) console.warn('[AppContext] Không cập nhật được role lên Firestore:', e);
-      });
-    }
-
-    return { ok: true };
-  }, []);
-
-  const equipItem = useCallback((itemId) => {
-    dispatch({ type: 'EQUIP_ITEM', payload: { itemId } });
-  }, []);
-
-  const createMarket = useCallback((draft) => {
-    const current = stateRef.current;
-    const user = getCurrentUser(current);
-    if (!user || !['admin', 'creator'].includes(user.role)) {
-      return { ok: false, error: 'Cần quyền Market Creator. Mua Creator Pass trong Store.' };
-    }
-    if (!String(draft.question || '').trim()) return { ok: false, error: 'Câu hỏi không được để trống.' };
-    if (!draft.endDate) return { ok: false, error: 'Chưa chọn ngày kết thúc.' };
-    const yesPrice = Number(draft.yesPrice);
-    if (!Number.isInteger(yesPrice) || yesPrice < 5 || yesPrice > 95) {
-      return { ok: false, error: 'Giá YES phải là số nguyên từ 5% đến 95%.' };
-    }
-    const marketId = `m_${generateId()}`;
-    dispatch({
-      type: 'CREATE_MARKET',
-      payload: { ...draft, question: String(draft.question).trim(), yesPrice, marketId },
-    });
-    return { ok: true, marketId };
-  }, []);
-
-  // Admin: cập nhật cả Firestore (nguồn sự thật) và local (UI phản hồi ngay)
   const setUserStatus = useCallback(async (userId, status) => {
     if (getCurrentUser(stateRef.current)?.role !== 'admin') {
-      return { ok: false, error: 'Chỉ System Admin mới được cập nhật trạng thái tài khoản.' };
+      return { ok: false, error: 'Chỉ quản trị hệ thống mới được cập nhật trạng thái tài khoản.' };
     }
     if (!['active', 'banned'].includes(status)) {
       return { ok: false, error: 'Trạng thái tài khoản không hợp lệ.' };
@@ -1662,9 +1023,9 @@ export function AppProvider({ children }) {
   const setUserRole = useCallback(async (userId, role) => {
     const actor = getCurrentUser(stateRef.current);
     if (actor?.role !== 'admin') {
-      return { ok: false, error: 'Chỉ System Admin mới được thay đổi phân quyền.' };
+      return { ok: false, error: 'Chỉ quản trị hệ thống mới được thay đổi phân quyền.' };
     }
-    if (!['admin', 'creator', 'user'].includes(role)) {
+    if (!['admin', 'user'].includes(role)) {
       return { ok: false, error: 'Quyền tài khoản không hợp lệ.' };
     }
     if (userId === actor.id) {
@@ -1678,22 +1039,6 @@ export function AppProvider({ children }) {
 
   const toggleModelAvailability = useCallback((modelId) => {
     dispatch({ type: 'ADMIN_TOGGLE_MODEL', payload: { modelId } });
-  }, []);
-
-  const followTrader = useCallback((leaderId, leaderName, maxPerTrade) => {
-    dispatch({ type: 'FOLLOW_TRADER', payload: { leaderId, leaderName, maxPerTrade } });
-  }, []);
-
-  const unfollowTrader = useCallback((leaderId) => {
-    dispatch({ type: 'UNFOLLOW_TRADER', payload: { leaderId } });
-  }, []);
-
-  const toggleCopyTrade = useCallback((id) => {
-    dispatch({ type: 'TOGGLE_COPY_TRADE', payload: { id } });
-  }, []);
-
-  const simulateCopyTrade = useCallback((leaderId, marketId, side, shares) => {
-    dispatch({ type: 'SIMULATE_COPY_TRADE', payload: { leaderId, marketId, side, shares } });
   }, []);
 
   const resetToken = useCallback(() => {
@@ -1715,15 +1060,6 @@ export function AppProvider({ children }) {
     ? state.notifications.filter(n => n.userId === currentUser.id)
     : [];
   const unreadNotifications = notifications.filter(n => !n.read).length;
-  const myCommentsCount = currentUser
-    ? Object.values(state.comments).reduce(
-      (sum, list) => sum + list.filter(c => c.userId === currentUser.id).length, 0
-    )
-    : 0;
-  const myCopyTrades = currentUser
-    ? state.copyTrades.filter(c => c.followerId === currentUser.id)
-    : [];
-
   return (
     <AppContext.Provider
       value={{
@@ -1747,40 +1083,23 @@ export function AppProvider({ children }) {
         questState,
         notifications,
         unreadNotifications,
-        myCommentsCount,
-        myCopyTrades,
         // app actions
         topUpTokens,
-        buyShares,
-        sellShares,
-        resolveMarket,
         // AI (OpenAI-compatible)
         aiConfig,
         saveAIConfig,
         resetAIConfig,
         testAIConnect,
         sendAIMessage,
-        analyzeMarketAI,
         transfer,
         placeTaiXiuBet,
         claimDailyReward,
         claimQuest,
-        addComment,
-        likeComment,
-        deleteComment,
         markNotificationsRead,
-        purchaseItem,
-        equipItem,
-        createMarket,
         // admin actions
         setUserStatus,
         setUserRole,
         toggleModelAvailability,
-        // copy trade
-        followTrader,
-        unfollowTrader,
-        toggleCopyTrade,
-        simulateCopyTrade,
         resetToken,
       }}
     >
@@ -1796,5 +1115,4 @@ export function useApp() {
   return ctx;
 }
 
-// Ghi chú: STORE_ITEMS/QUESTS/ROLE_LABELS được export lại để screen dùng chung 1 nguồn
-export { STORE_ITEMS, QUESTS, ROLE_LABELS };
+export { QUESTS, ROLE_LABELS };

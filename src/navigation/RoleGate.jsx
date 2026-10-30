@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { AppIcon } from '../components/ui/AppIcon';
-import { colors, touch } from '../theme/tokens';
+import { AppHeader, Button } from '../components/ui';
+import { colors } from '../theme/tokens';
 
 export function RoleGate({ screen: Screen, allowedRoles, ...screenProps }) {
   const { state } = useApp();
@@ -19,18 +20,20 @@ export function RoleGate({ screen: Screen, allowedRoles, ...screenProps }) {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
-      <AppIcon name="lock" size={30} color={colors.textDim} />
-      <Text style={styles.title}>Bạn không có quyền truy cập</Text>
-      <Text style={styles.message}>Màn hình này chỉ dành cho tài khoản có quyền phù hợp.</Text>
-      <TouchableOpacity accessibilityRole="button" style={styles.button} onPress={returnHome}>
-        <Text style={styles.buttonText}>Quay lại</Text>
-      </TouchableOpacity>
+    <View style={styles.root}>
+      <AppHeader navigation={screenProps.navigation} title="Không có quyền truy cập" />
+      <View style={[styles.container, { paddingBottom: insets.bottom + 24 }]}>
+        <AppIcon name="lock" size={30} color={colors.textDim} />
+        <Text style={styles.title}>Bạn không có quyền truy cập</Text>
+        <Text style={styles.message}>Màn hình này chỉ dành cho tài khoản có quyền phù hợp.</Text>
+        <Button label="Quay lại" style={styles.returnButton} onPress={returnHome} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.bg },
   container: {
     flex: 1,
     alignItems: 'center',
@@ -40,14 +43,5 @@ const styles = StyleSheet.create({
   },
   title: { color: colors.text, fontSize: 18, fontWeight: '700', marginTop: 16, textAlign: 'center' },
   message: { color: colors.textDim, fontSize: 14, lineHeight: 20, marginTop: 8, textAlign: 'center' },
-  button: {
-    minHeight: touch.min,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    backgroundColor: colors.accentStrong,
-  },
-  buttonText: { color: colors.bg, fontSize: 14, fontWeight: '700' },
+  returnButton: { marginTop: 20 },
 });

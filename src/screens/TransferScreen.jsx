@@ -1,10 +1,9 @@
 // screens/TransferScreen.jsx
 import React, { useState } from 'react';
-import { BackButton } from '../components/ui/BackButton';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
-import { TokenBadge } from '../components/TokenBadge';
+import { AppHeader, Button, TokenIcon } from '../components/ui';
 import { formatToken } from '../utils/format';
 import { colors, centeredContent, touch } from '../theme/tokens';
 
@@ -23,10 +22,9 @@ export function TransferScreen({ navigation }) {
     && recipient.trim().length > 0
     && !isSelf;
 
-  // Danh sách gợi ý lấy từ tài khoản thật trong hệ thống (bỏ chính mình, ưu tiên người có thể đăng nhập)
+  // Chỉ gợi ý các ví đã đăng nhập trên thiết bị này.
   const friends = state.accounts
     .filter(a => a.id !== state.user.id)
-    .sort((a, b) => (a.provider === 'system' ? 1 : 0) - (b.provider === 'system' ? 1 : 0))
     .slice(0, 10);
 
   const handleTransfer = () => {
@@ -43,17 +41,17 @@ export function TransferScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 20 }]}
+      stickyHeaderIndices={[0]}
+      contentContainerStyle={[centeredContent, { paddingBottom: insets.bottom + 20 }]}
     >
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Chuyển token</Text>
-        <TokenBadge size="small" />
-      </View>
+      <AppHeader navigation={navigation} title="Chuyển token" />
 
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>Số dư hiện tại</Text>
-        <Text style={styles.balanceValue}>{formatToken(state.user.tokenBalance)} token</Text>
+        <View style={styles.balanceValueRow}>
+          <Text style={styles.balanceValue}>{formatToken(state.user.tokenBalance)}</Text>
+          <TokenIcon size={18} />
+        </View>
       </View>
 
       <View style={styles.form}>
@@ -76,6 +74,7 @@ export function TransferScreen({ navigation }) {
             </TouchableOpacity>
           ))}
         </ScrollView>
+        {friends.length === 0 && <Text style={styles.hint}>Đăng nhập thêm tài khoản trên thiết bị này để chuyển token.</Text>}
 
         <Text style={styles.label}>Số token</Text>
         <View style={styles.amountRow}>
@@ -102,9 +101,11 @@ export function TransferScreen({ navigation }) {
         <Text style={styles.label}>Ghi chú (tùy chọn)</Text>
         <TextInput style={styles.input} value={note} onChangeText={setNote} placeholder="Thêm ghi chú..." placeholderTextColor={colors.textFaint} />
 
-        <TouchableOpacity accessibilityRole="button" style={[styles.transferBtn, !canTransfer && styles.btnDisabled]} onPress={handleTransfer} disabled={!canTransfer}>
-          <Text style={styles.transferBtnText}>Gửi {amountNum > 0 ? formatToken(amountNum) : ''} {'\u{1F4B0}'}</Text>
-        </TouchableOpacity>
+        <Button
+          label={`Gửi ${amountNum > 0 ? formatToken(amountNum) : ''} token`}
+          onPress={handleTransfer}
+          disabled={!canTransfer}
+        />
 
         {!canTransfer && hasValidAmount && amountNum > state.user.tokenBalance && (
           <Text style={styles.warning}>Không đủ token</Text>
@@ -120,7 +121,7 @@ export function TransferScreen({ navigation }) {
           {recentTransfers.map(tx => (
             <View key={tx.id} style={styles.recentItem}>
               <Text style={styles.recentDesc} numberOfLines={2}>{tx.description}</Text>
-              <Text style={styles.recentAmount}>-{formatToken(tx.amount)} {'\u{1F4B0}'}</Text>
+              <Text style={styles.recentAmount}>-{formatToken(tx.amount)} <TokenIcon size={12} /></Text>
             </View>
           ))}
         </View>
@@ -131,22 +132,21 @@ export function TransferScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 10 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
-  headerTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
   balanceCard: { backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft, marginBottom: 16 },
   balanceLabel: { color: colors.textDim, fontSize: 13, marginBottom: 4 },
-  balanceValue: { color: colors.accentSoft, fontSize: 24, fontWeight: '700', fontFamily: 'monospace' },
+  balanceValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  balanceValue: { color: colors.accentSoft, fontSize: 24, fontWeight: '700', fontVariant: ['tabular-nums'] },
   form: { paddingHorizontal: 16 },
   label: { color: colors.textDim, fontSize: 13, marginBottom: 8, marginTop: 12 },
   input: { backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 14, paddingHorizontal: 14, paddingVertical: 12, minHeight: touch.min },
   friendsRow: { flexDirection: 'row', marginTop: 8, gap: 8 },
+  hint: { color: colors.textFaint, fontSize: 12, marginTop: 6 },
   friendChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceAlt, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6, marginRight: 6, borderWidth: 1, borderColor: colors.borderSoft, gap: 4, minHeight: touch.min },
   friendChipActive: { borderColor: colors.accent, backgroundColor: colors.accentDim },
   friendAvatar: { fontSize: 14 },
   friendName: { color: colors.textDim, fontSize: 12 },
   amountRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 14 },
-  amountInput: { flex: 1, color: colors.text, fontSize: 20, fontWeight: '700', fontFamily: 'monospace', paddingVertical: 12 },
+  amountInput: { flex: 1, color: colors.text, fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'], paddingVertical: 12 },
   amountSuffix: { fontSize: 18 },
   quickRow: { flexDirection: 'row', gap: 6, marginTop: 8 },
   quickBtn: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 8, minHeight: touch.min, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
@@ -160,5 +160,5 @@ const styles = StyleSheet.create({
   recentTitle: { color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 },
   recentItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 8, padding: 12, marginBottom: 4, borderWidth: 1, borderColor: colors.borderSoft, gap: 8 },
   recentDesc: { flex: 1, color: colors.text, fontSize: 12, lineHeight: 16 },
-  recentAmount: { color: colors.danger, fontSize: 13, fontWeight: '600', fontFamily: 'monospace' },
+  recentAmount: { color: colors.danger, fontSize: 13, fontWeight: '600', fontVariant: ['tabular-nums'] },
 });

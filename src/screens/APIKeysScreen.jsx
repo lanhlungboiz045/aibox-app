@@ -9,7 +9,7 @@ import { View, Text, ScrollView, StyleSheet, RefreshControl } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import {
-  Button, EmptyState, ErrorState, FadeIn, IconButton, Input, SkeletonList, Switch, BottomSheet, useToast,
+  AppHeader, Button, EmptyState, ErrorState, FadeIn, IconButton, Input, SkeletonList, Switch, BottomSheet, useToast,
 } from '../components/ui';
 import { formatDate, formatToken } from '../utils/format';
 import { copyText } from '../utils/clipboard';
@@ -149,15 +149,13 @@ export function APIKeysScreen({ navigation }) {
   const activeCount = keys.filter(k => k.active).length;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <IconButton icon="chevron-left" label="Quay lại" onPress={() => navigation.goBack()} />
-        <View style={styles.headerBody}>
-          <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.6}>{t('screen.apiKeys')}</Text>
-          <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
-            {loading ? 'Đang tải…' : `${keys.length}/${MAX_API_KEYS} key · ${activeCount} đang bật`}
-          </Text>
-        </View>
+    <View style={styles.container}>
+      <AppHeader
+        navigation={navigation}
+        title={t('screen.apiKeys')}
+        subtitle={loading ? 'Đang tải…' : `${keys.length}/${MAX_API_KEYS} khóa · ${activeCount} đang bật`}
+      />
+      <View style={styles.headerActions}>
         <IconButton
           icon="plus"
           label="Tạo API key"
@@ -236,13 +234,6 @@ export function APIKeysScreen({ navigation }) {
           ))
         )}
 
-        {!loading && !error && keys.length > 0 ? (
-          <View style={styles.note}>
-            <Text style={styles.noteText} maxFontSizeMultiplier={1.6}>
-              Key chỉ lưu trên thiết bị này (bản demo). Muốn thu hồi, xoá key và tạo key mới.
-            </Text>
-          </View>
-        ) : null}
       </ScrollView>
 
       <BottomSheet
@@ -302,7 +293,7 @@ export function APIKeysScreen({ navigation }) {
               value={limit}
               onChangeText={setLimit}
               keyboardType="number-pad"
-              helper="Để trống = không giới hạn. Hạn mức chỉ để tham khảo trong bản demo."
+              helper="Để trống nếu không muốn đặt hạn mức tham khảo."
               maxLength={9}
             />
           </View>
@@ -314,18 +305,7 @@ export function APIKeysScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    minHeight: layout.headerHeight + 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xs,
-    gap: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  headerBody: { flex: 1, gap: 2 },
-  title: { ...type.subtitle, color: colors.text, fontWeight: '700' },
-  headerMeta: { ...type.small, color: colors.textFaint },
+  headerActions: { alignItems: 'flex-end', paddingHorizontal: spacing.lg, paddingTop: spacing.xs },
   content: { ...centeredContent, padding: spacing.lg, gap: spacing.md },
   card: {
     backgroundColor: colors.surface,

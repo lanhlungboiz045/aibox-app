@@ -50,6 +50,6 @@ const styles = StyleSheet.create({
   textUser: { color: colors.onAccent },
   textAI: { color: colors.text },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs, paddingHorizontal: spacing.xs },
-  cost: { ...type.smallStrong, color: colors.warning, ...type.mono },
+  cost: { ...type.smallStrong, color: colors.warning, ...type.numeric },
   time: { ...type.small, color: colors.textFaint },
 });

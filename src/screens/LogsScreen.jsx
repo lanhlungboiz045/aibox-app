@@ -1,8 +1,8 @@
-// screens/LogsScreen.jsx — Lịch sử request AI (Bước 3)
+// screens/LogsScreen.jsx — Lịch sử yêu cầu AI
 //
-// Luồng: Home → ô "Requests" → Lọc (sheet) → xem chi tiết 1 request.
+// Luồng: Home → yêu cầu gần đây → lọc → xem chi tiết một lượt gọi.
 // Bộ lọc áp dụng ngay (không cần bấm "Áp dụng"), trạng thái rỗng riêng cho
-// "chưa có request" và "không khớp bộ lọc".
+// "chưa có lượt gọi" và "không khớp bộ lọc".
 import React, { useMemo, useState } from 'react';
 import { View, Text, FlatList, ScrollView, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +10,7 @@ import { useApp } from '../context/AppContext';
 import { formatDate, formatToken, formatRelativeTime } from '../utils/format';
 import { copyText } from '../utils/clipboard';
 import {
-  BottomSheet, Button, Chip, EmptyState, FadeIn, IconButton, ListRow, Row, AppIcon, useToast,
+  AppHeader, BottomSheet, Button, Chip, EmptyState, FadeIn, IconButton, ListRow, Row, AppIcon, TokenIcon, useToast,
 } from '../components/ui';
 import { centeredContent, colors, layout, radius, spacing, touch, type } from '../theme/tokens';
 import { t } from '../i18n';
@@ -79,20 +79,18 @@ export function LogsScreen({ navigation }) {
       `Nội dung: ${detail.description || ''}`,
     ].join('\n');
     const ok = await copyText(text);
-    if (ok) toast.success('Đã sao chép chi tiết request');
+    if (ok) toast.success('Đã sao chép chi tiết lượt gọi');
     else toast.error('Không sao chép được.');
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <IconButton icon="chevron-left" label="Quay lại" onPress={() => navigation.goBack()} />
-        <View style={styles.headerBody}>
-          <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.6}>{t('screen.logs')}</Text>
-          <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
-            {allLogs.length} request · {formatToken(allLogs.reduce((s, item) => s + Math.abs(item.amount || 0), 0))} {'\u{1F4B0}'}
-          </Text>
-        </View>
+    <View style={styles.container}>
+      <AppHeader
+        navigation={navigation}
+        title={t('screen.logs')}
+        subtitle={`${allLogs.length} lượt gọi · ${formatToken(allLogs.reduce((s, item) => s + Math.abs(item.amount || 0), 0))} token`}
+      />
+      <View style={styles.headerActions}>
         <View>
           <IconButton
             icon="sliders"
@@ -143,12 +141,12 @@ export function LogsScreen({ navigation }) {
               <View style={styles.summaryDivider} />
               <View style={styles.summaryItem}>
                 <Text style={styles.summaryValue} maxFontSizeMultiplier={1.5}>{logs.length}</Text>
-                <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.5}>request</Text>
+                <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.5}>lượt gọi</Text>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryItem}>
                 <Text style={styles.summaryValue} maxFontSizeMultiplier={1.5}>{formatToken(avgTokens)}</Text>
-                <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.5}>TB / request</Text>
+                <Text style={styles.summaryLabel} maxFontSizeMultiplier={1.5}>TB / lượt</Text>
               </View>
             </View>
           </FadeIn>
@@ -158,7 +156,7 @@ export function LogsScreen({ navigation }) {
             <EmptyState
               icon="activity"
               title={t('home.noRequests')}
-              message="Gọi AI trong tab Chat, request đầu tiên sẽ hiện ở đây kèm token đã trừ."
+              message="Gọi AI trong tab Chat để xem lịch sử sử dụng và token đã trừ tại đây."
               actionLabel="Mở Chat"
               onAction={() => navigation.navigate('AIHub')}
             />
@@ -187,7 +185,7 @@ export function LogsScreen({ navigation }) {
             right={<Text style={styles.amount}>{`-${formatToken(Math.abs(item.amount || 0))}`}</Text>}
             onPress={() => setDetail(item)}
             chevron
-            accessibilityHint="Mở chi tiết request"
+            accessibilityHint="Mở chi tiết lượt gọi AI"
           />
         )}
       />
@@ -245,11 +243,11 @@ export function LogsScreen({ navigation }) {
         </View>
       </BottomSheet>
 
-      {/* Chi tiết 1 request */}
+      {/* Chi tiết lượt gọi */}
       <BottomSheet
         visible={!!detail}
         onClose={() => setDetail(null)}
-        title="Chi tiết request"
+        title="Chi tiết lượt gọi"
         subtitle={detail ? formatRelativeTime(detail.timestamp) : ''}
         footer={
           <Button label="Sao chép chi tiết" icon="copy" variant="secondary" fullWidth onPress={handleCopyDetail} />
@@ -258,12 +256,17 @@ export function LogsScreen({ navigation }) {
         {detail ? (
           <View style={styles.detail}>
             <Row label="Model" value={modelName(detail.modelId)} />
-            <Row label="Token đã trừ" value={`${formatToken(Math.abs(detail.amount || 0))} ${'\u{1F4B0}'}`} tone="danger" />
+            <Row
+              label="Token đã trừ"
+              value={formatToken(Math.abs(detail.amount || 0))}
+              right={<TokenIcon size={12} color={colors.danger} />}
+              tone="danger"
+            />
             <Row
               label="Thời gian"
               value={`${formatDate(detail.timestamp)} · ${new Date(detail.timestamp).toLocaleTimeString('vi-VN')}`}
             />
-            <Row label="Mã request" value={String(detail.id).slice(0, 10)} />
+            <Row label="Mã lượt gọi" value={String(detail.id).slice(0, 10)} />
             <View style={styles.promptBox}>
               <Text style={styles.promptLabel} maxFontSizeMultiplier={1.5}>Nội dung</Text>
               <Text style={styles.promptText} selectable maxFontSizeMultiplier={1.8}>
@@ -282,18 +285,7 @@ export function LogsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    minHeight: layout.headerHeight + 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xs,
-    gap: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  headerBody: { flex: 1, gap: 2 },
-  title: { ...type.subtitle, color: colors.text, fontWeight: '700' },
-  headerMeta: { ...type.small, color: colors.textFaint },
+  headerActions: { alignItems: 'flex-end', paddingHorizontal: spacing.lg },
   filterDot: {
     position: 'absolute',
     top: 8,
@@ -318,11 +310,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   summaryItem: { flex: 1, alignItems: 'center', gap: 2 },
-  summaryValue: { ...type.subtitle, color: colors.text, fontWeight: '700' },
+  summaryValue: { ...type.subtitle, ...type.numeric, color: colors.text, fontWeight: '700' },
   summaryLabel: { ...type.small, color: colors.textFaint },
   summaryDivider: { width: 1, height: 28, backgroundColor: colors.border },
   divider: { height: 1, backgroundColor: colors.border, marginLeft: touch.iconButton },
-  amount: { ...type.smallStrong, color: colors.textDim },
+  amount: { ...type.smallStrong, ...type.numeric, color: colors.textDim },
   sheetSection: { gap: spacing.md, marginBottom: spacing.xl },
   sheetLabel: { ...type.smallStrong, color: colors.textDim, textTransform: 'uppercase', letterSpacing: 0.4 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },

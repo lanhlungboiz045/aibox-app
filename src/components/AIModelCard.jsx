@@ -5,6 +5,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { AIProviderLogo } from './AIProviderLogo';
 import { AppIcon } from './ui/AppIcon';
+import { TokenIcon } from './ui/TokenIcon';
 import { PressableScale } from './ui/PressableScale';
 import { formatTokenShort } from '../utils/format';
 import { colors, layout, radius, spacing, type, touch } from '../theme/tokens';
@@ -41,8 +42,8 @@ export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
             </Text>
           </View>
           <View style={styles.costWrap}>
-            <AppIcon name="database" size={12} color={colors.accentSoft} />
-            <Text style={styles.cost} maxFontSizeMultiplier={1.5}>usage</Text>
+            <TokenIcon size={12} color={colors.accentSoft} />
+            <Text style={styles.cost} maxFontSizeMultiplier={1.5}>Theo mức dùng</Text>
           </View>
         </View>
 

@@ -1,12 +1,12 @@
 // screens/admin/AdminRiskScreen.jsx — Theo dõi dòng tiền & phát hiện rửa token
 // Heuristic (demo): tốc độ chuyển, tỷ lệ xả ví, dòng tiền 2 chiều, giao dịch quá lớn.
 import React from 'react';
-import { BackButton } from '../../components/ui/BackButton';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { ROLE_LABELS } from '../../data/accounts';
-import { formatToken, formatTokenShort, formatRelativeTime } from '../../utils/format';
+import { formatToken, formatRelativeTime } from '../../utils/format';
+import { AppHeader } from '../../components/ui';
 import { colors, centeredContent, touch } from '../../theme/tokens';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -59,7 +59,7 @@ export function AdminRiskScreen({ navigation }) {
     const biggest = outs.reduce((max, tx) => Math.max(max, Math.abs(tx.amount || 0)), 0);
     if (biggest > 0 && biggest >= Math.max(account.tokenBalance, 1) * 0.8) {
       score += 15;
-      reasons.push(`lệnh lớn ${formatTokenShort(biggest)} token`);
+      reasons.push(`lệnh lớn ${formatToken(biggest)} token`);
     }
     // 5) Tài khoản mới đã chuyển tiền
     const accountAge = now - Date.parse(account.createdAt);
@@ -94,28 +94,23 @@ export function AdminRiskScreen({ navigation }) {
   const totalSupply = state.accounts.reduce((sum, a) => sum + a.tokenBalance, 0);
   const totalTransferred = rows.reduce((sum, row) => sum + row.sentTotal, 0);
   const totalAi = state.accounts.reduce((sum, a) => sum + (a.totalSpentOnAI || 0), 0);
-  const totalStore = state.accounts.reduce((sum, a) => sum + (a.totalSpentOnStore || 0), 0);
-
   const money = [
-    { label: 'Token lưu hành', value: formatTokenShort(totalSupply), color: colors.accentSoft },
-    { label: 'Tổng transfer', value: formatTokenShort(totalTransferred), color: colors.warning },
-    { label: 'Sink AI', value: formatTokenShort(totalAi), color: colors.openai },
-    { label: 'Sink Store', value: formatTokenShort(totalStore), color: colors.danger },
+    { label: 'Token lưu hành', value: formatToken(totalSupply), color: colors.accentSoft },
+    { label: 'Tổng chuyển', value: formatToken(totalTransferred), color: colors.warning },
+    { label: 'Đã dùng cho AI', value: formatToken(totalAi), color: colors.openai },
+    { label: 'Tổng ván Tài Xỉu', value: state.accounts.reduce((sum, account) => sum + account.transactions.filter(tx => tx.type === 'TAIXIU').length, 0), color: colors.success },
   ];
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
+      stickyHeaderIndices={[0]}
+      contentContainerStyle={[centeredContent, { paddingBottom: insets.bottom + 24 }]}
     >
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.title}>Rủi ro dòng tiền</Text>
-        <View style={{ width: 50 }} />
-      </View>
+      <AppHeader navigation={navigation} title="Rủi ro dòng tiền" />
 
       <Text style={styles.notice}>
-        Tín hiệu dưới đây là heuristic trên dữ liệu local, không phải kết luận về hành vi của tài khoản.
+        Cảnh báo chỉ là tín hiệu tham khảo; hãy kiểm tra lịch sử trước khi xử lý tài khoản.
       </Text>
 
       <View style={styles.grid}>
@@ -144,7 +139,7 @@ export function AdminRiskScreen({ navigation }) {
                 </Text>
               </View>
               <Text style={styles.alertMeta}>
-                {ROLE_LABELS[row.account.role]} · số dư {formatTokenShort(row.account.tokenBalance)} · đã gửi {formatTokenShort(row.sentTotal)} · đã nhận {formatTokenShort(row.receivedTotal)}
+                {ROLE_LABELS[row.account.role]} · số dư {formatToken(row.account.tokenBalance)} · đã gửi {formatToken(row.sentTotal)} · đã nhận {formatToken(row.receivedTotal)}
               </Text>
               <Text style={styles.alertReasons}>{row.reasons.join(' · ')}</Text>
             </View>
@@ -155,7 +150,7 @@ export function AdminRiskScreen({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tài khoản có dòng tiền lớn nhất</Text>
         {active.length === 0 ? (
-          <Text style={styles.empty}>Chưa có giao dịch transfer nào.</Text>
+          <Text style={styles.empty}>Chưa có giao dịch chuyển token nào.</Text>
         ) : (
           <View style={styles.table}>
             <View style={styles.tableHead}>
@@ -167,10 +162,10 @@ export function AdminRiskScreen({ navigation }) {
             {active.map(row => (
               <View key={row.account.id} style={styles.tableRow}>
                 <Text style={[styles.cell, styles.cellName, styles.cellText]} numberOfLines={1}>{row.account.username}</Text>
-                <Text style={[styles.cell, styles.cellText]}>{formatTokenShort(row.sentTotal)}</Text>
-                <Text style={[styles.cell, styles.cellText]}>{formatTokenShort(row.receivedTotal)}</Text>
+                <Text style={[styles.cell, styles.cellText]}>{formatToken(row.sentTotal)}</Text>
+                <Text style={[styles.cell, styles.cellText]}>{formatToken(row.receivedTotal)}</Text>
                 <Text style={[styles.cell, row.sent24h > 0 ? styles.cellWarn : styles.cellText]}>
-                  {row.sent24h > 0 ? formatTokenShort(row.sent24h) : '—'}
+                  {row.sent24h > 0 ? formatToken(row.sent24h) : '—'}
                 </Text>
               </View>
             ))}
@@ -179,7 +174,7 @@ export function AdminRiskScreen({ navigation }) {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Hoạt động transfer gần nhất</Text>
+        <Text style={styles.sectionTitle}>Hoạt động chuyển token gần nhất</Text>
         <View style={styles.txList}>
           {state.accounts
             .flatMap(account =>
@@ -204,22 +199,16 @@ export function AdminRiskScreen({ navigation }) {
         </View>
       </View>
 
-      <Text style={styles.footnote}>
-        Heuristic chỉ chạy trên dữ liệu local. Hệ thống thật cần ledger append-only + phân tích graph ở server mới phát hiện được rửa token.
-      </Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minWidth: 50, minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
-  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   notice: { color: colors.textDim, fontSize: 12, lineHeight: 17, paddingHorizontal: 16, marginBottom: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginBottom: 4 },
   gridCard: { width: '47%', flexGrow: 1, backgroundColor: colors.surface, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
-  gridValue: { fontSize: 16, fontWeight: '700', fontFamily: 'monospace' },
+  gridValue: { fontSize: 16, fontWeight: '700', fontVariant: ['tabular-nums'] },
   gridLabel: { color: colors.textDim, fontSize: 12, marginTop: 3 },
   section: { marginTop: 16, paddingHorizontal: 16 },
   sectionTitle: { color: colors.text, fontSize: 15, fontWeight: '700', marginBottom: 8 },
@@ -230,13 +219,13 @@ const styles = StyleSheet.create({
   alertLow: { backgroundColor: colors.surface, borderColor: colors.borderSoft },
   alertHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   alertName: { color: colors.text, fontSize: 13, fontWeight: '600', flex: 1 },
-  riskBadge: { fontSize: 12, fontWeight: '800', fontFamily: 'monospace' },
+  riskBadge: { fontSize: 12, fontWeight: '800', fontVariant: ['tabular-nums'] },
   alertMeta: { color: colors.textDim, fontSize: 12, lineHeight: 15 },
   alertReasons: { color: colors.warning, fontSize: 12, marginTop: 4, lineHeight: 15 },
   table: { backgroundColor: colors.surface, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: colors.borderSoft },
   tableHead: { flexDirection: 'row', paddingHorizontal: 10, paddingVertical: 8, backgroundColor: colors.surfaceAlt },
   tableRow: { flexDirection: 'row', paddingHorizontal: 10, paddingVertical: 9, borderTopWidth: 1, borderTopColor: colors.border },
-  cell: { width: 58, textAlign: 'right', color: colors.textDim, fontSize: 12, fontFamily: 'monospace' },
+  cell: { width: 58, textAlign: 'right', color: colors.textDim, fontSize: 12, fontVariant: ['tabular-nums'] },
   cellName: { flex: 1, textAlign: 'left', fontFamily: undefined },
   headText: { color: colors.textFaint, fontSize: 12, fontWeight: '700' },
   cellText: { color: colors.text },
@@ -246,5 +235,4 @@ const styles = StyleSheet.create({
   txOwner: { color: colors.text, fontSize: 12, fontWeight: '600', width: 82 },
   txDesc: { flex: 1, color: colors.textDim, fontSize: 12, lineHeight: 14 },
   txTime: { fontSize: 12 },
-  footnote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 16 },
 });

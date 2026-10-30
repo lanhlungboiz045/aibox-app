@@ -1,9 +1,8 @@
-// components/TokenBadge.jsx — Pill số dư token (Bước 3)
-// Giữ đơn vị 💰 theo quy ước của app; màu accentSoft đạt AA trên nền accentDim.
+// components/TokenBadge.jsx — Chip số dư token dùng chung trong header.
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useApp } from '../context/AppContext';
-import { AppIcon } from './ui/AppIcon';
+import { TokenIcon } from './ui/TokenIcon';
 import { formatToken } from '../utils/format';
 import { colors, radius, spacing, type } from '../theme/tokens';
 
@@ -23,7 +22,7 @@ export function TokenBadge({ size = 'medium' }) {
       style={[styles.badge, { paddingHorizontal: s.paddingH, paddingVertical: s.paddingV }]}
       accessibilityLabel={`Số dư ${formatToken(balance)} token`}
     >
-      <AppIcon name="database" size={s.iconSize} color={colors.accentSoft} />
+      <TokenIcon size={s.iconSize} color={colors.accentSoft} />
       <Text style={[styles.text, { fontSize: s.fontSize }]} maxFontSizeMultiplier={1.5}>
         {formatToken(balance)}
       </Text>
@@ -45,6 +44,6 @@ const styles = StyleSheet.create({
   text: {
     color: colors.accentSoft,
     fontWeight: '700',
-    ...type.mono,
+    ...type.numeric,
   },
 });

@@ -10,14 +10,15 @@ import { colors, motion, radius, spacing, touch, type } from '../../theme/tokens
 const VARIANTS = {
   primary: { bg: colors.accentStrong, fg: colors.onAccent, border: colors.accentStrong, haptic: hapticPress },
   secondary: { bg: colors.surfaceAlt, fg: colors.text, border: colors.borderSoft, haptic: hapticTap },
+  disabled: { bg: colors.surfaceAlt, fg: colors.disabledText, border: colors.borderSoft, haptic: hapticTap },
   ghost: { bg: 'transparent', fg: colors.accentSoft, border: 'transparent', haptic: hapticTap },
   danger: { bg: colors.dangerBg, fg: colors.onAccent, border: colors.dangerBg, haptic: hapticTap },
 };
 
 const SIZES = {
-  sm: { minHeight: touch.min, paddingHorizontal: spacing.lg, icon: 16, text: type.smallStrong },
-  md: { minHeight: 48, paddingHorizontal: spacing.xl, icon: 18, text: type.bodyStrong },
-  lg: { minHeight: 52, paddingHorizontal: spacing.xxl, icon: 20, text: { ...type.subtitle, fontWeight: '700' } },
+  sm: { height: touch.min, paddingHorizontal: spacing.lg, icon: 16, text: type.smallStrong },
+  md: { height: touch.min, paddingHorizontal: spacing.xl, icon: 18, text: type.bodyStrong },
+  lg: { height: touch.min, paddingHorizontal: spacing.xxl, icon: 20, text: { ...type.subtitle, fontWeight: '700' } },
 };
 
 export function Button({
@@ -28,7 +29,7 @@ export function Button({
   const v = VARIANTS[variant] || VARIANTS.primary;
   const s = SIZES[size] || SIZES.md;
   const scale = useRef(new Animated.Value(1)).current;
-  const isDisabled = disabled || loading;
+  const isDisabled = disabled || loading || variant === 'disabled';
 
   const animateTo = (to) => {
     // Giảm chuyển động → không nhún nút (trả scale về 1 để không bị kẹt nếu cài đặt đổi giữa chừng)
@@ -84,8 +85,7 @@ export function Button({
         style={[
           styles.base,
           {
-            minHeight: s.minHeight,
-            paddingVertical: spacing.xs,
+            height: s.height,
             paddingHorizontal: s.paddingHorizontal,
             backgroundColor: v.bg,
             borderColor: v.border,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: touch.min,
+    height: touch.min,
   },
   content: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
   // Disabled: giảm tương phản nhưng vẫn đọc được + chặn press

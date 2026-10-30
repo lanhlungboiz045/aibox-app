@@ -28,7 +28,6 @@ const LEGACY_ICON_NAMES = {
   '👥': 'users',
   '📈': 'trending-up',
   '📊': 'bar-chart-2',
-  '💰': 'dollar-sign',
   '🛒': 'shopping-bag',
   '⚠️': 'alert-triangle',
   '🔒': 'lock',

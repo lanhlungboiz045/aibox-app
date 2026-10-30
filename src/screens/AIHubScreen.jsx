@@ -1,4 +1,4 @@
-// screens/AIHubScreen.jsx — Marketplace AI models + chat (Bước 3 + 4)
+// screens/AIHubScreen.jsx — AI model catalog + chat
 //
 // 5 luồng chính ≤ 3 chạm:
 //   Chat: tab Chat → chọn model → nhập & Gửi (3 chạm, đã tính lần mở app).
@@ -17,13 +17,12 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
-import { TokenBadge } from '../components/TokenBadge';
 import { AIModelCard } from '../components/AIModelCard';
 import { AIProviderLogo } from '../components/AIProviderLogo';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { ChatBubble } from '../components/ChatBubble';
 import {
-  AppIcon, Chip, EmptyState, ErrorState, FadeIn, IconButton, MiniBanner, OfflineBar, Skeleton, useToast,
+  AppIcon, AppHeader, Chip, EmptyState, ErrorState, FadeIn, IconButton, MiniBanner, OfflineBar, Skeleton, useToast,
 } from '../components/ui';
 import { formatToken, generateId } from '../utils/format';
 import { MIN_AI_CALL_BALANCE } from '../utils/aiCost';
@@ -479,23 +478,13 @@ export function AIHubScreen() {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={[styles.chatHeader, { paddingTop: insets.top + spacing.sm }]}>
-          <View style={styles.chatHeaderRow}>
-            <IconButton icon="chevron-left" label="Đóng cuộc chat" onPress={closeModel} />
-            <View style={[styles.chatAvatar, { backgroundColor: (selectedModel.accentColor || colors.accent) + '22' }]}>
-              <AIProviderLogo provider={selectedModel.provider} size={32} />
-            </View>
-            <View style={styles.chatHeaderInfo}>
-              <Text style={styles.chatHeaderName} numberOfLines={1} maxFontSizeMultiplier={1.6}>
-                {selectedModel.name}
-              </Text>
-              <View style={styles.chatHeaderMetaRow}>
-                <View style={[styles.modeDot, { backgroundColor: live ? colors.success : colors.warning }]} />
-                <Text style={styles.chatHeaderSub} numberOfLines={1} maxFontSizeMultiplier={1.5}>
-                  {sending ? 'Đang trả lời…' : live ? `LIVE · ${aiConfig.model}` : 'MOCK · chưa có API key'}
-                </Text>
-              </View>
-            </View>
+        <AppHeader
+          navigation={navigation}
+          title={selectedModel.name}
+          subtitle={sending ? 'Đang trả lời…' : live ? `Đang kết nối · ${aiConfig.model}` : 'Đang dùng câu trả lời mô phỏng'}
+          onBack={closeModel}
+        />
+        <View style={styles.headerActions}>
             <IconButton
               icon="trash-2"
               label="Xoá lịch sử chat"
@@ -504,7 +493,6 @@ export function AIHubScreen() {
               onPress={clearCurrentHistory}
             />
             <IconButton icon="settings" label="Cài đặt AI" size={18} onPress={openSettings} />
-          </View>
         </View>
 
         {historyError ? (
@@ -658,21 +646,18 @@ export function AIHubScreen() {
   // ───────────────────── Danh sách model ─────────────────────
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <View style={styles.headerRow}>
-          <IconButton icon="menu" label={t('nav.openMenu')} size={20} onPress={openDrawer} />
-          <View style={styles.headerTitleWrap}>
-            <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.5}>{t('screen.aihub')}</Text>
-            <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
-              {totalHistory > 0 ? `${totalHistory} tin nhắn đã lưu` : 'Chọn model để bắt đầu'}
-            </Text>
-          </View>
-          <TokenBadge size="medium" />
+      <AppHeader
+        navigation={navigation}
+        title={t('screen.aihub')}
+        subtitle={totalHistory > 0 ? `${totalHistory} tin nhắn đã lưu` : 'Chọn model để bắt đầu'}
+        isRoot
+        onMenu={openDrawer}
+      />
+      <View style={styles.headerActions}>
           {totalHistory > 0 ? (
             <IconButton icon="trash-2" label="Xoá toàn bộ lịch sử chat" size={18} onPress={clearAllHistory} />
           ) : null}
           <IconButton icon="settings" label="Cài đặt AI" size={18} onPress={openSettings} />
-        </View>
       </View>
 
       {isOffline ? (
@@ -834,7 +819,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     backgroundColor: colors.bg,
   },
-  metaText: { ...type.small, color: colors.textFaint, ...type.mono },
+  metaText: { ...type.small, color: colors.textFaint, ...type.numeric },
   imageNote: {
     flexDirection: 'row',
     alignItems: 'center',

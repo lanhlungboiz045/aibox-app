@@ -1,17 +1,16 @@
 // screens/HomeScreen.jsx — Home bản gọn
-// Header cố định 56px + 4 shortcut + banner 1 dòng + 3 ô Models/Logs/Quota + card Chi tiêu 7 ngày.
-// Markets đã bỏ khỏi Home (vẫn còn tab riêng).
+// Header cố định + shortcut + banner + thống kê model, logs, quota và chi tiêu 7 ngày.
 import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
-import { formatToken, formatTokenShort, formatRelativeTime } from '../utils/format';
+import { formatToken, formatRelativeTime } from '../utils/format';
 import { t } from '../i18n';
 import { buildSpendSummary } from '../utils/spend';
 import { QUESTS } from '../data/quests';
 import { AppDrawer } from '../components/AppDrawer';
 import { DailyRewardModal } from '../components/DailyRewardModal';
-import { AppIcon, MiniBanner, SectionHeader, ListRow, StatTile, Sparkline, IconButton, EmptyState, PressableScale } from '../components/ui';
+import { AppIcon, AppHeader, MiniBanner, SectionHeader, ListRow, StatTile, Sparkline, EmptyState, PressableScale, TokenIcon } from '../components/ui';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { useAppDrawer } from '../hooks/useAppDrawer';
 import { centeredContent, colors, layout, radius, spacing, touch, type } from '../theme/tokens';
@@ -20,15 +19,15 @@ import { centeredContent, colors, layout, radius, spacing, touch, type } from '.
 const LOW_BALANCE = 1000;
 
 const SHORTCUTS = [
-  { key: 'keys', icon: 'key', label: 'API Keys', route: 'APIKeys' },
-  { key: 'usage', icon: 'bar-chart-2', label: 'Usage', route: 'UsageDashboard' },
-  { key: 'topup', icon: 'credit-card', label: 'Nạp tiền', route: 'CreditsTopup' },
-  { key: 'chat', icon: 'message-square', label: 'Chat', route: 'AIHub' },
+  { key: 'keys', icon: 'key', label: 'Khóa API', route: 'APIKeys' },
+  { key: 'usage', icon: 'bar-chart-2', label: 'Thống kê', route: 'UsageDashboard' },
+  { key: 'topup', icon: 'credit-card', label: 'Nạp token', route: 'CreditsTopup' },
+  { key: 'chat', icon: 'message-square', label: 'Trò chuyện', route: 'AIHub' },
 ];
 
 export function HomeScreen({ navigation }) {
   const {
-    state, canClaimDaily, nextDailyReward, unreadNotifications, questState,
+    state, canClaimDaily, nextDailyReward, questState,
   } = useApp();
   const insets = useSafeAreaInsets();
   const [showDaily, setShowDaily] = useState(false);
@@ -40,7 +39,7 @@ export function HomeScreen({ navigation }) {
   const claimedQuests = questState?.claimed?.length || 0;
   const unclaimedQuests = Math.max(QUESTS.length - claimedQuests, 0);
 
-  // Request gần đây: tạm lấy 3 giao dịch AI_CALL mới nhất (Phần 5 sẽ thay bằng Logs thật)
+  // Lượt gọi AI gần đây lấy từ 3 giao dịch mới nhất.
   const recentCalls = (user?.transactions || []).filter(t => t.type === 'AI_CALL').slice(0, 3);
 
   // Số liệu 7 ngày + hạn mức tháng cho card "Chi tiêu 7 ngày"
@@ -96,62 +95,7 @@ export function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Header cố định: không cuộn theo nội dung */}
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <View style={styles.headerInner}>
-          <IconButton
-            icon="menu"
-            label={t('nav.openMenu')}
-            size={22}
-            onPress={openDrawer}
-          />
-          <Text style={styles.brand} numberOfLines={1} maxFontSizeMultiplier={1.5}>AIBox</Text>
-
-          <View style={{ flex: 1 }} />
-
-          <TouchableOpacity
-            accessibilityRole="button"
-            style={styles.balancePill}
-            onPress={() => navigation.navigate('CreditsTopup')}
-            activeOpacity={0.85}
-            hitSlop={{ top: 6, bottom: 6 }}
-            accessibilityLabel={`Số dư ${formatToken(balance)} token, mở nạp tiền`}
-          >
-            <AppIcon name="credit-card" size={12} color={colors.accentSoft} />
-            <Text style={styles.balanceText} numberOfLines={1} maxFontSizeMultiplier={1.5}>
-              {formatToken(balance)} {'\u{1F4B0}'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            accessibilityRole="button"
-            style={styles.iconBtn}
-            onPress={() => navigation.navigate('Notifications')}
-            hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
-            accessibilityLabel={unreadNotifications > 0 ? `Thông báo, ${unreadNotifications} chưa đọc` : 'Thông báo'}
-          >
-            <AppIcon name="bell" size={20} color={colors.textDim} />
-            {unreadNotifications > 0 ? (
-              <View style={styles.bellBadge}>
-                <Text style={styles.bellBadgeText} maxFontSizeMultiplier={1}>
-                  {unreadNotifications > 9 ? '9+' : unreadNotifications}
-                </Text>
-              </View>
-            ) : null}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            accessibilityRole="button"
-            style={styles.avatar}
-            onPress={() => navigation.navigate('Profile')}
-            activeOpacity={0.85}
-            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-            accessibilityLabel="Hồ sơ cá nhân"
-          >
-            <Text style={styles.avatarText} maxFontSizeMultiplier={1.5}>{user?.avatar || '\u{1F464}'}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <AppHeader navigation={navigation} title="AIBox" subtitle="Tổng quan" isRoot onMenu={openDrawer} />
 
       <ScrollView
         style={styles.scroll}
@@ -189,19 +133,19 @@ export function HomeScreen({ navigation }) {
         <View style={styles.tileRow}>
           <StatTile
             icon="layers"
-            label="Models"
+            label="Mô hình"
             sub={`${state.aiModels.length} model`}
             onPress={() => navigation.navigate('ModelCatalog')}
           />
           <StatTile
             icon="activity"
-            label="Logs"
-            sub={`${totalRequests} requests`}
+            label="Lịch sử AI"
+            sub={`${totalRequests} lượt gọi`}
             onPress={() => navigation.navigate('Logs')}
           />
           <StatTile
             icon="pie-chart"
-            label="Gói quota"
+            label="Hạn mức AI"
             sub={spend.quotaLeftPct > 0 ? `Còn ${spend.quotaLeftPct}% hạn mức` : 'Hết hạn mức tháng'}
             onPress={() => navigation.navigate('UsageDashboard')}
           />
@@ -211,7 +155,7 @@ export function HomeScreen({ navigation }) {
         <View>
           <SectionHeader
             title={t('home.spend7d')}
-            actionLabel="Xem Billing"
+            actionLabel="Xem chi tiết"
             onAction={() => navigation.navigate('UsageDashboard')}
           />
           <View style={styles.spendCard}>
@@ -219,8 +163,8 @@ export function HomeScreen({ navigation }) {
               <View style={styles.spendInfo}>
                 <Text style={styles.spendLabel}>Token 7 ngày</Text>
                 <Text style={styles.spendValue} maxFontSizeMultiplier={1.5} numberOfLines={1}>
-                  {formatTokenShort(spend.total)}
-                  <Text style={styles.spendUnit}> {'\u{1F4B0}'}</Text>
+                  {formatToken(spend.total)}
+                  <TokenIcon size={14} color={colors.textFaint} />
                 </Text>
                 <Text style={[styles.spendDelta, { color: deltaColor }]} numberOfLines={1} maxFontSizeMultiplier={1.5}>{deltaText}</Text>
               </View>
@@ -228,12 +172,12 @@ export function HomeScreen({ navigation }) {
             </View>
             <View style={styles.spendDivider} />
             <Text style={styles.spendMeta} numberOfLines={1}>
-              Đã dùng {formatToken(spend.total)} {'\u{1F4B0}'} · {spend.requests} requests
+              Đã dùng {formatToken(spend.total)} token · {spend.requests} lượt gọi
             </Text>
           </View>
         </View>
 
-        {/* Tạm thời: 3 request AI gần nhất — Phần 5 thay bằng Logs + nút "Xem tất cả" */}
+        {/* Ba lượt gọi AI gần nhất */}
         <View style={styles.section}>
           <SectionHeader
             title={t('home.recentRequests')}
@@ -245,7 +189,7 @@ export function HomeScreen({ navigation }) {
                 compact
                 icon="message-square"
                 title={t('home.noRequests')}
-                message="Hỏi AI một câu, request đầu tiên sẽ hiện ở đây."
+                message="Gọi AI lần đầu để xem lịch sử sử dụng tại đây."
                 actionLabel="Chat ngay"
                 onAction={() => navigation.navigate('AIHub')}
               />
@@ -370,11 +314,11 @@ const styles = StyleSheet.create({
   spendTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   spendInfo: { flex: 1 },
   spendLabel: { ...type.smallStrong, color: colors.textFaint },
-  spendValue: { ...type.display, color: colors.text, marginTop: 2 },
+  spendValue: { ...type.display, ...type.numeric, color: colors.text, marginTop: 2 },
   spendUnit: { fontSize: 14, fontWeight: '600' },
   spendDelta: { ...type.small, marginTop: 2 },
   spendDivider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.md },
-  spendMeta: { ...type.small, color: colors.textDim },
+  spendMeta: { ...type.small, ...type.numeric, color: colors.textDim },
   section: { gap: 0 },
   card: {
     backgroundColor: colors.surface,
@@ -384,5 +328,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   divider: { height: 1, backgroundColor: colors.border, marginLeft: layout.gutter },
-  amount: { ...type.smallStrong, color: colors.textDim },
+  amount: { ...type.smallStrong, ...type.numeric, color: colors.textDim },
 });

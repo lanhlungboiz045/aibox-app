@@ -10,6 +10,7 @@ import { useRoute } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { formatToken } from '../utils/format';
 import { AppIcon, IconButton } from './ui';
+import { TokenIcon } from './ui/TokenIcon';
 import { colors, radius, spacing, touch, type } from '../theme/tokens';
 import { useI18n } from '../i18n';
 import { getReduceMotion } from '../hooks/useReduceMotion';
@@ -22,9 +23,7 @@ const GROUPS = [
     items: [
       { label: 'nav.home', icon: 'home', route: 'Home' },
       { label: 'nav.aihub', icon: 'message-square', route: 'AIHub' },
-      { label: 'nav.markets', icon: 'trending-up', route: 'Markets' },
-      { label: 'nav.portfolio', icon: 'briefcase', route: 'Portfolio' },
-      { label: 'nav.leaderboard', icon: 'award', route: 'Leaderboard' },
+      { label: 'nav.transactions', icon: 'list', route: 'Transactions' },
     ],
   },
   {
@@ -41,7 +40,6 @@ const GROUPS = [
       { label: 'nav.usage', icon: 'bar-chart-2', route: 'UsageDashboard' },
       { label: 'nav.topup', icon: 'plus-circle', route: 'CreditsTopup' },
       { label: 'nav.quests', icon: 'target', route: 'Quests' },
-      { label: 'nav.store', icon: 'shopping-bag', route: 'Store' },
       { label: 'nav.aiSettings', icon: 'settings', route: 'AISettings' },
     ],
   },
@@ -81,12 +79,10 @@ export function AppDrawer({ visible, onClose, navigation }) {
 
   const user = state.user;
   const isAdmin = user?.role === 'admin';
-  const visibleGroups = GROUPS
-    .map(group => ({
-      ...group,
-      items: group.items.filter(item => isAdmin || item.route !== 'AISettings'),
-    }))
-    .filter(group => group.items.length > 0);
+  const visibleGroups = GROUPS.map(group => ({
+    ...group,
+    items: group.items.filter(item => isAdmin || item.route !== 'AISettings'),
+  })).filter(group => group.items.length > 0);
 
   const go = (route) => {
     onClose();
@@ -139,7 +135,7 @@ export function AppDrawer({ visible, onClose, navigation }) {
                 {user?.username || 'Khách'}
               </Text>
               <View style={styles.balanceRow}>
-                <AppIcon name="credit-card" size={12} color={colors.accentSoft} />
+                <TokenIcon size={12} color={colors.accentSoft} />
                 <Text style={styles.balance} numberOfLines={1} maxFontSizeMultiplier={1.5}>
                   {formatToken(user?.tokenBalance || 0)} token
                 </Text>
@@ -178,11 +174,11 @@ export function AppDrawer({ visible, onClose, navigation }) {
                 style={styles.item}
                 onPress={() => go('AdminHome')}
                 activeOpacity={0.75}
-                accessibilityLabel="Admin Dashboard"
+                accessibilityLabel="Trang quản trị"
               >
                 <AppIcon name="shield" size={18} color={colors.warning} />
                 <Text style={[styles.itemLabel, { color: colors.warning }]} numberOfLines={1} maxFontSizeMultiplier={1.6}>
-                  Admin Dashboard
+                  Trang quản trị
                 </Text>
               </TouchableOpacity>
             </View>
@@ -241,7 +237,7 @@ const styles = StyleSheet.create({
   profileBody: { flex: 1, gap: 2 },
   name: { ...type.bodyStrong, color: colors.text, fontWeight: '700' },
   balanceRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  balance: { ...type.small, color: colors.accentSoft, fontWeight: '600' },
+  balance: { ...type.small, ...type.numeric, color: colors.accentSoft, fontWeight: '600' },
   group: { marginTop: spacing.lg },
   groupLabel: {
     ...type.small,

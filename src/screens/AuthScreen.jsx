@@ -96,7 +96,7 @@ export function AuthScreen() {
         <AppIcon name="cpu" size={40} color={colors.accentSoft} style={styles.logo} />
         <Text style={styles.title}>AIBox</Text>
         <Text style={styles.subtitle}>
-          AI Hub · Prediction Market · Token nội bộ
+          AI Hub · Tài Xỉu · Ví token nội bộ
         </Text>
       </View>
 
@@ -380,6 +380,6 @@ const styles = StyleSheet.create({
   setupText: { color: colors.gold, fontSize: 12, lineHeight: 17 },
   terms: { color: colors.textFaint, fontSize: 12, lineHeight: 15, textAlign: 'center', marginTop: 16 },
   footer: { alignItems: 'center', marginTop: 22 },
-  footerText: { color: colors.textDim, fontSize: 12, fontFamily: 'monospace' },
+  footerText: { color: colors.textDim, fontSize: 12, fontVariant: ['tabular-nums'] },
   footerHint: { color: colors.textFaint, fontSize: 12, marginTop: 4, textAlign: 'center' },
 });

@@ -1,8 +1,8 @@
 # AIBox — React Native App (JavaScript)
 
-Nền tảng AI Marketplace + Prediction Market + Token Trading, xây bằng React Native (Expo) + JavaScript.
+Ứng dụng AIBox kết hợp AI Hub, ví token nội bộ và trò chơi Tài Xỉu, xây bằng React Native (Expo) + JavaScript.
 Đăng nhập bằng **email/mật khẩu hoặc Google** qua Firebase Authentication; hồ sơ người dùng (role, trạng thái, tên, avatar)
-lưu trên **Firestore**; ví token / positions / quests lưu local theo `uid` Firebase.
+lưu trên **Firestore**; ví token / giao dịch / quests lưu local theo `uid` Firebase.
 
 ## 1. Cài đặt
 
@@ -98,27 +98,25 @@ Trong màn đăng nhập, tài khoản mẫu chỉ hiện ở bản dev và dùn
 
 | Role | Email | Mật khẩu |
 |---|---|---|
-| Admin | `admin@aibox.local` | `Admin123!` |
-| Market Creator | `creator@aibox.local` | `Creator123!` |
-| Standard User | `user@aibox.local` | `User123!` |
+| Quản trị hệ thống | `admin@aibox.local` | `Admin123!` |
+| Người dùng | `user@aibox.local` | `User123!` |
 
 Đây là tài khoản giả lập để thử giao diện, không phải tài khoản Firebase thật.
 Đăng xuất giữ nguyên ví local của từng tài khoản mẫu.
 
 Đăng nhập/tạo tài khoản email thật dùng Firebase Authentication. Bật provider
 **Email/Password** tại Firebase Console → Authentication → Sign-in method.
-Tài khoản đăng ký mới nhận role `user`; admin có thể cấp role, còn Creator Pass nâng cấp tài khoản thành `creator` trong bản demo local.
+Tài khoản đăng ký mới nhận role `user`; chỉ admin được cấp quyền `admin`.
 Google Sign-In thật vẫn cần dev client (không chạy trong Expo Go).
 
 ### Quyền theo role
 
 | Role | Quyền xem và sử dụng |
 |---|---|
-| `user` | Các chức năng AI, markets, ví, giao dịch và dữ liệu cá nhân; không xem CMS hoặc cấu hình AI dùng chung |
-| `creator` | Như `user`, cộng thêm tạo market |
+| `user` | Các chức năng AI, ví, giao dịch và dữ liệu cá nhân; không xem CMS hoặc cấu hình AI dùng chung |
 | `admin` | Toàn bộ chức năng, Admin CMS và cấu hình AI dùng chung |
 
-Drawer và Profile chỉ hiện mục phù hợp với role. Các màn CMS và cấu hình AI cũng được chặn khi điều hướng trực tiếp; `CreateMarket` chỉ hiển thị biểu mẫu cho creator/admin. API key và lịch sử request thông thường vẫn được giới hạn theo tài khoản đang đăng nhập.
+Drawer và Profile chỉ hiện mục phù hợp với role. Các màn CMS và cấu hình AI cũng được chặn khi điều hướng trực tiếp. API key và lịch sử request thông thường vẫn được giới hạn theo tài khoản đang đăng nhập.
 Đây là kiểm soát ở giao diện/client; không thay thế kiểm tra quyền ở Firestore Rules hoặc backend cho dữ liệu và thao tác production.
 
 Yêu cầu máy build (Windows):
@@ -141,24 +139,21 @@ local theo UID Firebase để giữ ví riêng.
 - Firebase tự restore phiên khi mở lại app → không còn session 7 ngày / refresh watchdog.
 - `onSnapshot` trên `users/{uid}`: admin đổi role hoặc ban → app cập nhật ngay;
   bị ban giữa phiên → tự động đăng xuất kèm thông báo.
-- Tài khoản đăng nhập mới mặc định có role `user`; quyền `admin` chỉ đến từ whitelist quản trị, còn `creator` có thể được mở khoá bằng Creator Pass trong Store.
+- Tài khoản đăng nhập mới mặc định có role `user`; quyền `admin` chỉ đến từ whitelist quản trị hoặc thay đổi của admin.
+- Khi nâng state local v4 lên v5, app giữ số dư và lịch sử giao dịch của tài khoản thật, bỏ dữ liệu vật phẩm/vị thế và tài khoản hệ thống mẫu; role `creator` cũ được đưa về `user`. Các giao dịch market đã ghi trước đó vẫn nằm trong lịch sử ví.
 - Firestore lỗi (chưa bật / chưa deploy rules) **không chặn đăng nhập**:
   app dùng hồ sơ tạm và hiện cảnh báo đồng bộ.
 
 ## 5. Tính năng
 
-1. **AI Hub** — 12 model AI (GPT-4o, Claude 3.5, Gemini Pro, DALL-E 3, Midjourney...) — chat interface, trừ token theo usage thật của API
-2. **Markets** — 12 prediction markets — mua YES/NO shares bằng token
-3. **Portfolio** — positions + P&L + transaction history
-4. **Transfer** — chuyển token cho người dùng khác (chỉ thấy người đã đăng nhập trên cùng máy + trader nền)
-5. **Leaderboard** — top trader + vị trí của bạn
-6. **Daily Reward** — nhận token miễn phí mỗi ngày + streak bonus
-7. **Quests / Store / Copy Trade / Notifications**
-8. **Role access** — user dùng tính năng thường; creator có thêm tạo market; admin có CMS và cấu hình AI dùng chung
-9. **Admin CMS** — markets, AI models, users (role/ban trên Firestore), risk
-10. **Profile** — sửa tên + avatar, đăng xuất
-11. **Cấu hình AI thật** — admin nhập Base URL / API key / model (OpenAI-compatible), test kết nối, lưu trên máy
-12. **Catalog / Usage Dashboard / Nạp token** — xem danh mục model, thống kê token theo model, nạp credit (mô phỏng)
+1. **AI Hub** — chat với các model AI, trừ token theo usage thật của API
+2. **Ví token** — số dư, lịch sử giao dịch và chuyển token giữa các tài khoản trên cùng thiết bị
+3. **Tài Xỉu** — game 3 xúc xắc dùng token nội bộ; kết quả, lịch sử ván còn lưu và luật chơi hiển thị trong màn game
+4. **Daily Reward / Nhiệm vụ** — nhận token hằng ngày và hoàn thành nhiệm vụ AI, Tài Xỉu, chuyển token
+5. **Thông báo / Profile** — quản lý hồ sơ và hoạt động tài khoản
+6. **Admin CMS** — AI models, người dùng (role/ban trên Firestore), rủi ro dòng tiền
+7. **Cấu hình AI thật** — admin nhập Base URL / API key / model (OpenAI-compatible), test kết nối, lưu trên máy
+8. **Catalog / Usage Dashboard / Nạp token** — xem danh mục model, thống kê token theo model, nạp credit (mô phỏng)
 
 ## 5.1. Gọi AI thật (OpenAI-compatible)
 
@@ -218,32 +213,7 @@ Chi tiết code: `src/services/chatHistory.js` (`loadChatHistory`, `saveModelHis
 `clearModelHistory`, `clearAllChatHistory`, `countByModel`), UI ở `src/screens/AIHubScreen.jsx`
 (badge 💬 trên `AIModelCard`).
 
-## 5.3. AI Market Analyst
-
-Nút "Hỏi AI về kèo này" trong chi tiết market gửi dữ liệu kèo (câu hỏi, mô tả, giá YES/NO,
-volume, liquidity, hạn kết thúc) lên model đã chọn.
-
-Prompt **không ép khuôn cố định** vì mỗi loại kèo cần cách phân tích khác nhau (bóng đá khác
-tài chính, chính trị khác giải trí). Model được tự chọn cách trình bày — đoạn văn, gạch đầu dòng
-hay chia mục ngắn — miễn là người đọc thấy rõ:
-
-- quan điểm nghiêng bên nào và vì sao,
-- xác suất ước tính (con số cụ thể) so với giá thị trường,
-- bằng chứng/yếu tố đặc thù của lĩnh vực đó,
-- rủi ro và điều kiện khiến nhận định sai,
-- nên làm gì tiếp theo (bên mua, vùng giá %, % số dư, chốt lời/cắt lỗ) hoặc đứng ngoài chờ tín hiệu.
-
-Prompt chỉ **gợi ý trọng tâm** theo danh mục: thể thao → phong độ, lực lượng, sân nhà, đối đầu;
-tài chính/crypto → mốc giá, dòng tiền, vĩ mô, thanh khoản; chính trị → thăm dò, tiền lệ, lịch sự
-kiện; công nghệ/giải trí → lộ trình sản phẩm, tin rò rỉ, độ lan truyền. Quy tắc giữ lại: phải nêu
-quan điểm dứt khoát kèm con số (không thay bằng "cần theo dõi thêm"), giá dùng đơn vị % cho khớp
-app, vị thế tối đa 5% số dư với kèo thể thao/crypto/chính trị và 10% với loại khác.
-
-Khi chưa cấu hình AI thật, `src/utils/analyst.js` sinh bản MOCK: ước tính xác suất bằng heuristic
-(giá lệch xa 50 khi thanh khoản mỏng → kéo về gần 50), từ đó chọn YES/NO, tính edge, độ tin cậy,
-vùng giá vào, chốt lời; kèm 3 yếu tố cần soi theo đúng danh mục của kèo.
-
-## 5.4. Trạng thái mạng, cache & hiệu năng
+## 5.3. Trạng thái mạng, cache & hiệu năng
 
 - `src/hooks/useNetworkStatus.js` theo dõi mạng bằng `@react-native-community/netinfo` (có sẵn
   trong Expo Go). Khi mất mạng, Home và AI Hub hiện dải cảnh báo kèm nút **Thử lại**.
@@ -255,7 +225,7 @@ vùng giá vào, chốt lời; kèm 3 yếu tố cần soi theo đúng danh mụ
   `maxToRenderPerBatch`, `windowSize`, `removeClippedSubviews` (Android) để cuộn mượt.
 - Animation mount (`FadeIn`) và skeleton tôn trọng cài đặt **giảm chuyển động** của hệ điều hành.
 
-## 5.5. Giao diện thích ứng: theme sáng/tối, cỡ chữ, tablet, a11y, i18n
+## 5.4. Giao diện thích ứng: theme sáng/tối, cỡ chữ, tablet, a11y, i18n
 
 **Theme sáng/tối.** Bảng màu nằm ở `src/theme/palettes.js` (`darkColors`, `lightColors`), `src/theme/tokens.js`
 chọn bảng theo `Appearance.getColorScheme()` ngay khi module được nạp rồi export ra `colors` như cũ — nên
@@ -267,9 +237,9 @@ mọi `StyleSheet.create` đang dùng `colors.*` **không phải sửa**. Vì gi
 (`accentStrong`, `dangerBg`, `warningBg`) chỉ dùng chữ `colors.onAccent`/`colors.onBright`. Nút Google giữ
 nền trắng cố định (nhận diện thương hiệu) với chữ tối.
 
-**Cỡ chữ 130–200%.** Không còn `height` cố định cho nút/ô nhập/hàng — thay bằng `minHeight`, nên chữ phóng
-to vẫn không bị cắt. Chữ trong `Text` đặt `maxFontSizeMultiplier` 1.5–1.8, không dùng cỡ < 12 và `Button`
-không còn `numberOfLines={1}` (nhãn dài xuống dòng thay vì bị "…").
+**Nút dùng chung.** `src/components/ui/Button.jsx` có chiều cao cố định 48dp, căn giữa nội dung và hỗ trợ
+primary, secondary cùng trạng thái disabled/loading. Trường nhập và hàng nội dung vẫn co giãn theo chữ.
+`AppHeader` chuẩn hoá nút menu/back, tiêu đề/phụ đề và chip số dư; màn đăng nhập không hiển thị số dư.
 
 **Tablet ≥ 720px.** Token `centeredContent` (`width: '100%'`, `maxWidth: 720`, `alignSelf: 'center'`) được
 thêm vào `contentContainerStyle` của các màn chính, nên trên tablet nội dung canh giữa thay vì giãn hết bề
@@ -285,7 +255,7 @@ chỉ thoát. Dải offline dùng `accessibilityRole="alert"`.
 áp cho drawer, tiêu đề các màn chính, các trạng thái lỗi/offline dùng chung và một số nhãn ở Home/AI Hub/Logs;
 phần copy còn lại trong thân màn hình vẫn là tiếng Việt và chuyển dần sang `t()` theo từng màn.
 
-## 5.6. Onboarding, trạng thái rỗng & micro-interaction
+## 5.5. Onboarding, trạng thái rỗng & micro-interaction
 
 **Onboarding lần đầu.** `src/components/Onboarding.jsx` hiện 3 slide (hỏi AI bằng token → ví & chi tiêu →
 dữ liệu ở lại trên máy) **trước** màn đăng nhập, chỉ ở lần mở app đầu tiên. Đi hết 3 slide (tối đa 3 chạm)
@@ -309,22 +279,21 @@ cho cả app (cache ở module + 1 listener `reduceMotionChanged`), export `useR
 mức sáng, drawer mở không trượt (`animationType="none"`), toast hiện/ẩn tức thì, nút/card không scale (chỉ
 đổi độ mờ nhẹ để vẫn có phản hồi). Haptic vẫn giữ vì không ảnh hưởng tiền đình.
 
-## 5.7. Bỏ bottom tab bar — điều hướng bằng drawer
+## 5.6. Bỏ bottom tab bar — điều hướng bằng drawer
 
-`AppNavigator` **không còn** `createBottomTabNavigator`: 5 màn chính (`Home`, `AIHub`, `Markets`, `Portfolio`,
-`Leaderboard`) nằm chung stack với các màn phụ, `initialRouteName="Home"`. Chuyển màn bằng nút **☰** ở header:
+`AppNavigator` **không còn** `createBottomTabNavigator`: các màn chính (`Home`, `AIHub`, `TaiXiu`, lịch sử giao dịch)
+nằm chung stack với các màn phụ, `initialRouteName="Home"`. Chuyển màn bằng nút **☰** ở header:
 `useAppDrawer()` (`src/hooks/useAppDrawer.js`) giữ state mở/đóng và trả `drawerProps` để rải vào
 `<AppDrawer {...drawerProps} />`; `AppDrawer` gọi `navigation.navigate(route)` nên quay lại màn đã có trong
 stack thay vì chồng thêm màn mới.
 
-Vì tab bar trước đây tự chừa `insets.bottom`, các màn chính đã cộng `insets.bottom` vào `paddingBottom`
-của danh sách (Home, AI Hub) và của `contentContainerStyle` (Markets, Portfolio, Leaderboard); chat AI Hub
-cộng `insets.bottom` vào thanh nhập. Drawer vẫn chỉ mở được từ 5 màn chính — màn phụ đi bằng nút back.
+Vì tab bar trước đây tự chừa `insets.bottom`, các màn chính cộng `insets.bottom` vào `paddingBottom`
+của nội dung; chat AI Hub cộng `insets.bottom` vào thanh nhập. Drawer mở từ header các màn chính.
 
 Đánh đổi: đổi màn tốn 2 chạm (☰ → mục) thay vì 1 chạm, bù lại nội dung không bị chiếm 56px + safe area ở
 đáy và không còn tab bar che bàn phím.
 
-## 5.8. Game Tài xỉu — cá cược token nội bộ
+## 5.7. Game Tài xỉu — cá cược token nội bộ
 
 Màn `TaiXiuScreen` (vào từ drawer → nhóm **Giải trí**) là game 3 xúc xắc dùng token của app.
 Luật nằm ở `src/utils/taiXiu.js` (thuần JS, test được bằng Node), tiền được tính **trong reducer**
@@ -349,9 +318,8 @@ Gói nạp cũng được nhân 10 để khớp thang token thật, **giữ nguy
 không đổi (1 API token = 1 token app), chỉ đổi đơn vị hiển thị cho dễ hình dung.
 
 **Không thêm field vào account.** Mỗi ván ghi 1 transaction `type: 'TAIXIU'` với `amount` = tiền ròng, kèm
-`side`/`dice`/`total`/`triple`; thống kê (số ván, thắng, tỉ lệ, lãi ròng) và dải 12 ván gần nhất đều suy ra
-từ chính các transaction đó. Nhờ vậy dữ liệu cũ không phải migrate, `sanitizeAccount` giữ nguyên, và lịch sử
-cược xuất hiện luôn trong Portfolio (chip lọc **Game**) và trong `TransactionItem`.
+`side`/`dice`/`total`/`triple`; thống kê và danh sách ván được suy ra từ toàn bộ transaction Tài Xỉu còn lưu.
+Lịch sử giao dịch được giữ riêng với danh mục game tại màn **Lịch sử giao dịch**.
 
 Trải nghiệm: mức cược **≥ 1.000** hoặc cược toàn bộ số dư cần xác nhận qua bảng
 (`BottomSheet`: thắng/thua/số dư sau ván thắng); các mức nhỏ hơn vào ván ngay. Xúc xắc lắc ~700ms rồi
@@ -360,6 +328,20 @@ nội dung là số dư mới) + haptic. Máy bật "giảm chuyển động" th
 Không đủ 100 token thì hiện `ErrorState` kèm nút **Nạp token** thay vì chặn màn; game chạy local nên offline
 vẫn cược được, chỉ hiện thêm `OfflineBar`.
 
+## 5.8. Header, token và thông tin bản demo
+
+Các màn ứng dụng dùng `src/components/ui/AppHeader.jsx`: màn chính mở drawer bằng biểu tượng menu; màn con
+dùng biểu tượng quay lại. Chip số dư và `TokenIcon` lấy chung cách hiển thị từ `TokenBadge`, còn `formatToken`
+nhóm hàng nghìn bằng dấu chấm kiểu Việt Nam. Số liệu dùng font sans-serif với `tabular-nums`.
+
+`Button` là nút hành động dùng chung, chiều cao cố định 48dp và nội dung căn giữa; các biến thể gồm primary,
+secondary và disabled. Các thao tác riêng của trò chơi, như nút Tài/Xỉu và mức cược, giữ hình thức riêng để
+thể hiện trạng thái và số liệu của game.
+
+Thông tin kỹ thuật/giới hạn demo không còn đặt ở cuối các màn hình nghiệp vụ. Người dùng có thể mở **Về bản
+demo** từ Hồ sơ; màn này giải thích lưu trữ dữ liệu trên thiết bị, thông báo nội bộ, AI mô phỏng, thanh toán
+mô phỏng, phạm vi phân tích quản trị và các bước cần thiết trước khi phát hành.
+
 ## 6. Cấu trúc project
 
 ```
@@ -367,14 +349,14 @@ aibox-app/
   src/
     components/   (UI components .jsx, ui/ cho UI kit, Onboarding.jsx, Die.jsx — mặt xúc xắc)
     screens/      (screens .jsx, admin/ cho CMS, TaiXiuScreen.jsx — game Tài xỉu)
-    data/         (mockData.js, accounts.js, quests.js, storeItems.js)
+    data/         (mockData.js, accounts.js, quests.js)
     config/       (firebase.js — init Auth/Firestore, ai.js — preset AI gateway, đọc .env)
     services/     (auth.js — Google sign-in, users.js — Firestore users/{uid}, ai.js — gọi AI thật)
     context/      (AppContext.jsx — global state + AsyncStorage)
     hooks/        (useNetworkStatus.js — mạng, useReduceMotion.js — giảm chuyển động, useAppDrawer.js — mở/đóng drawer)
     theme/        (palettes.js — bảng màu sáng/tối, tokens.js — spacing/type/colors)
     i18n/         (index.js — từ điển vi/en + t()/useI18n)
-    utils/        (format, rewards, economy — quy đổi token ↔ câu hỏi AI, analyst, spend, clipboard, apiKeys, taiXiu — luật game Tài xỉu)
+    utils/        (format, rewards, economy — quy đổi token ↔ câu hỏi AI, spend, clipboard, apiKeys, taiXiu — luật game Tài xỉu)
     navigation/   (AppNavigator.jsx)
   App.js
   firestore.rules
@@ -389,11 +371,11 @@ aibox-app/
 - React Native (Expo SDK 52) + Expo Dev Client
 - Firebase Auth (Google) + Cloud Firestore (`firebase@10.14.1` — bản có RN persistence)
 - `@react-native-google-signin/google-signin`
-- React Navigation (stack: 5 màn chính + màn phụ, **không bottom tab**; chuyển màn bằng drawer ☰ trên header mọi màn chính)
-- AsyncStorage (ví token, markets, quests, comments theo uid)
+- React Navigation (stack + drawer, **không bottom tab**)
+- AsyncStorage (ví token, giao dịch, thông báo và quests theo uid)
 - `@react-native-community/netinfo` (trạng thái mạng), `expo-haptics`, `expo-clipboard`
 - React Native SVG (charts), theme sáng/tối (theo hệ điều hành hoặc `EXPO_PUBLIC_THEME`)
 
 ## Disclaimer
 
-AIBox là nền tảng giải trí. Token là credit nội bộ, KHÔNG có giá trị tiền tệ. Prediction market là game dự đoán, không phải cá cược.
+AIBox cung cấp công cụ AI và trò chơi Tài Xỉu. Token là credit nội bộ, KHÔNG có giá trị tiền tệ và không thể đổi thành tiền thật.

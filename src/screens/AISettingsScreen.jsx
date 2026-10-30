@@ -2,15 +2,15 @@
 // Cho phép nhập Base URL / API key / model ngay trên điện thoại, lưu AsyncStorage,
 // test kết nối. Mặc định đọc từ .env nên không bắt buộc phải nhập ở đây.
 import React, { useState } from 'react';
-import { BackButton } from '../components/ui/BackButton';
 import {
-  View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Switch, ActivityIndicator, Alert,
+  View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Switch, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { AI_PRESETS } from '../config/ai';
 import { getAISettings } from '../services/ai';
 import { AppIcon } from '../components/ui/AppIcon';
+import { AppHeader, Button } from '../components/ui';
 import { colors, centeredContent, touch } from '../theme/tokens';
 
 export function AISettingsScreen({ navigation }) {
@@ -125,14 +125,11 @@ export function AISettingsScreen({ navigation }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 32 }]}
+      stickyHeaderIndices={[0]}
+      contentContainerStyle={[centeredContent, { paddingBottom: insets.bottom + 32 }]}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Cấu hình AI</Text>
-        <View style={{ width: 50 }} />
-      </View>
+      <AppHeader navigation={navigation} title="Cấu hình AI" />
 
       {/* Trạng thái hiện tại */}
       <View style={[styles.statusCard, live ? styles.statusLive : styles.statusMock]}>
@@ -268,49 +265,11 @@ export function AISettingsScreen({ navigation }) {
 
       {/* Hành động */}
       <View style={styles.actions}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Kiểm tra kết nối AI"
-          accessibilityState={{ busy: testing, disabled: testing || saving }}
-          style={[styles.testBtn, testing && styles.btnDisabled]}
-          onPress={handleTest}
-          disabled={testing || saving}
-        >
-          {testing
-            ? <ActivityIndicator color={colors.accentSoft} />
-            : <View style={styles.buttonContent}><AppIcon name="power" size={16} color={colors.accentSoft} /><Text style={styles.testBtnText}>Kiểm tra kết nối</Text></View>}
-        </TouchableOpacity>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Lưu cấu hình AI"
-          accessibilityState={{ busy: saving, disabled: saving || testing }}
-          style={[styles.saveBtn, saving && styles.btnDisabled]}
-          onPress={handleSave}
-          disabled={saving || testing}
-        >
-          {saving ? <ActivityIndicator color={colors.onAccent} /> : <Text style={styles.saveBtnText}>Lưu cấu hình</Text>}
-        </TouchableOpacity>
+        <Button label="Kiểm tra kết nối" icon="power" variant="secondary" style={styles.actionButton} onPress={handleTest} loading={testing} disabled={testing || saving} />
+        <Button label="Lưu cấu hình" style={styles.actionButton} onPress={handleSave} loading={saving} disabled={saving || testing} />
       </View>
 
-      <TouchableOpacity
-        accessibilityRole="button"
-        accessibilityLabel="Xoá cấu hình AI đã lưu và quay về .env"
-        accessibilityState={{ disabled: saving || testing }}
-        disabled={saving || testing}
-        style={styles.resetBtn}
-        onPress={handleReset}
-      >
-        <Text style={styles.resetBtnText}>Xoá cấu hình trong app (quay về .env)</Text>
-      </TouchableOpacity>
-
-      <View style={styles.warnBox}>
-        <View style={styles.noticeTitle}><AppIcon name="alert-triangle" size={16} color={colors.warning} /><Text style={styles.warnTitle}>Lưu ý bảo mật</Text></View>
-        <Text style={styles.warnText}>
-          API key lưu trên thiết bị (AsyncStorage) và mọi biến EXPO_PUBLIC_* đều nằm trong bundle —
-          chỉ phù hợp đồ án/demo. Nếu triển khai thật, hãy đặt key ở backend/proxy rồi để app gọi
-          server của bạn, đừng nhúng key vào app.
-        </Text>
-      </View>
+      <Button label="Xoá cấu hình trong app" variant="secondary" fullWidth onPress={handleReset} disabled={saving || testing} />
 
       <View style={styles.warnBox}>
         <View style={styles.noticeTitle}><AppIcon name="zap" size={16} color={colors.warning} /><Text style={styles.warnTitle}>Gợi ý nhanh</Text></View>
