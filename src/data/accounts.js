@@ -23,6 +23,7 @@ export const ROLE_COLORS = {
 
 export const PROVIDER_LABELS = {
   google: 'Google',
+  email: 'Email / mật khẩu',
   demo: 'Chế độ demo (Expo Go)',
   system: 'Tài khoản hệ thống',
 };

@@ -2,6 +2,7 @@
 // Cho phép nhập Base URL / API key / model ngay trên điện thoại, lưu AsyncStorage,
 // test kết nối. Mặc định đọc từ .env nên không bắt buộc phải nhập ở đây.
 import React, { useState } from 'react';
+import { BackButton } from '../components/ui/BackButton';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Switch, ActivityIndicator, Alert,
 } from 'react-native';
@@ -9,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { AI_PRESETS } from '../config/ai';
 import { getAISettings } from '../services/ai';
+import { AppIcon } from '../components/ui/AppIcon';
 import { colors, centeredContent, touch } from '../theme/tokens';
 
 export function AISettingsScreen({ navigation }) {
@@ -127,7 +129,7 @@ export function AISettingsScreen({ navigation }) {
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.headerTitle}>Cấu hình AI</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -164,7 +166,7 @@ export function AISettingsScreen({ navigation }) {
             onPress={() => applyPreset(p)}
             activeOpacity={0.85}
           >
-            <Text style={styles.presetIcon}>{p.icon}</Text>
+            <AppIcon name={p.icon} size={18} color={currentPresetId === p.id ? colors.accentSoft : colors.textDim} />
             <Text style={[styles.presetName, currentPresetId === p.id && styles.presetNameActive]}>{p.name}</Text>
           </TouchableOpacity>
         ))}
@@ -274,7 +276,9 @@ export function AISettingsScreen({ navigation }) {
           onPress={handleTest}
           disabled={testing || saving}
         >
-          {testing ? <ActivityIndicator color={colors.accentSoft} /> : <Text style={styles.testBtnText}>{'\u{1F50C}'} Kiểm tra kết nối</Text>}
+          {testing
+            ? <ActivityIndicator color={colors.accentSoft} />
+            : <View style={styles.buttonContent}><AppIcon name="power" size={16} color={colors.accentSoft} /><Text style={styles.testBtnText}>Kiểm tra kết nối</Text></View>}
         </TouchableOpacity>
         <TouchableOpacity
           accessibilityRole="button"
@@ -300,7 +304,7 @@ export function AISettingsScreen({ navigation }) {
       </TouchableOpacity>
 
       <View style={styles.warnBox}>
-        <Text style={styles.warnTitle}>{'\u{26A0}'} Lưu ý bảo mật</Text>
+        <View style={styles.noticeTitle}><AppIcon name="alert-triangle" size={16} color={colors.warning} /><Text style={styles.warnTitle}>Lưu ý bảo mật</Text></View>
         <Text style={styles.warnText}>
           API key lưu trên thiết bị (AsyncStorage) và mọi biến EXPO_PUBLIC_* đều nằm trong bundle —
           chỉ phù hợp đồ án/demo. Nếu triển khai thật, hãy đặt key ở backend/proxy rồi để app gọi
@@ -309,7 +313,7 @@ export function AISettingsScreen({ navigation }) {
       </View>
 
       <View style={styles.warnBox}>
-        <Text style={styles.warnTitle}>{'\u{1F4A1}'} Gợi ý nhanh</Text>
+        <View style={styles.noticeTitle}><AppIcon name="zap" size={16} color={colors.warning} /><Text style={styles.warnTitle}>Gợi ý nhanh</Text></View>
         <Text style={styles.warnText}>
           • Muốn thử ngay không cần đăng ký: chọn preset Pollinations (keyless).{'\n'}
           • Gemini có free tier: aistudio.google.com/apikey{'\n'}
@@ -339,7 +343,6 @@ const styles = StyleSheet.create({
   presetRow: { paddingHorizontal: 16, gap: 8 },
   presetChip: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center', minWidth: 78, minHeight: touch.min },
   presetChipActive: { borderColor: colors.accent, backgroundColor: colors.accentDim },
-  presetIcon: { fontSize: 16, marginBottom: 2 },
   presetName: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
   presetNameActive: { color: colors.text },
   presetHint: { color: colors.textFaint, fontSize: 12, marginHorizontal: 16, marginTop: 8, lineHeight: 15 },
@@ -366,6 +369,8 @@ const styles = StyleSheet.create({
   resetBtn: { alignItems: 'center', marginTop: 14, paddingVertical: 10, minHeight: touch.min },
   resetBtnText: { color: colors.textDim, fontSize: 12, textDecorationLine: 'underline' },
   warnBox: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, marginHorizontal: 16, marginTop: 16, padding: 12 },
-  warnTitle: { color: colors.warning, fontSize: 12, fontWeight: '700', marginBottom: 6 },
+  noticeTitle: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  warnTitle: { color: colors.warning, fontSize: 12, fontWeight: '700' },
+  buttonContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   warnText: { color: colors.textDim, fontSize: 12, lineHeight: 17 },
 });

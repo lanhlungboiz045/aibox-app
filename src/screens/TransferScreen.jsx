@@ -1,5 +1,6 @@
 // screens/TransferScreen.jsx
 import React, { useState } from 'react';
+import { BackButton } from '../components/ui/BackButton';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
@@ -45,14 +46,14 @@ export function TransferScreen({ navigation }) {
       contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 20 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.headerTitle}>Chuyển token</Text>
         <TokenBadge size="small" />
       </View>
 
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>Số dư hiện tại</Text>
-        <Text style={styles.balanceValue}>{formatToken(state.user.tokenBalance)} {'\u{1F4B0}'}</Text>
+        <Text style={styles.balanceValue}>{formatToken(state.user.tokenBalance)} token</Text>
       </View>
 
       <View style={styles.form}>
@@ -87,7 +88,7 @@ export function TransferScreen({ navigation }) {
             keyboardType="number-pad"
             accessibilityLabel="Số token cần chuyển"
           />
-          <Text style={styles.amountSuffix}>{'\u{1F4B0}'}</Text>
+          <Text style={styles.amountSuffix}>token</Text>
         </View>
 
         <View style={styles.quickRow}>
@@ -106,7 +107,7 @@ export function TransferScreen({ navigation }) {
         </TouchableOpacity>
 
         {!canTransfer && hasValidAmount && amountNum > state.user.tokenBalance && (
-          <Text style={styles.warning}>{'\u{26A0}'} Không đủ token</Text>
+          <Text style={styles.warning}>Không đủ token</Text>
         )}
         {!canTransfer && isSelf && (
           <Text style={styles.warning}>Không thể chuyển token cho chính mình.</Text>
@@ -115,7 +116,7 @@ export function TransferScreen({ navigation }) {
 
       {recentTransfers.length > 0 && (
         <View style={styles.recentSection}>
-          <Text style={styles.recentTitle}>{'\u{1F4E4}'} Lịch sử chuyển</Text>
+          <Text style={styles.recentTitle}>Lịch sử chuyển</Text>
           {recentTransfers.map(tx => (
             <View key={tx.id} style={styles.recentItem}>
               <Text style={styles.recentDesc} numberOfLines={2}>{tx.description}</Text>

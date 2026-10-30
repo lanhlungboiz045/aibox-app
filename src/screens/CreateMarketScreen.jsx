@@ -1,21 +1,23 @@
 // screens/CreateMarketScreen.jsx — Market Creator / Admin tự tạo kèo
 import React, { useState } from 'react';
+import { BackButton } from '../components/ui/BackButton';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatToken } from '../utils/format';
+import { AppIcon } from '../components/ui/AppIcon';
 import { colors, centeredContent, touch } from '../theme/tokens';
 
 const CATEGORIES = [
-  { key: 'sports', label: 'Sports', icon: '\u{26BD}' },
-  { key: 'crypto', label: 'Crypto', icon: '\u{20BF}' },
-  { key: 'tech', label: 'Tech', icon: '\u{1F4BB}' },
-  { key: 'entertainment', label: 'Entertain', icon: '\u{1F3B5}' },
-  { key: 'life', label: 'Life', icon: '\u{1F4DA}' },
-  { key: 'politics', label: 'Politics', icon: '\u{1F3DB}' },
+  { key: 'sports', label: 'Sports', icon: 'activity' },
+  { key: 'crypto', label: 'Crypto', icon: 'trending-up' },
+  { key: 'tech', label: 'Tech', icon: 'monitor' },
+  { key: 'entertainment', label: 'Entertain', icon: 'music' },
+  { key: 'life', label: 'Life', icon: 'book-open' },
+  { key: 'politics', label: 'Politics', icon: 'globe' },
 ];
 
-const ICONS = ['\u{1F52E}', '\u{1F4C8}', '\u{26BD}', '\u{20BF}', '\u{1F3AF}', '\u{1F680}', '\u{1F3B2}', '\u{1F4F0}'];
+const ICONS = ['aperture', 'bar-chart-2', 'activity', 'trending-up', 'target', 'zap', 'award', 'file-text'];
 const PRESET_PRICES = [30, 50, 70];
 
 export function CreateMarketScreen({ navigation }) {
@@ -29,7 +31,7 @@ export function CreateMarketScreen({ navigation }) {
   const [question, setQuestion] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('sports');
-  const [icon, setIcon] = useState('\u{1F52E}');
+  const [icon, setIcon] = useState('aperture');
   const [endDateText, setEndDateText] = useState(defaultEndText);
   const [yesPrice, setYesPrice] = useState('50');
   const [error, setError] = useState(null);
@@ -44,12 +46,12 @@ export function CreateMarketScreen({ navigation }) {
     return (
       <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
         <View style={styles.header}>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+          <BackButton onPress={() => navigation.goBack()} />
           <Text style={styles.title}>Tạo market</Text>
           <View style={{ width: 50 }} />
         </View>
         <View style={styles.lockCard}>
-          <Text style={styles.lockIcon}>{'\u{1F512}'}</Text>
+          <AppIcon name="lock" size={32} color={colors.textDim} />
           <Text style={styles.lockTitle}>Cần quyền Market Creator</Text>
           <Text style={styles.lockText}>
             Bạn đang là Standard User. Mua Creator Pass trong Store để tự tạo kèo và nhận 2% fee trên volume market của mình.
@@ -113,14 +115,14 @@ export function CreateMarketScreen({ navigation }) {
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.title}>Tạo market</Text>
         <View style={{ width: 50 }} />
       </View>
 
       <View style={styles.notice}>
         <Text style={styles.noticeText}>
-          {'\u{1F451}'} Tạo với tư cách {user.role === 'admin' ? 'System Admin' : 'Market Creator'} · nhận 2% creator fee trên volume.
+          Tạo với tư cách {user.role === 'admin' ? 'System Admin' : 'Market Creator'} · nhận 2% creator fee trên volume.
         </Text>
       </View>
 
@@ -159,7 +161,8 @@ export function CreateMarketScreen({ navigation }) {
               style={[styles.chip, category === item.key && styles.chipActive]}
               onPress={() => setCategory(item.key)}
             >
-              <Text style={[styles.chipText, category === item.key && styles.chipTextActive]}>{item.icon} {item.label}</Text>
+              <AppIcon name={item.icon} size={16} color={category === item.key ? colors.accentSoft : colors.textDim} />
+              <Text style={[styles.chipText, category === item.key && styles.chipTextActive]}>{item.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -175,7 +178,7 @@ export function CreateMarketScreen({ navigation }) {
               style={[styles.iconChip, icon === item && styles.chipActive]}
               onPress={() => setIcon(item)}
             >
-              <Text style={styles.iconText}>{item}</Text>
+              <AppIcon name={item} size={18} color={icon === item ? colors.accentSoft : colors.textDim} />
             </TouchableOpacity>
           ))}
         </View>
@@ -204,7 +207,7 @@ export function CreateMarketScreen({ navigation }) {
           />
         </View>
         <Text style={styles.hint}>
-          NO price = {noPricePreview}{noPricePreview === '—' ? '' : '%'} · thanh khoản nền tảng: {formatToken(10000)} {'\u{1F4B0}'}
+          NO price = {noPricePreview}{noPricePreview === '—' ? '' : '%'} · thanh khoản nền tảng: {formatToken(10000)} token
         </Text>
 
         <Text style={styles.label}>Ngày kết thúc (YYYY-MM-DD)</Text>
@@ -218,7 +221,7 @@ export function CreateMarketScreen({ navigation }) {
           onChangeText={value => { setEndDateText(value); setError(null); }}
         />
 
-        {error ? <Text style={styles.error}>{'\u{26A0}'} {error}</Text> : null}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <TouchableOpacity
           accessibilityRole="button"
@@ -249,12 +252,11 @@ const styles = StyleSheet.create({
   input: { backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 14, paddingHorizontal: 14, minHeight: touch.min },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: touch.gap },
-  chip: { backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 10, minHeight: touch.min, justifyContent: 'center' },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 10, minHeight: touch.min, justifyContent: 'center' },
   chipActive: { borderColor: colors.accent, backgroundColor: colors.accentDim },
   chipText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
   chipTextActive: { color: colors.accentSoft },
   iconChip: { width: touch.min, height: touch.min, borderRadius: 8, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.borderSoft, alignItems: 'center', justifyContent: 'center' },
-  iconText: { fontSize: 18 },
   priceRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
   priceInput: { width: 60, minHeight: touch.min, backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, color: colors.accentSoft, fontSize: 15, fontWeight: '700', fontFamily: 'monospace', paddingHorizontal: 10, textAlign: 'center' },
   hint: { color: colors.textFaint, fontSize: 12, marginTop: 2 },

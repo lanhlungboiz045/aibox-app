@@ -20,12 +20,12 @@ export function MarketsScreen({ navigation }) {
   const [category, setCategory] = useState('all');
 
   const categories = [
-    { key: 'all', label: 'All', icon: '\u{2728}' },
-    { key: 'sports', label: 'Sports', icon: '\u{26BD}' },
-    { key: 'crypto', label: 'Crypto', icon: '\u{23BF}' },
-    { key: 'tech', label: 'Tech', icon: '\u{1F4BB}' },
-    { key: 'entertainment', label: 'Entertain', icon: '\u{1F3B5}' },
-    { key: 'life', label: 'Life', icon: '\u{1F4DA}' },
+    { key: 'all', label: 'All', icon: 'grid' },
+    { key: 'sports', label: 'Sports', icon: 'activity' },
+    { key: 'crypto', label: 'Crypto', icon: 'trending-up' },
+    { key: 'tech', label: 'Tech', icon: 'monitor' },
+    { key: 'entertainment', label: 'Entertain', icon: 'music' },
+    { key: 'life', label: 'Life', icon: 'book-open' },
   ];
 
   const filtered = state.markets.filter(m => {

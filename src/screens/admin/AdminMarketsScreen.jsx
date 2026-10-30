@@ -1,8 +1,10 @@
 // screens/admin/AdminMarketsScreen.jsx — Quản lý market + resolve thủ công
 import React, { useState } from 'react';
+import { BackButton } from '../../components/ui/BackButton';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
+import { AppIcon } from '../../components/ui/AppIcon';
 import { formatTokenShort, formatDate, formatTimeLeft, formatRelativeTime } from '../../utils/format';
 import { colors, centeredContent, touch } from '../../theme/tokens';
 
@@ -61,7 +63,7 @@ export function AdminMarketsScreen({ navigation }) {
       contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.title}>Quản lý Markets</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -87,7 +89,7 @@ export function AdminMarketsScreen({ navigation }) {
         return (
           <View key={market.id} style={[styles.card, overdue && styles.cardOverdue]}>
             <View style={styles.cardHead}>
-              <Text style={styles.icon}>{market.icon}</Text>
+              <AppIcon name={market.icon} size={20} color={colors.accentSoft} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.question}>{market.question}</Text>
                 <Text style={styles.meta}>
@@ -141,7 +143,6 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, marginBottom: 8, padding: 14, borderWidth: 1, borderColor: colors.borderSoft },
   cardOverdue: { borderColor: colors.dangerBorder },
   cardHead: { flexDirection: 'row', gap: 10 },
-  icon: { fontSize: 22 },
   question: { color: colors.text, fontSize: 14, fontWeight: '600', lineHeight: 19, marginBottom: 4 },
   meta: { color: colors.textDim, fontSize: 12, lineHeight: 16 },
   creator: { color: colors.warning, fontSize: 12, marginTop: 2 },

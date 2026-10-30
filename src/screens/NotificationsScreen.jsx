@@ -1,5 +1,6 @@
 // screens/NotificationsScreen.jsx — Trung tâm thông báo (mock push in-app)
 import React from 'react';
+import { BackButton } from '../components/ui/BackButton';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
@@ -28,7 +29,7 @@ export function NotificationsScreen({ navigation }) {
       contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.title}>Thông báo</Text>
         <TouchableOpacity
           accessibilityRole="button"

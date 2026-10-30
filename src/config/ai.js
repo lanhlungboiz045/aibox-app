@@ -20,7 +20,7 @@ export const AI_PRESETS = [
   {
     id: 'pollinations',
     name: 'Pollinations (free)',
-    icon: '\u{1F338}',
+    icon: 'sun',
     baseUrl: 'https://text.pollinations.ai/openai',
     model: 'openai',
     hint: 'Miễn phí, không cần key · có thể bị giới hạn tốc độ (test nhanh rất tiện)',
@@ -29,7 +29,7 @@ export const AI_PRESETS = [
   {
     id: 'openai',
     name: 'OpenAI',
-    icon: '\u{1F9E0}',
+    icon: 'cpu',
     baseUrl: 'https://api.openai.com/v1',
     model: 'gpt-4o-mini',
     hint: 'Key dạng sk-... · platform.openai.com/api-keys',
@@ -37,7 +37,7 @@ export const AI_PRESETS = [
   {
     id: 'openrouter',
     name: 'OpenRouter',
-    icon: '\u{1F310}',
+    icon: 'globe',
     baseUrl: 'https://openrouter.ai/api/v1',
     model: 'openai/gpt-4o-mini',
     hint: '1 key dùng nhiều model · openrouter.ai/keys',
@@ -45,7 +45,7 @@ export const AI_PRESETS = [
   {
     id: 'deepseek',
     name: 'DeepSeek',
-    icon: '\u{1F433}',
+    icon: 'feather',
     baseUrl: 'https://api.deepseek.com/v1',
     model: 'deepseek-chat',
     hint: 'Rẻ, tiếng Việt tốt · platform.deepseek.com',
@@ -53,7 +53,7 @@ export const AI_PRESETS = [
   {
     id: 'groq',
     name: 'Groq',
-    icon: '\u{26A1}',
+    icon: 'zap',
     baseUrl: 'https://api.groq.com/openai/v1',
     model: 'llama-3.3-70b-versatile',
     hint: 'Nhanh, có free tier · console.groq.com',
@@ -61,7 +61,7 @@ export const AI_PRESETS = [
   {
     id: 'gemini',
     name: 'Google Gemini',
-    icon: '\u{2728}',
+    icon: 'star',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
     model: 'gemini-3.1-flash-lite',
     hint: 'Free tier · aistudio.google.com/apikey · flash-lite trả lời nhanh, không tốn token "thinking"',
@@ -69,7 +69,7 @@ export const AI_PRESETS = [
   {
     id: 'aibox',
     name: 'AI Box',
-    icon: '\u{1F4E6}',
+    icon: 'box',
     baseUrl: 'https://api.ai-box.vn/v1',
     model: 'gpt-4o-mini',
     hint: 'Cổng AI home.ai-box.vn (nếu tài khoản có key)',
@@ -77,7 +77,7 @@ export const AI_PRESETS = [
   {
     id: 'ollama',
     name: 'Ollama / LM Studio',
-    icon: '\u{1F4BB}',
+    icon: 'monitor',
     baseUrl: 'http://192.168.1.10:11434/v1',
     model: 'llama3.1',
     hint: 'Chạy trên máy tính trong cùng Wi-Fi · không cần key',
@@ -106,11 +106,10 @@ export const APP_MODEL_MAP = {
   'gpt-4o': 'gpt-4o',
   'gpt-4o-mini': 'gpt-4o-mini',
   'claude-3-5-sonnet': 'claude-3-5-sonnet-20241022',
-  'gemini-1-5-pro': 'gemini-1.5-pro',
-  'gemini-1-5-flash': 'gemini-1.5-flash',
-  'llama-3-1-405b': 'meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo',
-  'mistral-large': 'mistral-large-latest',
-  'deepseek-v3': 'deepseek-chat',
+  'claude-3-haiku': 'claude-3-haiku-20240307',
+  'gemini-pro': 'gemini-1.5-pro',
+  'gemini-flash': 'gemini-1.5-flash',
+  'llama-3-70b': 'meta-llama/Meta-Llama-3-70B-Instruct',
   'deepseek-coder': 'deepseek-coder',
 };
 

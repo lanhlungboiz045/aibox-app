@@ -1,6 +1,7 @@
-// services/auth.js — Đăng nhập Google (Firebase Auth) cho React Native
+// services/auth.js — Firebase email/password and Google authentication.
 //
-// Luồng: GoogleSignin (native) → idToken → Firebase credential → signInWithCredential
+// Google: GoogleSignin (native) → idToken → Firebase credential
+// Email: Firebase email/password provider (works in Expo Go and dev builds)
 // Firebase tự quản refresh token + lưu phiên bằng AsyncStorage, nên KHÔNG cần
 // tự làm session/expiry như bản mock trước đây.
 //
@@ -12,6 +13,8 @@
 import { Platform, TurboModuleRegistry } from 'react-native';
 import {
   GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signInWithCredential,
   signOut as firebaseSignOut,
   onAuthStateChanged,
@@ -104,6 +107,7 @@ export function mapFirebaseUser(user) {
     email: user.email || '',
     displayName: user.displayName || (user.email ? user.email.split('@')[0] : 'Người dùng'),
     photoURL: user.photoURL || null,
+    provider: user.providerData?.some(item => item.providerId === 'google.com') ? 'google' : 'email',
   };
 }
 
@@ -156,6 +160,47 @@ export async function signInWithGoogle() {
       return { ok: false, error: 'Thiết bị chưa có hoặc chưa cập nhật Google Play Services.' };
     }
     return { ok: false, error: error?.message || 'Đăng nhập Google thất bại.' };
+  }
+}
+
+function emailAuthError(error) {
+  switch (error?.code) {
+    case 'auth/invalid-email':
+      return 'Địa chỉ email không hợp lệ.';
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+      return 'Email hoặc mật khẩu không chính xác.';
+    case 'auth/email-already-in-use':
+      return 'Email này đã được đăng ký. Hãy đăng nhập thay vì tạo tài khoản mới.';
+    case 'auth/weak-password':
+      return 'Mật khẩu cần có ít nhất 6 ký tự.';
+    case 'auth/operation-not-allowed':
+      return 'Email/mật khẩu chưa được bật trong Firebase Authentication.';
+    case 'auth/network-request-failed':
+      return 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.';
+    default:
+      return error?.message || 'Xác thực thất bại. Vui lòng thử lại.';
+  }
+}
+
+export async function signInWithEmail(email, password) {
+  if (!authInstance) return { ok: false, error: getSetupError() };
+  try {
+    await signInWithEmailAndPassword(authInstance, email.trim().toLowerCase(), password);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: emailAuthError(error) };
+  }
+}
+
+export async function registerWithEmail(email, password) {
+  if (!authInstance) return { ok: false, error: getSetupError() };
+  try {
+    await createUserWithEmailAndPassword(authInstance, email.trim().toLowerCase(), password);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: emailAuthError(error) };
   }
 }
 

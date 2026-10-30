@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
+import { AppIcon } from './ui/AppIcon';
 import { formatToken } from '../utils/format';
 import { DAILY_REWARD_STREAK_BONUS, DAILY_REWARD_BONUS_AT_STREAK } from '../utils/rewards';
 import { colors, touch } from '../theme/tokens';
@@ -24,26 +25,26 @@ export function DailyRewardModal({ visible, onClose }) {
     <Modal visible={visible} animationType="fade" transparent={true} onRequestClose={onClose}>
       <View style={[styles.overlay, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <View style={styles.card}>
-          <Text style={styles.icon}>{'\u{1F381}'}</Text>
+          <AppIcon name="gift" size={44} color={colors.warning} style={styles.icon} />
           <Text style={styles.title}>Thưởng hàng ngày!</Text>
           {!todayClaimed ? (
             <>
               <Text style={styles.amount}>{formatToken(reward)} token miễn phí</Text>
               {nextStreak > 1 && (
-                <Text style={styles.streak}>{'\u{1F525}'} Streak {nextStreak} ngày</Text>
+                <Text style={styles.streak}>Streak {nextStreak} ngày</Text>
               )}
               {nextStreak >= DAILY_REWARD_BONUS_AT_STREAK && (
                 <Text style={styles.bonus}>(+{formatToken(DAILY_REWARD_STREAK_BONUS)} bonus streak {DAILY_REWARD_BONUS_AT_STREAK} ngày!)</Text>
               )}
               <Text style={styles.hint}>Quay lại mỗi ngày để nhận thưởng và giữ streak!</Text>
               <TouchableOpacity accessibilityRole="button" style={styles.claimBtn} onPress={handleClaim}>
-                <Text style={styles.claimBtnText}>Nhận ngay {'\u{1F4B0}'}</Text>
+                <Text style={styles.claimBtnText}>Nhận ngay</Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
               <Text style={styles.claimedText}>Bạn đã nhận thưởng hôm nay!</Text>
-              <Text style={styles.hint}>Quay lại sau 24h để nhận tiếp. {'\u{1F525}'} Streak: {state.user.dailyStreak} ngày</Text>
+              <Text style={styles.hint}>Quay lại sau 24h để nhận tiếp. Streak: {state.user.dailyStreak} ngày</Text>
               <TouchableOpacity accessibilityRole="button" style={styles.closeBtn} onPress={onClose}>
                 <Text style={styles.closeBtnText}>Đóng</Text>
               </TouchableOpacity>
@@ -58,7 +59,7 @@ export function DailyRewardModal({ visible, onClose }) {
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.overlay },
   card: { backgroundColor: colors.surface, borderRadius: 20, padding: 28, alignItems: 'center', width: '85%', borderWidth: 1, borderColor: colors.borderSoft },
-  icon: { fontSize: 48, marginBottom: 12 },
+  icon: { marginBottom: 12 },
   title: { color: colors.text, fontSize: 20, fontWeight: '700', marginBottom: 8 },
   amount: { color: colors.warning, fontSize: 22, fontWeight: '700', fontFamily: 'monospace', marginBottom: 4 },
   streak: { color: colors.danger, fontSize: 14, fontWeight: '600', marginBottom: 2 },

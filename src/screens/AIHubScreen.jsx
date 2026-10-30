@@ -19,6 +19,7 @@ import { useApp } from '../context/AppContext';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { TokenBadge } from '../components/TokenBadge';
 import { AIModelCard } from '../components/AIModelCard';
+import { AIProviderLogo } from '../components/AIProviderLogo';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { ChatBubble } from '../components/ChatBubble';
 import {
@@ -245,10 +246,10 @@ export function AIHubScreen() {
   }, [messages, loadedModelId, selectedModel?.id, uid]);
 
   const typeFilters = [
-    { key: 'all', label: 'Tất cả', icon: '\u{2728}' },
-    { key: 'text', label: 'Text', icon: '\u{1F4AC}' },
-    { key: 'image', label: 'Ảnh', icon: '\u{1F3A8}' },
-    { key: 'code', label: 'Code', icon: '\u{1F4BB}' },
+    { key: 'all', label: 'Tất cả', icon: 'grid' },
+    { key: 'text', label: 'Text', icon: 'message-square' },
+    { key: 'image', label: 'Ảnh', icon: 'image' },
+    { key: 'code', label: 'Code', icon: 'code' },
   ];
 
   const keyword = search.trim().toLowerCase();
@@ -482,7 +483,7 @@ export function AIHubScreen() {
           <View style={styles.chatHeaderRow}>
             <IconButton icon="chevron-left" label="Đóng cuộc chat" onPress={closeModel} />
             <View style={[styles.chatAvatar, { backgroundColor: (selectedModel.accentColor || colors.accent) + '22' }]}>
-              <Text style={styles.chatAvatarText}>{selectedModel.icon}</Text>
+              <AIProviderLogo provider={selectedModel.provider} size={32} />
             </View>
             <View style={styles.chatHeaderInfo}>
               <Text style={styles.chatHeaderName} numberOfLines={1} maxFontSizeMultiplier={1.6}>

@@ -1,13 +1,14 @@
 // components/TransactionItem.jsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { AppIcon } from './ui/AppIcon';
 import { formatRelativeTime, formatAmount } from '../utils/format';
 import { colors } from '../theme/tokens';
 
 const TYPE_ICONS = {
-  AI_CALL: '\u{1F916}', BUY: '\u{1F4C8}', SELL: '\u{1F4B9}', RESOLVE: '\u{2696}',
-  TRANSFER_OUT: '\u{1F4E8}', TRANSFER_IN: '\u{1F4E9}', DAILY_REWARD: '\u{1F381}',
-  TOPUP: '\u{1F4B3}', TAIXIU: '\u{1F3B2}',
+  AI_CALL: 'cpu', BUY: 'trending-up', SELL: 'trending-down', RESOLVE: 'check-circle',
+  TRANSFER_OUT: 'send', TRANSFER_IN: 'download', DAILY_REWARD: 'gift',
+  TOPUP: 'credit-card', TAIXIU: 'grid',
 };
 const TYPE_COLORS = {
   AI_CALL: colors.openai, BUY: colors.danger, SELL: colors.success, RESOLVE: colors.warning,
@@ -16,14 +17,14 @@ const TYPE_COLORS = {
 };
 
 export function TransactionItem({ tx }) {
-  const icon = TYPE_ICONS[tx.type] || '\u{1F4B0}';
+  const icon = TYPE_ICONS[tx.type] || 'database';
   const color = TYPE_COLORS[tx.type] || colors.textDim;
   const isPositive = tx.amount > 0;
 
   return (
     <View style={styles.item}>
       <View style={[styles.iconWrap, { backgroundColor: color + '22' }]}>
-        <Text style={styles.icon}>{icon}</Text>
+        <AppIcon name={icon} size={16} color={color} />
       </View>
       <View style={styles.content}>
         <Text style={styles.description} numberOfLines={2}>{tx.description}</Text>
@@ -39,7 +40,6 @@ export function TransactionItem({ tx }) {
 const styles = StyleSheet.create({
   item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 16, gap: 10 },
   iconWrap: { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  icon: { fontSize: 16 },
   content: { flex: 1 },
   description: { color: colors.text, fontSize: 13, lineHeight: 18 },
   time: { color: colors.textFaint, fontSize: 12, marginTop: 2 },

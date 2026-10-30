@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { formatTokenShort, formatTimeLeft } from '../utils/format';
+import { AppIcon } from './ui/AppIcon';
 import { colors, marketCategoryColors, touch } from '../theme/tokens';
 
 export function MarketCard({ market, onPress, onYes, onNo }) {
@@ -11,7 +12,7 @@ export function MarketCard({ market, onPress, onYes, onNo }) {
     <TouchableOpacity accessibilityRole="button" style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.topRow}>
         <View style={[styles.iconWrap, { backgroundColor: accent + '22' }]}>
-          <Text style={styles.icon}>{market.icon}</Text>
+          <AppIcon name={market.icon} size={18} color={accent} />
         </View>
         <View style={styles.categoryTag}>
           <Text style={[styles.categoryText, { color: accent }]}>{market.category}</Text>
@@ -33,7 +34,8 @@ export function MarketCard({ market, onPress, onYes, onNo }) {
       </View>
 
       <View style={styles.volumeRow}>
-        <Text style={styles.volumeText}>{'\u{1F4C8}'} {formatTokenShort(market.volume)} volume</Text>
+        <AppIcon name="trending-up" size={14} color={colors.textFaint} />
+        <Text style={styles.volumeText}>{formatTokenShort(market.volume)} volume</Text>
       </View>
     </TouchableOpacity>
   );
@@ -47,7 +49,6 @@ const styles = StyleSheet.create({
   },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   iconWrap: { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  icon: { fontSize: 18 },
   categoryTag: { flex: 1 },
   categoryText: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   timeLeft: { fontSize: 12, color: colors.textDim },
@@ -58,6 +59,6 @@ const styles = StyleSheet.create({
   btnNo: { backgroundColor: colors.dangerDim, borderWidth: 1, borderColor: colors.dangerBorder },
   btnLabel: { fontSize: 13, fontWeight: '700' },
   btnPrice: { fontSize: 13, fontWeight: '700', fontFamily: 'monospace' },
-  volumeRow: { flexDirection: 'row', alignItems: 'center' },
+  volumeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   volumeText: { fontSize: 12, color: colors.textFaint },
 });

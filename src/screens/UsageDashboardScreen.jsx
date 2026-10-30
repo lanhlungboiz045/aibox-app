@@ -2,11 +2,13 @@
 // Tổng hợp từ giao dịch AI_CALL của tài khoản hiện tại: token đã dùng, số request,
 // model dùng nhiều nhất, breakdown theo model.
 import React, { useMemo } from 'react';
+import { BackButton } from '../components/ui/BackButton';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatToken } from '../utils/format';
 import { centeredContent, colors, touch } from '../theme/tokens';
+import { AIProviderLogo } from '../components/AIProviderLogo';
 
 export function UsageDashboardScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -39,9 +41,7 @@ export function UsageDashboardScreen({ navigation }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>{'\u{276C}'} Quay lại</Text>
-        </TouchableOpacity>
+        <BackButton label="Quay lại" onPress={() => navigation.goBack()} />
         <Text style={styles.title}>Usage Dashboard</Text>
         <Text style={styles.sub}>Thống kê sử dụng AI của bạn</Text>
       </View>
@@ -80,7 +80,10 @@ export function UsageDashboardScreen({ navigation }) {
           byModel.map(m => (
             <View key={m.modelId} style={styles.modelRow}>
               <View style={styles.modelRowTop}>
-                <Text style={styles.modelName}>{m.model?.icon || '🤖'} {m.model?.name || m.modelId}</Text>
+                <View style={styles.modelNameRow}>
+                  <AIProviderLogo provider={m.model?.provider} size={24} />
+                  <Text style={styles.modelName}>{m.model?.name || m.modelId}</Text>
+                </View>
                 <Text style={styles.modelStat}>{m.count} req · {formatToken(m.tokens)} token</Text>
               </View>
               <View style={styles.barTrack}>
@@ -132,6 +135,7 @@ const styles = StyleSheet.create({
   empty: { color: colors.textFaint, fontSize: 12, marginTop: 6 },
   modelRow: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, padding: 10 },
   modelRowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  modelNameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   modelName: { color: colors.text, fontSize: 13, fontWeight: '600' },
   modelStat: { color: colors.textDim, fontSize: 12 },
   barTrack: { height: 6, backgroundColor: colors.surfaceAlt, borderRadius: 3, overflow: 'hidden' },

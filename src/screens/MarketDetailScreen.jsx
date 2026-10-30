@@ -1,5 +1,6 @@
 // screens/MarketDetailScreen.jsx
 import React, { useState } from 'react';
+import { BackButton } from '../components/ui/BackButton';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
@@ -8,6 +9,7 @@ import { TradeSheet } from '../components/TradeSheet';
 import { TokenBadge } from '../components/TokenBadge';
 import { MarketAnalystModal } from '../components/MarketAnalystModal';
 import { CommentSection } from '../components/CommentSection';
+import { AppIcon } from '../components/ui/AppIcon';
 import { formatToken, formatTokenShort, formatTimeLeft, formatDate } from '../utils/format';
 import { colors, centeredContent, marketCategoryColors, touch } from '../theme/tokens';
 
@@ -32,7 +34,10 @@ export function MarketDetailScreen({ route, navigation }) {
           style={styles.errorBack}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backBtn}>Quay lại</Text>
+          <View style={styles.errorBackContent}>
+            <AppIcon name="chevron-left" size={16} color={colors.accentSoft} />
+            <Text style={styles.backBtn}>Quay lại</Text>
+          </View>
         </TouchableOpacity>
       </View>
     );
@@ -49,7 +54,7 @@ export function MarketDetailScreen({ route, navigation }) {
       contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 20 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <TokenBadge size="small" />
       </View>
 
@@ -58,12 +63,12 @@ export function MarketDetailScreen({ route, navigation }) {
           <Text style={[styles.categoryTag, { color: accent }]}>{market.category.toUpperCase()}</Text>
           <Text style={styles.timeLeft}>{formatTimeLeft(market.endDate)}</Text>
         </View>
-        <Text style={styles.icon}>{market.icon}</Text>
+        <AppIcon name={market.icon} size={36} color={accent} style={styles.icon} />
         <Text style={styles.question}>{market.question}</Text>
         <Text style={styles.description}>{market.description}</Text>
         <Text style={styles.endDate}>Kết thúc: {formatDate(market.endDate)}</Text>
         {market.creatorName ? (
-          <Text style={styles.creator}>{'\u{1F451}'} Tạo bởi {market.creatorName} · creator fee 2% volume</Text>
+          <Text style={styles.creator}>Tạo bởi {market.creatorName} · creator fee 2% volume</Text>
         ) : null}
       </View>
 
@@ -74,15 +79,15 @@ export function MarketDetailScreen({ route, navigation }) {
       )}
 
       <View style={styles.chartSection}>
-        <Text style={styles.chartTitle}>{'\u{1F4C8}'} Giá YES (7 ngày qua)</Text>
+        <Text style={styles.chartTitle}>Giá YES (7 ngày qua)</Text>
         <PriceChart data={market.priceHistory} height={140} />
       </View>
 
       <View style={styles.infoSection}>
-        <View style={styles.infoRow}><Text style={styles.infoLabel}>Volume</Text><Text style={styles.infoValue}>{formatTokenShort(market.volume)} {'\u{1F4B0}'}</Text></View>
-        <View style={styles.infoRow}><Text style={styles.infoLabel}>Liquidity</Text><Text style={styles.infoValue}>{formatTokenShort(market.liquidity)} {'\u{1F4B0}'}</Text></View>
-        <View style={styles.infoRow}><Text style={styles.infoLabel}>YES price</Text><Text style={[styles.infoValue, { color: colors.success }]}>{market.yesPrice} {'\u{1F4B0}'}</Text></View>
-        <View style={styles.infoRow}><Text style={styles.infoLabel}>NO price</Text><Text style={[styles.infoValue, { color: colors.danger }]}>{market.noPrice} {'\u{1F4B0}'}</Text></View>
+        <View style={styles.infoRow}><Text style={styles.infoLabel}>Volume</Text><Text style={styles.infoValue}>{formatTokenShort(market.volume)} token</Text></View>
+        <View style={styles.infoRow}><Text style={styles.infoLabel}>Liquidity</Text><Text style={styles.infoValue}>{formatTokenShort(market.liquidity)} token</Text></View>
+        <View style={styles.infoRow}><Text style={styles.infoLabel}>YES price</Text><Text style={[styles.infoValue, { color: colors.success }]}>{market.yesPrice} token</Text></View>
+        <View style={styles.infoRow}><Text style={styles.infoLabel}>NO price</Text><Text style={[styles.infoValue, { color: colors.danger }]}>{market.noPrice} token</Text></View>
       </View>
 
       <TouchableOpacity
@@ -91,7 +96,7 @@ export function MarketDetailScreen({ route, navigation }) {
         onPress={() => setShowAnalyst(true)}
         activeOpacity={0.85}
       >
-        <Text style={styles.analystIcon}>{'\u{1F916}'}</Text>
+        <AppIcon name="cpu" size={24} color={colors.accentSoft} />
         <View style={{ flex: 1 }}>
           <Text style={styles.analystTitle}>Hỏi AI về kèo này</Text>
           <Text style={styles.analystSub}>
@@ -100,12 +105,12 @@ export function MarketDetailScreen({ route, navigation }) {
               : 'AI đọc giá, volume, thời hạn và đưa ra góc nhìn + quản trị vốn'}
           </Text>
         </View>
-        <Text style={styles.analystArrow}>{'\u{276F}'}</Text>
+        <AppIcon name="chevron-right" size={16} color={colors.accentSoft} />
       </TouchableOpacity>
 
       {userPosition && (
         <View style={styles.positionSection}>
-          <Text style={styles.positionTitle}>{'\u{1F4BC}'} Position của bạn</Text>
+          <Text style={styles.positionTitle}>Position của bạn</Text>
           <View style={styles.positionCard}>
             <Text style={styles.positionSide}>{userPosition.side}</Text>
             <Text style={styles.positionShares}>{userPosition.shares} shares</Text>
@@ -119,11 +124,11 @@ export function MarketDetailScreen({ route, navigation }) {
         <View style={styles.tradeButtons}>
           <TouchableOpacity accessibilityRole="button" style={[styles.tradeBtn, styles.tradeYes]} onPress={() => openTrade('YES')} activeOpacity={0.8}>
             <Text style={styles.tradeBtnLabel}>Mua YES</Text>
-            <Text style={styles.tradeBtnPrice}>{market.yesPrice} {'\u{1F4B0}'}</Text>
+            <Text style={styles.tradeBtnPrice}>{market.yesPrice} token</Text>
           </TouchableOpacity>
           <TouchableOpacity accessibilityRole="button" style={[styles.tradeBtn, styles.tradeNo]} onPress={() => openTrade('NO')} activeOpacity={0.8}>
             <Text style={styles.tradeBtnLabel}>Mua NO</Text>
-            <Text style={styles.tradeBtnPrice}>{market.noPrice} {'\u{1F4B0}'}</Text>
+            <Text style={styles.tradeBtnPrice}>{market.noPrice} token</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -144,7 +149,7 @@ const styles = StyleSheet.create({
   questionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   categoryTag: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5 },
   timeLeft: { color: colors.textDim, fontSize: 12 },
-  icon: { fontSize: 40, marginBottom: 8 },
+  icon: { marginBottom: 8 },
   question: { color: colors.text, fontSize: 20, fontWeight: '700', lineHeight: 26, marginBottom: 8 },
   description: { color: colors.textDim, fontSize: 14, lineHeight: 20, marginBottom: 8 },
   endDate: { color: colors.textFaint, fontSize: 12 },
@@ -161,10 +166,8 @@ const styles = StyleSheet.create({
   infoValue: { color: colors.text, fontSize: 14, fontWeight: '600', fontFamily: 'monospace' },
   analystCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 16, marginBottom: 16, padding: 14, borderRadius: 12, backgroundColor: colors.accentDim, borderWidth: 1, borderColor: colors.accentDim, minHeight: touch.min },
   analystCardMuted: { backgroundColor: colors.surface, borderColor: colors.borderSoft },
-  analystIcon: { fontSize: 26 },
   analystTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
   analystSub: { color: colors.textDim, fontSize: 12, marginTop: 2, lineHeight: 16 },
-  analystArrow: { color: colors.accentSoft, fontSize: 14 },
   positionSection: { marginHorizontal: 16, marginBottom: 16 },
   positionTitle: { color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 8 },
   positionCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: colors.borderSoft },
@@ -181,4 +184,5 @@ const styles = StyleSheet.create({
   missingMarket: { alignItems: 'center', justifyContent: 'center', padding: 24 },
   error: { color: colors.danger, fontSize: 16, textAlign: 'center' },
   errorBack: { minHeight: touch.min, justifyContent: 'center', paddingHorizontal: 20, marginTop: 12 },
+  errorBackContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
 });

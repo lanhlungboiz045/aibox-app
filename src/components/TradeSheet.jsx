@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
+import { AppIcon } from './ui/AppIcon';
 import { formatToken } from '../utils/format';
 import { colors, touch } from '../theme/tokens';
 
@@ -74,7 +75,7 @@ export function TradeSheet({ visible, market, initialSide, onClose }) {
           <View style={styles.header}>
             <Text style={styles.title} numberOfLines={1}>{market.question}</Text>
             <TouchableOpacity accessibilityRole="button" accessibilityLabel="Đóng" style={styles.closeAction} onPress={onClose}>
-              <Text style={styles.closeBtn}>{'\u{2715}'}</Text>
+              <AppIcon name="x" size={18} color={colors.textDim} />
             </TouchableOpacity>
           </View>
 
@@ -143,10 +144,10 @@ export function TradeSheet({ visible, market, initialSide, onClose }) {
 
           <View style={styles.summary}>
             <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Giá / share</Text><Text style={styles.summaryValue}>{price} token</Text></View>
-            <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Tổng cost</Text><Text style={[styles.summaryValue, { color: colors.danger }]}>{formatToken(cost)} {'\u{1F4B0}'}</Text></View>
-            <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Potential payout</Text><Text style={[styles.summaryValue, { color: colors.success }]}>{formatToken(potentialPayout)} {'\u{1F4B0}'}</Text></View>
-            <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Lợi nhuận nếu đúng</Text><Text style={[styles.summaryValue, { color: colors.success }]}>+{formatToken(profit)} {'\u{1F4B0}'}</Text></View>
-            <View style={[styles.summaryRow, styles.balanceRow]}><Text style={styles.summaryLabel}>Số dư của bạn</Text><Text style={styles.balanceValue}>{formatToken(state.user.tokenBalance)} {'\u{1F4B0}'}</Text></View>
+            <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Tổng cost</Text><Text style={[styles.summaryValue, { color: colors.danger }]}>{formatToken(cost)} token</Text></View>
+            <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Potential payout</Text><Text style={[styles.summaryValue, { color: colors.success }]}>{formatToken(potentialPayout)} token</Text></View>
+            <View style={styles.summaryRow}><Text style={styles.summaryLabel}>Lợi nhuận nếu đúng</Text><Text style={[styles.summaryValue, { color: colors.success }]}>+{formatToken(profit)} token</Text></View>
+            <View style={[styles.summaryRow, styles.balanceRow]}><Text style={styles.summaryLabel}>Số dư của bạn</Text><Text style={styles.balanceValue}>{formatToken(state.user.tokenBalance)} token</Text></View>
           </View>
 
           <View style={styles.actionRow}>
@@ -166,7 +167,7 @@ export function TradeSheet({ visible, market, initialSide, onClose }) {
           </View>
 
           {sharesValid && !canAfford && (
-            <Text style={styles.warning}>{'\u{26A0}'} Không đủ token. Nhận thưởng hàng ngày hoặc chơi prediction market!</Text>
+            <Text style={styles.warning}>Không đủ token. Nhận thưởng hàng ngày hoặc chơi prediction market!</Text>
           )}
         </ScrollView>
       </KeyboardAvoidingView>

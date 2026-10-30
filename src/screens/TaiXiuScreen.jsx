@@ -15,11 +15,10 @@ import { useApp, MAX_TRANSACTIONS } from '../context/AppContext';
 import { TokenBadge } from '../components/TokenBadge';
 import { Die } from '../components/Die';
 import {
-  AppIcon, BottomSheet, Button, ErrorState, IconButton, OfflineBar, useToast,
+  AppIcon, BottomSheet, Button, IconButton, useToast,
 } from '../components/ui';
 import { AppDrawer } from '../components/AppDrawer';
 import { useAppDrawer } from '../hooks/useAppDrawer';
-import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { useReduceMotion } from '../hooks/useReduceMotion';
 import { formatToken, formatRelativeTime } from '../utils/format';
 import { chatsRange } from '../utils/economy';
@@ -37,17 +36,17 @@ const RECENT_LIMIT = 12;
 // Cược từ 1.000 token trở lên hoặc cược toàn bộ số dư cần xác nhận rõ ràng.
 const CONFIRM_FROM = 1000;
 
-export function TaiXiuScreen({ navigation }) {
+export function TaiXiuScreen() {
   const { state, placeTaiXiuBet } = useApp();
   const insets = useSafeAreaInsets();
   const { open: openDrawer, drawerProps } = useAppDrawer();
   const toast = useToast();
   const reduceMotion = useReduceMotion();
-  const { isOffline, refresh: refreshNetwork } = useNetworkStatus();
 
   const [stakeInput, setStakeInput] = useState('500');
   const [faces, setFaces] = useState([1, 1, 1]); // mặt đang hiển thị (lúc lắc thì nhảy số)
   const [rolling, setRolling] = useState(false);
+  const [rulesExpanded, setRulesExpanded] = useState(false);
   // Cửa đang chờ xác nhận (cược lớn hoặc tất tay) — null = không mở bảng
   const [confirmSide, setConfirmSide] = useState(null);
 
@@ -236,17 +235,10 @@ export function TaiXiuScreen({ navigation }) {
           <IconButton icon="menu" label={t('nav.openMenu')} size={22} onPress={openDrawer} />
           <View style={styles.headerBody}>
             <Text style={styles.title} maxFontSizeMultiplier={1.6}>{t('screen.taixiu')}</Text>
-            <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
-              Token nội bộ · không đổi ra tiền
-            </Text>
           </View>
           <TokenBadge size="medium" />
         </View>
       </View>
-
-      {isOffline ? (
-        <OfflineBar onRetry={refreshNetwork} style={styles.offlineBar} />
-      ) : null}
 
       <ScrollView
         style={styles.scroll}
@@ -278,7 +270,6 @@ export function TaiXiuScreen({ navigation }) {
               styles.banner,
               bannerTone === 'success' && styles.bannerSuccess,
               bannerTone === 'danger' && styles.bannerDanger,
-              bannerTone === 'warning' && styles.bannerWarning,
             ]}
           >
             <Text
@@ -286,7 +277,6 @@ export function TaiXiuScreen({ navigation }) {
                 styles.bannerText,
                 bannerTone === 'success' && { color: colors.success },
                 bannerTone === 'danger' && { color: colors.danger },
-                bannerTone === 'warning' && { color: colors.warning },
               ]}
               maxFontSizeMultiplier={1.6}
             >
@@ -310,22 +300,11 @@ export function TaiXiuScreen({ navigation }) {
               </Text>
             ) : (
               <Text style={styles.statsText} maxFontSizeMultiplier={1.5}>
-                Chưa có ván nào — luật chơi ở cuối màn.
+                Chưa có ván nào.
               </Text>
             )}
           </View>
         </View>
-
-        {/* ── Không đủ token tối thiểu: chỉ đường nạp, không chặn xem luật ── */}
-        {balance < MIN_STAKE ? (
-          <ErrorState
-            compact
-            title="Không đủ token để cược"
-            message={`Cần tối thiểu ${formatToken(MIN_STAKE)} token cho mỗi ván. Nạp thêm để chơi tiếp.`}
-            retryLabel={t('common.topup')}
-            onRetry={() => navigation.navigate('CreditsTopup')}
-          />
-        ) : null}
 
         {/* ── 12 ván gần nhất ── */}
         <View style={styles.card}>
@@ -373,52 +352,44 @@ export function TaiXiuScreen({ navigation }) {
           )}
         </View>
 
-        {/* ── Luật công khai + disclaimer ── */}
+        {/* ── Luật chơi thu gọn theo yêu cầu ── */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.6}>Luật chơi</Text>
-          <View style={styles.ruleList}>
-            <View style={styles.ruleRow}>
-              <AppIcon name="info" size={14} color={colors.textFaint} />
-              <Text style={styles.ruleText} maxFontSizeMultiplier={1.6}>
-                3 xúc xắc, mỗi mặt 1–6. Tổng 4–10 là XỈU, 11–17 là TÀI.
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ expanded: rulesExpanded }}
+            accessibilityLabel={rulesExpanded ? 'Thu gọn luật chơi' : 'Xem luật chơi'}
+            style={styles.rulesToggle}
+            onPress={() => setRulesExpanded(expanded => !expanded)}
+          >
+            <View style={styles.rulesToggleText}>
+              <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.6}>Luật chơi</Text>
+              <Text style={styles.rulesSummary} maxFontSizeMultiplier={1.5}>
+                3 xúc xắc · đúng cửa lãi 0,96× · bộ ba lãi 2×
               </Text>
             </View>
-            <View style={styles.ruleRow}>
-              <AppIcon name="info" size={14} color={colors.textFaint} />
+            <AppIcon
+              name={rulesExpanded ? 'chevron-up' : 'chevron-down'}
+              size={20}
+              color={colors.textDim}
+            />
+          </TouchableOpacity>
+          {rulesExpanded ? (
+            <View style={styles.ruleList}>
               <Text style={styles.ruleText} maxFontSizeMultiplier={1.6}>
-                Cược tối thiểu {formatToken(MIN_STAKE)} token, không có trần cố định; mức cược không vượt số dư.
+                Tổng 4–10 là Xỉu; tổng 11–17 là Tài.
+              </Text>
+              <Text style={styles.ruleText} maxFontSizeMultiplier={1.6}>
+                Đoán đúng cửa: lãi 0,96 lần cược. Đoán sai: mất số token đã cược.
+              </Text>
+              <Text style={styles.ruleText} maxFontSizeMultiplier={1.6}>
+                Nếu ra ba mặt giống nhau, bạn thắng và lãi gấp 2 lần cược, bất kể cửa đã chọn.
+              </Text>
+              <Text style={styles.ruleText} maxFontSizeMultiplier={1.6}>
+                Mức cược tối thiểu {formatToken(MIN_STAKE)} token; tối đa bằng số dư hiện có.
+                Kết quả được quay ngẫu nhiên trong ứng dụng.
               </Text>
             </View>
-            <View style={styles.ruleRow}>
-              <AppIcon name="info" size={14} color={colors.textFaint} />
-              <Text style={styles.ruleText} maxFontSizeMultiplier={1.6}>
-                {`Đúng cửa: lãi 0,96× cược; sai cửa: mất cược. Thưởng làm tròn xuống token nguyên.${hasStake ? ` Với mức hiện tại: +${formatToken(stakePayouts.sideWin)} hoặc −${formatToken(stakeAmount)} token.` : ''}`}
-              </Text>
-            </View>
-            <View style={styles.ruleRow}>
-              <AppIcon name="info" size={14} color={colors.textFaint} />
-              <Text style={styles.ruleText} maxFontSizeMultiplier={1.6}>
-                Bộ ba 111–666 (6/216 ván, 2,78%) thắng bất kể cửa đã đặt, nhận lãi gấp 2 lần cược
-                {hasStake ? ` (+${formatToken(stakePayouts.tripleWin)} token với mức hiện tại).` : '.'}
-                {' Mức thưởng này khiến kỳ vọng toán học nghiêng về người chơi.'}
-              </Text>
-            </View>
-            <View style={styles.ruleRow}>
-              <AppIcon name="info" size={14} color={colors.textFaint} />
-              <Text style={styles.ruleText} maxFontSizeMultiplier={1.6}>
-                Kết quả do máy quay ngẫu nhiên khi bạn bấm cược, không phải kết quả casino hay
-                xổ số thật.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.disclaimer}>
-            <AppIcon name="alert-triangle" size={14} color={colors.warning} />
-            <Text style={styles.disclaimerText} maxFontSizeMultiplier={1.6}>
-              Dành cho người từ 18 tuổi. Token là credit nội bộ của app demo, không nạp/rút bằng
-              tiền thật và không đổi được ra tiền. Chơi có trách nhiệm.
-            </Text>
-          </View>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -673,8 +644,6 @@ const styles = StyleSheet.create({
   },
   headerBody: { flex: 1, gap: 2 },
   title: { ...type.h1, color: colors.text },
-  headerMeta: { ...type.small, color: colors.textFaint },
-  offlineBar: { marginHorizontal: layout.gutter, marginTop: spacing.sm },
   scroll: { flex: 1 },
   content: {
     paddingHorizontal: layout.gutter,
@@ -712,7 +681,6 @@ const styles = StyleSheet.create({
   },
   bannerSuccess: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
   bannerDanger: { backgroundColor: colors.dangerDim, borderColor: colors.dangerBorder },
-  bannerWarning: { backgroundColor: colors.warningDim, borderColor: colors.warningBorder },
   bannerText: { ...type.bodyStrong, color: colors.textDim, textAlign: 'center' },
   // Số trong câu: mono để tổng/số token thẳng cột (The Money Is Monospace Rule)
   num: { fontFamily: 'monospace' },
@@ -853,19 +821,10 @@ const styles = StyleSheet.create({
   historyMeta: { ...type.small, color: colors.textDim, fontFamily: 'monospace' },
   historyAmount: { ...type.smallStrong, fontFamily: 'monospace' },
 
-  // ── Luật chơi ──
-  ruleList: { gap: spacing.sm },
-  ruleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  // ── Luật chơi thu gọn ──
+  rulesToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, minHeight: touch.min },
+  rulesToggleText: { flex: 1, gap: spacing.xs },
+  rulesSummary: { ...type.small, color: colors.textFaint },
+  ruleList: { gap: spacing.sm, paddingTop: spacing.sm },
   ruleText: { ...type.body, color: colors.textDim, flex: 1 },
-  disclaimer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.warningDim,
-    borderWidth: 1,
-    borderColor: colors.warningBorder,
-  },
-  disclaimerText: { ...type.small, color: colors.warning, flex: 1, lineHeight: 18 },
 });

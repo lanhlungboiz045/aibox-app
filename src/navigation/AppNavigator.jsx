@@ -30,10 +30,22 @@ import { AdminMarketsScreen } from '../screens/admin/AdminMarketsScreen';
 import { AdminAIModelsScreen } from '../screens/admin/AdminAIModelsScreen';
 import { AdminUsersScreen } from '../screens/admin/AdminUsersScreen';
 import { AdminRiskScreen } from '../screens/admin/AdminRiskScreen';
+import { RoleGate } from './RoleGate';
+import { useApp } from '../context/AppContext';
 
 const Stack = createNativeStackNavigator();
 
+const AdminHomeRoute = props => <RoleGate {...props} screen={AdminHomeScreen} allowedRoles={['admin']} />;
+const AdminMarketsRoute = props => <RoleGate {...props} screen={AdminMarketsScreen} allowedRoles={['admin']} />;
+const AdminAIModelsRoute = props => <RoleGate {...props} screen={AdminAIModelsScreen} allowedRoles={['admin']} />;
+const AdminUsersRoute = props => <RoleGate {...props} screen={AdminUsersScreen} allowedRoles={['admin']} />;
+const AdminRiskRoute = props => <RoleGate {...props} screen={AdminRiskScreen} allowedRoles={['admin']} />;
+const AISettingsRoute = props => <RoleGate {...props} screen={AISettingsScreen} allowedRoles={['admin']} />;
+
 export function AppNavigator() {
+  const { state } = useApp();
+  const isAdmin = state.user?.role === 'admin';
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Home">
       {/* ── 5 màn chính: vào bằng drawer ── */}
@@ -49,7 +61,7 @@ export function AppNavigator() {
       <Stack.Screen name="ModelCatalog" component={ModelCatalogScreen} />
       <Stack.Screen name="UsageDashboard" component={UsageDashboardScreen} />
       <Stack.Screen name="CreditsTopup" component={CreditsTopupScreen} />
-      <Stack.Screen name="AISettings" component={AISettingsScreen} />
+      <Stack.Screen name="AISettings" component={AISettingsRoute} />
       <Stack.Screen name="APIKeys" component={APIKeysScreen} />
       <Stack.Screen name="Logs" component={LogsScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
@@ -61,11 +73,11 @@ export function AppNavigator() {
       <Stack.Screen name="TraderProfile" component={TraderProfileScreen} />
       <Stack.Screen name="CopyTrade" component={CopyTradeScreen} />
       {/* Admin CMS — vẫn nằm trong app vì đây là bản demo; production nên tách web CMS */}
-      <Stack.Screen name="AdminHome" component={AdminHomeScreen} />
-      <Stack.Screen name="AdminMarkets" component={AdminMarketsScreen} />
-      <Stack.Screen name="AdminAIModels" component={AdminAIModelsScreen} />
-      <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
-      <Stack.Screen name="AdminRisk" component={AdminRiskScreen} />
+      {isAdmin ? <Stack.Screen name="AdminHome" component={AdminHomeRoute} /> : null}
+      {isAdmin ? <Stack.Screen name="AdminMarkets" component={AdminMarketsRoute} /> : null}
+      {isAdmin ? <Stack.Screen name="AdminAIModels" component={AdminAIModelsRoute} /> : null}
+      {isAdmin ? <Stack.Screen name="AdminUsers" component={AdminUsersRoute} /> : null}
+      {isAdmin ? <Stack.Screen name="AdminRisk" component={AdminRiskRoute} /> : null}
     </Stack.Navigator>
   );
 }

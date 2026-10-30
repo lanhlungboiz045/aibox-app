@@ -81,6 +81,12 @@ export function AppDrawer({ visible, onClose, navigation }) {
 
   const user = state.user;
   const isAdmin = user?.role === 'admin';
+  const visibleGroups = GROUPS
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => isAdmin || item.route !== 'AISettings'),
+    }))
+    .filter(group => group.items.length > 0);
 
   const go = (route) => {
     onClose();
@@ -135,14 +141,14 @@ export function AppDrawer({ visible, onClose, navigation }) {
               <View style={styles.balanceRow}>
                 <AppIcon name="credit-card" size={12} color={colors.accentSoft} />
                 <Text style={styles.balance} numberOfLines={1} maxFontSizeMultiplier={1.5}>
-                  {formatToken(user?.tokenBalance || 0)} {'\u{1F4B0}'}
+                  {formatToken(user?.tokenBalance || 0)} token
                 </Text>
               </View>
             </View>
             <AppIcon name="chevron-right" size={16} color={colors.textFaint} />
           </TouchableOpacity>
 
-          {GROUPS.map(group => (
+          {visibleGroups.map(group => (
             <View key={group.id} style={styles.group}>
               <Text style={styles.groupLabel} maxFontSizeMultiplier={1.5}>{t(group.label)}</Text>
               {group.items.map(item => (

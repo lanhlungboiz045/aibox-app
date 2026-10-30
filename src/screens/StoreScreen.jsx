@@ -1,5 +1,6 @@
 // screens/StoreScreen.jsx — Cửa hàng: sink token (khung avatar, màu tên, prompt, creator pass)
 import React, { useState } from 'react';
+import { BackButton } from '../components/ui/BackButton';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
@@ -49,7 +50,7 @@ export function StoreScreen({ navigation }) {
       contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.title}>Cửa hàng</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -57,11 +58,11 @@ export function StoreScreen({ navigation }) {
       <View style={styles.balanceCard}>
         <View>
           <Text style={styles.balanceLabel}>Số dư của bạn</Text>
-          <Text style={styles.balanceValue}>{formatToken(user.tokenBalance)} {'\u{1F4B0}'}</Text>
+          <Text style={styles.balanceValue}>{formatToken(user.tokenBalance)} token</Text>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
           <Text style={styles.balanceLabel}>Đã tiêu vào Store</Text>
-          <Text style={styles.sinkValue}>{formatTokenShort(sinkTotal)} {'\u{1F4B0}'}</Text>
+          <Text style={styles.sinkValue}>{formatTokenShort(sinkTotal)} token</Text>
         </View>
       </View>
 

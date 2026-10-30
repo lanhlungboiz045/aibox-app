@@ -1,9 +1,12 @@
 // screens/admin/AdminAIModelsScreen.jsx — Quản lý AI model (bật/tắt) & thống kê usage
 import React from 'react';
+import { BackButton } from '../../components/ui/BackButton';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { formatTokenShort } from '../../utils/format';
+import { AppIcon } from '../../components/ui/AppIcon';
+import { AIProviderLogo } from '../../components/AIProviderLogo';
 import { colors, centeredContent, touch } from '../../theme/tokens';
 
 export function AdminAIModelsScreen({ navigation }) {
@@ -30,7 +33,7 @@ export function AdminAIModelsScreen({ navigation }) {
       contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.title}>Mô hình AI</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -57,7 +60,7 @@ export function AdminAIModelsScreen({ navigation }) {
             key={model.id}
             style={[styles.card, !model.isAvailable && styles.cardOff]}
           >
-            <Text style={styles.icon}>{model.icon}</Text>
+            <AIProviderLogo provider={model.provider} size={36} />
             <View style={{ flex: 1 }}>
               <View style={styles.nameRow}>
                 <Text style={styles.name}>{model.name}</Text>
@@ -101,7 +104,6 @@ const styles = StyleSheet.create({
   hint: { color: colors.textFaint, fontSize: 12, paddingHorizontal: 16, marginBottom: 10, lineHeight: 16 },
   card: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, marginBottom: 6, padding: 12, borderWidth: 1, borderColor: colors.borderSoft },
   cardOff: { opacity: 0.6 },
-  icon: { fontSize: 22 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: { color: colors.text, fontSize: 13, fontWeight: '600' },
   provider: { color: colors.textFaint, fontSize: 12 },

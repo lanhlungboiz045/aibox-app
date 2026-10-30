@@ -15,7 +15,7 @@ export const STORE_ITEMS = [
 
   // Màu tên
   { id: 'color_gold', type: 'nameColor', name: 'Tên Vàng', price: 2500, color: '#FFD700', icon: 'star', description: 'Tên hiển thị màu vàng trên Leaderboard' },
-  { id: 'color_mint', type: 'nameColor', name: 'Tên Mint', price: 1500, color: '#00CE7E', icon: 'leaf', description: 'Tên hiển thị màu xanh mint' },
+  { id: 'color_mint', type: 'nameColor', name: 'Tên Mint', price: 1500, color: '#00CE7E', icon: 'feather', description: 'Tên hiển thị màu xanh mint' },
   { id: 'color_violet', type: 'nameColor', name: 'Tên Tím', price: 1500, color: '#A78BFA', icon: 'circle', description: 'Tên hiển thị màu tím' },
 
   // Prompt AI

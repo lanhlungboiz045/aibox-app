@@ -2,6 +2,7 @@
 // Chip có vùng chạm tối thiểu 48dp theo Material và accessibilityState.selected.
 import React from 'react';
 import { ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { AppIcon } from './ui/AppIcon';
 import { colors, radius, spacing, type } from '../theme/tokens';
 
 export function CategoryFilter({ categories, selected, onSelect }) {
@@ -26,7 +27,11 @@ export function CategoryFilter({ categories, selected, onSelect }) {
             accessibilityLabel={cat.label}
             accessibilityState={{ selected: isActive }}
           >
-            <Text style={styles.chipIcon}>{cat.icon}</Text>
+            <AppIcon
+              name={cat.icon}
+              size={16}
+              color={isActive ? colors.accentSoft : colors.textDim}
+            />
             <Text style={[styles.chipText, isActive && styles.chipTextActive]} maxFontSizeMultiplier={1.6}>
               {cat.label}
             </Text>
@@ -53,7 +58,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   chipActive: { backgroundColor: colors.accentDim, borderColor: colors.accentBorder },
-  chipIcon: { fontSize: 14 },
   chipText: { ...type.smallStrong, color: colors.textDim },
   chipTextActive: { color: colors.accentSoft },
 });

@@ -5,7 +5,7 @@ rules_version = '2';
 //   hoặc: firebase deploy --only firestore:rules
 //
 // Nguyên tắc:
-//  - Chỉ người đã đăng nhập (Google) mới đọc được hồ sơ.
+//  - Chỉ người đã xác thực Firebase (Google hoặc email/password) mới đọc hồ sơ.
 //  - Người dùng tự sửa được username/avatar/displayName/photoURL của mình,
 //    KHÔNG được tự đổi role/status (tránh tự phong admin hoặc tự mở khoá).
 //  - Admin (email trong EXPO_PUBLIC_ADMIN_EMAILS) toàn quyền.

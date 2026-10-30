@@ -3,7 +3,7 @@
 // Collection: users/{uid}
 //   uid, email, displayName, username, avatar, photoURL,
 //   role: 'user' | 'creator' | 'admin', status: 'active' | 'banned',
-//   provider: 'google', createdAt, lastLoginAt
+//   provider: 'google' | 'email', createdAt, lastLoginAt
 //
 // Role/status là nguồn sự thật ở Firestore. Ví token / positions / quests vẫn
 // nằm local (AsyncStorage) để demo offline, key theo uid của Firebase.
@@ -56,7 +56,7 @@ function buildProfileFields(fbUser) {
     email,
     displayName: fbUser.displayName || email.split('@')[0] || 'Người dùng',
     photoURL: fbUser.photoURL || null,
-    provider: 'google',
+    provider: fbUser.provider || 'google',
   };
 }
 

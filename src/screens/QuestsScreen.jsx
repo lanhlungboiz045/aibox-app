@@ -1,5 +1,6 @@
 // screens/QuestsScreen.jsx — Nhiệm vụ ngày + daily reward (gamification)
 import React from 'react';
+import { BackButton } from '../components/ui/BackButton';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
@@ -27,14 +28,14 @@ export function QuestsScreen({ navigation }) {
       contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.title}>Nhiệm vụ ngày</Text>
         <View style={{ width: 50 }} />
       </View>
 
       <View style={styles.streakCard}>
         <View style={styles.streakHead}>
-          <AppIcon name="flame" size={22} color={colors.warning} />
+          <AppIcon name="zap" size={22} color={colors.warning} />
           <View style={{ flex: 1 }}>
             <Text style={styles.streakTitle}>Streak {user.dailyStreak} ngày</Text>
             <Text style={styles.streakSub}>
@@ -84,10 +85,10 @@ export function QuestsScreen({ navigation }) {
                 <AppIcon name={quest.icon} size={18} color={colors.textDim} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.questTitle}>{quest.title}</Text>
-                  <Text style={styles.questProgressText}>{progress}/{quest.target} · thưởng {formatToken(quest.reward)} {'\u{1F4B0}'}</Text>
+                  <Text style={styles.questProgressText}>{progress}/{quest.target} · thưởng {formatToken(quest.reward)} token</Text>
                 </View>
                 {claimed ? (
-                  <Text style={styles.claimedTag}>{'\u{2713}'} Đã nhận</Text>
+                  <View style={styles.claimedTagWrap}><AppIcon name="check-circle" size={14} color={colors.success} /><Text style={styles.claimedTag}>Đã nhận</Text></View>
                 ) : (
                   <TouchableOpacity
                     accessibilityRole="button"
@@ -109,7 +110,7 @@ export function QuestsScreen({ navigation }) {
 
       <View style={styles.tip}>
         <Text style={styles.tipTitle}>
-          <AppIcon name="lightbulb" size={14} color={colors.accentSoft} /> Cách hoàn thành nhanh
+          <AppIcon name="zap" size={14} color={colors.accentSoft} /> Cách hoàn thành nhanh
         </Text>
         <Text style={styles.tipText}>
           · Chat AI 3 lần ở tab AI Hub{'\n'}
@@ -152,6 +153,7 @@ const styles = StyleSheet.create({
   claimBtnDisabled: { backgroundColor: colors.surfaceAlt },
   claimText: { color: colors.onAccent, fontSize: 12, fontWeight: '700' },
   claimTextDisabled: { color: colors.textFaint },
+  claimedTagWrap: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   claimedTag: { color: colors.success, fontSize: 12, fontWeight: '700' },
   progressTrack: { height: 5, borderRadius: 3, backgroundColor: colors.surfaceAlt, marginTop: 10, overflow: 'hidden' },
   progressFill: { height: 5, borderRadius: 3, backgroundColor: colors.accentStrong },

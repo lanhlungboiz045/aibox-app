@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useApp } from '../context/AppContext';
+import { AppIcon } from './ui/AppIcon';
 import { getStoreItem } from '../data/storeItems';
 import { ROLE_LABELS, ROLE_COLORS } from '../data/accounts';
 import { formatRelativeTime } from '../utils/format';
@@ -25,7 +26,7 @@ export function CommentSection({ marketId }) {
   return (
     <View style={styles.section}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>{'\u{1F4AC}'} Thảo luận</Text>
+        <Text style={styles.title}>Thảo luận</Text>
         <Text style={styles.count}>{comments.length} bình luận</Text>
       </View>
 
@@ -46,7 +47,7 @@ export function CommentSection({ marketId }) {
           onPress={submit}
           disabled={!draft.trim()}
         >
-          <Text style={styles.sendText}>{'\u{27A4}'}</Text>
+          <AppIcon name="send" size={16} color={colors.onAccent} />
         </TouchableOpacity>
       </View>
 
@@ -79,9 +80,10 @@ export function CommentSection({ marketId }) {
                 <Text style={styles.content}>{comment.content}</Text>
                 <View style={styles.actions}>
                   <TouchableOpacity accessibilityRole="button" onPress={() => likeComment(marketId, comment.id)}>
-                    <Text style={[styles.actionText, liked && { color: colors.danger }]}>
-                      {liked ? '\u{2764}' : '\u{2661}'} {comment.likes}
-                    </Text>
+                    <View style={styles.likeContent}>
+                      <AppIcon name="heart" size={14} color={liked ? colors.danger : colors.textDim} />
+                      <Text style={[styles.actionText, liked && { color: colors.danger }]}>{comment.likes}</Text>
+                    </View>
                   </TouchableOpacity>
                   {canDelete && (
                     <TouchableOpacity accessibilityRole="button" onPress={() => deleteComment(marketId, comment.id)}>
@@ -108,7 +110,6 @@ const styles = StyleSheet.create({
   input: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 13, paddingHorizontal: 12, paddingVertical: 9, maxHeight: 100 },
   sendBtn: { width: 38, height: 38, borderRadius: 10, backgroundColor: colors.accentStrong, alignItems: 'center', justifyContent: 'center', minHeight: touch.min },
   sendBtnDisabled: { opacity: 0.35 },
-  sendText: { color: colors.onAccent, fontSize: 16, fontWeight: '700' },
   empty: { color: colors.textFaint, fontSize: 12, textAlign: 'center', paddingVertical: 16 },
   comment: { flexDirection: 'row', gap: 10, backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, padding: 12, marginBottom: 8 },
   avatarWrap: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.borderSoft },
@@ -119,6 +120,7 @@ const styles = StyleSheet.create({
   time: { color: colors.textFaint, fontSize: 12 },
   content: { color: colors.text, fontSize: 13, lineHeight: 19 },
   actions: { flexDirection: 'row', gap: 16, marginTop: 6 },
+  likeContent: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: touch.min, paddingHorizontal: 4 },
   actionText: { color: colors.textDim, fontSize: 12 },
   deleteText: { color: colors.danger, fontSize: 12 },
 });

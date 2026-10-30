@@ -3,6 +3,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useApp } from '../context/AppContext';
+import { AppIcon } from './ui/AppIcon';
 import { formatToken } from '../utils/format';
 import { colors, radius, spacing, type } from '../theme/tokens';
 
@@ -22,7 +23,7 @@ export function TokenBadge({ size = 'medium' }) {
       style={[styles.badge, { paddingHorizontal: s.paddingH, paddingVertical: s.paddingV }]}
       accessibilityLabel={`Số dư ${formatToken(balance)} token`}
     >
-      <Text style={{ fontSize: s.iconSize }}>{'\u{1F4B0}'}</Text>
+      <AppIcon name="database" size={s.iconSize} color={colors.accentSoft} />
       <Text style={[styles.text, { fontSize: s.fontSize }]} maxFontSizeMultiplier={1.5}>
         {formatToken(balance)}
       </Text>

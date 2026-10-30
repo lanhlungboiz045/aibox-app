@@ -1,8 +1,10 @@
 // screens/TraderProfileScreen.jsx — Xem profile trader top leaderboard + follow / copy trade
 import React from 'react';
+import { BackButton } from '../components/ui/BackButton';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
+import { AppIcon } from '../components/ui/AppIcon';
 import { formatToken, formatTokenShort, formatDate } from '../utils/format';
 import { colors, centeredContent, touch } from '../theme/tokens';
 
@@ -63,7 +65,7 @@ export function TraderProfileScreen({ route, navigation }) {
       contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.headerTitle}>Trader profile</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -72,10 +74,10 @@ export function TraderProfileScreen({ route, navigation }) {
         <Text style={styles.avatar}>{trader.avatar}</Text>
         <Text style={styles.username}>{trader.username}</Text>
         <View style={styles.badgeRow}>
-          <Text style={styles.rankBadge}>{'\u{1F3C6}'} Rank #{trader.rank}</Text>
+          <Text style={styles.rankBadge}>Rank #{trader.rank}</Text>
           <Text style={styles.followers}>{followers} followers</Text>
         </View>
-        <Text style={styles.balance}>{formatToken(trader.tokenBalance)} {'\u{1F4B0}'}</Text>
+        <Text style={styles.balance}>{formatToken(trader.tokenBalance)} token</Text>
       </View>
 
       <View style={styles.statsRow}>
@@ -99,7 +101,7 @@ export function TraderProfileScreen({ route, navigation }) {
             <>
               <View style={styles.followingCard}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.followingTitle}>{'\u{2713}'} Đang copy trade</Text>
+                  <Text style={styles.followingTitle}>Đang copy trade</Text>
                   <Text style={styles.followingSub}>
                     Tối đa {formatToken(config.maxPerTrade)} token/lệnh · {config.enabled ? 'đang bật' : 'đang tạm dừng'}
                   </Text>
@@ -128,13 +130,13 @@ export function TraderProfileScreen({ route, navigation }) {
             </>
           ) : (
             <TouchableOpacity accessibilityRole="button" style={styles.followBtn} onPress={follow}>
-              <Text style={styles.followText}>{'\u{1F4E1}'} Theo dõi & Copy trade</Text>
+              <Text style={styles.followText}>Theo dõi & Copy trade</Text>
             </TouchableOpacity>
           )}
 
           {config && (
             <TouchableOpacity accessibilityRole="button" style={styles.simulateBtn} onPress={simulate}>
-              <Text style={styles.simulateText}>{'\u{1F3AC}'} Mô phỏng {trader.username} mở lệnh</Text>
+              <Text style={styles.simulateText}>Mô phỏng {trader.username} mở lệnh</Text>
             </TouchableOpacity>
           )}
           <Text style={styles.disclaimer}>
@@ -144,7 +146,7 @@ export function TraderProfileScreen({ route, navigation }) {
       )}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{'\u{1F4C8}'} Kèo đang quan tâm</Text>
+        <Text style={styles.sectionTitle}>Kèo đang quan tâm</Text>
         {picks.length === 0 ? (
           <Text style={styles.empty}>Không có market đang mở.</Text>
         ) : (
@@ -155,14 +157,14 @@ export function TraderProfileScreen({ route, navigation }) {
               style={styles.marketRow}
               onPress={() => navigation.navigate('MarketDetail', { marketId: market.id })}
             >
-              <Text style={styles.marketIcon}>{market.icon}</Text>
+              <AppIcon name={market.icon} size={18} color={colors.accentSoft} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.marketQuestion} numberOfLines={2}>{market.question}</Text>
                 <Text style={styles.marketMeta}>
                   YES {market.yesPrice}% · volume {formatTokenShort(market.volume)} {'\u{1F4B0}'}
                 </Text>
               </View>
-              <Text style={styles.marketArrow}>{'\u{276F}'}</Text>
+              <AppIcon name="chevron-right" size={16} color={colors.textFaint} style={styles.marketArrow} />
             </TouchableOpacity>
           ))
         )}

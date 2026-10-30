@@ -8,6 +8,7 @@ import { TransactionItem } from '../components/TransactionItem';
 import { formatToken } from '../utils/format';
 import { AppDrawer } from '../components/AppDrawer';
 import { IconButton } from '../components/ui';
+import { AppIcon } from '../components/ui/AppIcon';
 import { useAppDrawer } from '../hooks/useAppDrawer';
 import { t } from '../i18n';
 import { colors, centeredContent } from '../theme/tokens';
@@ -60,17 +61,17 @@ export function PortfolioScreen() {
         </View>
 
         <View style={styles.statsGrid}>
-          <View style={styles.statCard}><Text style={styles.statLabel}>Token balance</Text><Text style={styles.statValue}>{formatToken(state.user.tokenBalance)} {'\u{1F4B0}'}</Text></View>
-          <View style={styles.statCard}><Text style={styles.statLabel}>Portfolio value</Text><Text style={styles.statValue}>{formatToken(Math.round(portfolioValue))} {'\u{1F4B0}'}</Text></View>
-          <View style={styles.statCard}><Text style={styles.statLabel}>Total P&L</Text><Text style={[styles.statValue, { color: totalPnL >= 0 ? colors.success : colors.danger }]}>{totalPnL >= 0 ? '+' : ''}{formatToken(Math.round(totalPnL))} {'\u{1F4B0}'}</Text></View>
-          <View style={styles.statCard}><Text style={styles.statLabel}>Spent on AI</Text><Text style={[styles.statValue, { color: colors.danger }]}>{formatToken(state.user.totalSpentOnAI)} {'\u{1F4B0}'}</Text></View>
+          <View style={styles.statCard}><Text style={styles.statLabel}>Token balance</Text><Text style={styles.statValue}>{formatToken(state.user.tokenBalance)} token</Text></View>
+          <View style={styles.statCard}><Text style={styles.statLabel}>Portfolio value</Text><Text style={styles.statValue}>{formatToken(Math.round(portfolioValue))} token</Text></View>
+          <View style={styles.statCard}><Text style={styles.statLabel}>Total P&L</Text><Text style={[styles.statValue, { color: totalPnL >= 0 ? colors.success : colors.danger }]}>{totalPnL >= 0 ? '+' : ''}{formatToken(Math.round(totalPnL))} token</Text></View>
+          <View style={styles.statCard}><Text style={styles.statLabel}>Spent on AI</Text><Text style={[styles.statValue, { color: colors.danger }]}>{formatToken(state.user.totalSpentOnAI)} token</Text></View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{'\u{1F4BC}'} Positions ({state.user.positions.length})</Text>
+          <View style={styles.sectionHeading}><AppIcon name="briefcase" size={18} color={colors.accentSoft} /><Text style={styles.sectionTitle}>Positions ({state.user.positions.length})</Text></View>
           {positionsWithMarket.length === 0 ? (
             <View style={styles.emptyBox}>
-              <Text style={styles.emptyIcon}>{'\u{1F4BC}'}</Text>
+              <AppIcon name="briefcase" size={32} color={colors.textDim} style={styles.emptyIcon} />
               <Text style={styles.emptyText}>Bạn chưa có position nào.</Text>
               <Text style={styles.emptySub}>Khám phá markets và đặt cược ngay!</Text>
             </View>
@@ -95,7 +96,7 @@ export function PortfolioScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{'\u{1F4DD}'} Lịch sử giao dịch</Text>
+          <View style={styles.sectionHeading}><AppIcon name="edit-3" size={18} color={colors.accentSoft} /><Text style={styles.sectionTitle}>Lịch sử giao dịch</Text></View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -139,9 +140,10 @@ const styles = StyleSheet.create({
   statLabel: { color: colors.textDim, fontSize: 12, marginBottom: 4 },
   statValue: { color: colors.text, fontSize: 16, fontWeight: '700', fontFamily: 'monospace' },
   section: { marginBottom: 16 },
-  sectionTitle: { color: colors.text, fontSize: 16, fontWeight: '600', paddingHorizontal: 16, marginBottom: 8 },
+  sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, marginBottom: 8 },
+  sectionTitle: { color: colors.text, fontSize: 16, fontWeight: '600' },
   emptyBox: { backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
-  emptyIcon: { fontSize: 32, marginBottom: 8 },
+  emptyIcon: { marginBottom: 8 },
   emptyText: { color: colors.textDim, fontSize: 14 },
   emptySub: { color: colors.textFaint, fontSize: 12, marginTop: 4 },
   positionsList: { paddingHorizontal: 16, gap: 8 },

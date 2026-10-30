@@ -1,5 +1,6 @@
 // screens/ProfileScreen.jsx — Hồ sơ người dùng (Firebase Auth + Firestore)
 import React, { useState } from 'react';
+import { BackButton } from '../components/ui/BackButton';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, TextInput, Image,
 } from 'react-native';
@@ -8,6 +9,7 @@ import { useApp } from '../context/AppContext';
 import { ROLE_LABELS, ROLE_COLORS, PROVIDER_LABELS, AVATARS } from '../data/accounts';
 import { formatToken, formatDate } from '../utils/format';
 import { colors, centeredContent, touch } from '../theme/tokens';
+import { AppIcon } from '../components/ui/AppIcon';
 
 // Ảnh Google có thể lỗi (mạng/không có ảnh) → fallback emoji avatar
 function UserAvatar({ user, size = 96 }) {
@@ -113,13 +115,13 @@ export function ProfileScreen({ navigation }) {
       style={[styles.actionBtn, options.danger && styles.dangerBtn]}
       onPress={onPress}
     >
-      <Text style={styles.actionIcon}>{icon}</Text>
+      <AppIcon name={icon} size={18} color={options.danger ? colors.danger : colors.accentSoft} />
       <View style={{ flex: 1 }}>
         <Text style={[styles.actionText, options.danger && { color: colors.danger }]}>{label}</Text>
         {options.hint ? <Text style={styles.actionHint}>{options.hint}</Text> : null}
       </View>
       {options.badge ? <Text style={styles.actionBadge}>{options.badge}</Text> : null}
-      <Text style={styles.actionArrow}>{'\u{276F}'}</Text>
+      <AppIcon name="chevron-right" size={16} color={colors.textFaint} />
     </TouchableOpacity>
   );
 
@@ -129,7 +131,7 @@ export function ProfileScreen({ navigation }) {
       contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 20 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.headerTitle}>Profile</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -185,17 +187,20 @@ export function ProfileScreen({ navigation }) {
             <Text style={styles.email} numberOfLines={1}>{user.email}</Text>
 
             <TouchableOpacity accessibilityRole="button" style={styles.editBtn} onPress={startEdit}>
-              <Text style={styles.editBtnText}>{'\u{270F}'} Sửa hồ sơ</Text>
+              <View style={styles.buttonContent}>
+                <AppIcon name="edit-2" size={14} color={colors.accentSoft} />
+                <Text style={styles.editBtnText}>Sửa hồ sơ</Text>
+              </View>
             </TouchableOpacity>
 
             <View style={styles.rankRow}>
-              <Text style={styles.rank}>{'\u{1F3C6}'} Rank #{user.rank}</Text>
+              <Text style={styles.rank}>Rank #{user.rank}</Text>
               <Text style={styles.joined}>Tham gia: {formatDate(user.joinedDate)}</Text>
             </View>
 
             <View style={styles.balanceRow}>
               <Text style={styles.balanceLabel}>Token balance</Text>
-              <Text style={styles.balanceValue}>{formatToken(user.tokenBalance)} {'\u{1F4B0}'}</Text>
+              <Text style={styles.balanceValue}>{formatToken(user.tokenBalance)} token</Text>
             </View>
 
             <View style={styles.metaRow}>
@@ -215,7 +220,7 @@ export function ProfileScreen({ navigation }) {
       {state.demoMode && (
         <View style={styles.demoBox}>
           <Text style={styles.demoBoxText}>
-            {'\u{1F9EA}'} Chế độ demo (Expo Go): ví và dữ liệu chỉ lưu trên máy này,
+            Chế độ demo (Expo Go): ví và dữ liệu chỉ lưu trên máy này,
             không đồng bộ Firebase. Bấm đăng xuất để thoát, hoặc build dev client để đăng nhập Google thật.
           </Text>
         </View>
@@ -224,7 +229,7 @@ export function ProfileScreen({ navigation }) {
       {state.profileSync && (
         <View style={styles.syncWarn}>
           <Text style={styles.syncWarnText}>
-            {'\u{26A0}'} Chưa đồng bộ được hồ sơ với Firestore: {state.profileSync}
+            Chưa đồng bộ được hồ sơ với Firestore: {state.profileSync}
           </Text>
         </View>
       )}
@@ -238,16 +243,22 @@ export function ProfileScreen({ navigation }) {
             Alert.alert('Nhận thưởng', `Đã nhận ${formatToken(nextDailyReward)} token!`);
           }}
         >
-          <Text style={styles.dailyBtnText}>{'\u{1F381}'} Nhận {formatToken(nextDailyReward)} token hôm nay</Text>
+          <View style={styles.buttonContent}>
+            <AppIcon name="gift" size={16} color={colors.warning} />
+            <Text style={styles.dailyBtnText}>Nhận {formatToken(nextDailyReward)} token hôm nay</Text>
+          </View>
         </TouchableOpacity>
       ) : (
         <TouchableOpacity accessibilityRole="button" style={styles.dailyBtnDone} onPress={() => navigation.navigate('Quests')}>
-          <Text style={styles.dailyBtnDoneText}>{'\u{2713}'} Đã nhận thưởng hôm nay · xem nhiệm vụ</Text>
+          <View style={styles.buttonContent}>
+            <AppIcon name="check-circle" size={16} color={colors.success} />
+            <Text style={styles.dailyBtnDoneText}>Đã nhận thưởng hôm nay · xem nhiệm vụ</Text>
+          </View>
         </TouchableOpacity>
       )}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{'\u{1F4CA}'} Thống kê</Text>
+        <Text style={styles.sectionTitle}>Thống kê</Text>
         <View style={styles.statsGrid}>
           <View style={styles.statCard}><Text style={styles.statValue}>{totalTrades}</Text><Text style={styles.statLabel}>Trades</Text></View>
           <View style={styles.statCard}><Text style={[styles.statValue, { color: winRate >= 50 ? colors.success : colors.danger }]}>{winRate}%</Text><Text style={styles.statLabel}>Win rate</Text></View>
@@ -258,40 +269,40 @@ export function ProfileScreen({ navigation }) {
 
       {isAdmin && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{'\u{1F6E1}'} System Admin</Text>
-          {link('\u{2699}', 'Admin Dashboard', () => navigation.navigate('AdminHome'), { hint: 'Markets, AI models, users, rủi ro dòng tiền' })}
+          <Text style={styles.sectionTitle}>System Admin</Text>
+          {link('settings', 'Admin Dashboard', () => navigation.navigate('AdminHome'), { hint: 'Markets, AI models, users, rủi ro dòng tiền' })}
         </View>
       )}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{'\u{1F9F0}'} Công cụ</Text>
-        {canCreateMarket && link('\u{2795}', 'Tạo market', () => navigation.navigate('CreateMarket'), {
+        <Text style={styles.sectionTitle}>Công cụ</Text>
+        {canCreateMarket && link('plus-circle', 'Tạo market', () => navigation.navigate('CreateMarket'), {
           hint: user.role === 'creator' ? 'Bạn là Market Creator · nhận 2% fee' : 'Tạo kèo với tư cách admin',
         })}
-        {link('\u{1F9F0}', 'Cấu hình AI', () => navigation.navigate('AISettings'), {
+        {isAdmin && link('cpu', 'Cấu hình AI', () => navigation.navigate('AISettings'), {
           hint: aiConfig?.mode === 'live'
             ? `LIVE · ${aiConfig.model}`
             : 'Chưa có API key · đang trả lời mô phỏng',
           badge: aiConfig?.mode === 'live' ? 'LIVE' : 'MOCK',
         })}
-        {link('\u{1F6D2}', 'Store', () => navigation.navigate('Store'), { hint: 'Khung avatar, màu tên, prompt, Creator Pass' })}
-        {link('\u{1F3AF}', 'Nhiệm vụ ngày', () => navigation.navigate('Quests'), { hint: `${claimedQuests} nhiệm vụ đã nhận hôm nay` })}
-        {link('\u{1F514}', 'Thông báo', () => navigation.navigate('Notifications'), {
+        {link('shopping-bag', 'Store', () => navigation.navigate('Store'), { hint: 'Khung avatar, màu tên, prompt, Creator Pass' })}
+        {link('target', 'Nhiệm vụ ngày', () => navigation.navigate('Quests'), { hint: `${claimedQuests} nhiệm vụ đã nhận hôm nay` })}
+        {link('bell', 'Thông báo', () => navigation.navigate('Notifications'), {
           hint: 'Kết quả kèo, transfer, copy trade',
           badge: unreadNotifications > 0 ? String(unreadNotifications) : null,
         })}
-        {link('\u{1F4CB}', 'Copy Trade', () => navigation.navigate('CopyTrade'), { hint: `${myCopyTrades.length} trader đang theo dõi` })}
-        {link('\u{1F4B8}', 'Chuyển token', () => navigation.navigate('Transfer'), { hint: 'Gửi token cho người dùng khác' })}
+        {link('copy', 'Copy Trade', () => navigation.navigate('CopyTrade'), { hint: `${myCopyTrades.length} trader đang theo dõi` })}
+        {link('send', 'Chuyển token', () => navigation.navigate('Transfer'), { hint: 'Gửi token cho người dùng khác' })}
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{'\u{1F510}'} Tài khoản</Text>
-        {link('\u{1F6AA}', 'Đăng xuất', handleSignOut, { danger: true, hint: 'Đăng xuất khỏi Google trên thiết bị này' })}
-        {link('\u{1F504}', 'Reset token (demo)', handleReset, { danger: true, hint: 'Chỉ reset ví của tài khoản hiện tại' })}
+        <Text style={styles.sectionTitle}>Tài khoản</Text>
+        {link('log-out', 'Đăng xuất', handleSignOut, { danger: true, hint: 'Đăng xuất khỏi Google trên thiết bị này' })}
+        {link('refresh-cw', 'Reset token (demo)', handleReset, { danger: true, hint: 'Chỉ reset ví của tài khoản hiện tại' })}
       </View>
 
       <View style={styles.disclaimer}>
-        <Text style={styles.disclaimerText}>{'\u{26A0}'} AIBox là nền tảng giải trí. Token là credit nội bộ, không có giá trị tiền tệ và không thể đổi tiền thật. Prediction market là game dự đoán, không phải cá cược.</Text>
+        <Text style={styles.disclaimerText}>AIBox là nền tảng giải trí. Token là credit nội bộ, không có giá trị tiền tệ và không thể đổi tiền thật. Prediction market là game dự đoán, không phải cá cược.</Text>
       </View>
       <Text style={styles.mockNote}>
         Đăng nhập bằng Google qua Firebase Authentication. Hồ sơ (tên, avatar, quyền) lưu ở Firestore;
@@ -315,6 +326,7 @@ const styles = StyleSheet.create({
   email: { color: colors.textDim, fontSize: 12, marginBottom: 10, maxWidth: '90%' },
   editBtn: { backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 14, minHeight: touch.min },
   editBtnText: { color: colors.accentSoft, fontSize: 12, fontWeight: '600' },
+  buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   editBlock: { width: '100%', marginTop: 4 },
   nameInput: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.borderSoft, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: colors.text, fontSize: 15, textAlign: 'center' },
   avatarPickerLabel: { color: colors.textDim, fontSize: 12, marginTop: 12, marginBottom: 6 },
@@ -352,11 +364,9 @@ const styles = StyleSheet.create({
   statLabel: { color: colors.textDim, fontSize: 12, marginTop: 4 },
   actionBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 10, padding: 14, borderWidth: 1, borderColor: colors.borderSoft, marginBottom: 6, gap: 12, minHeight: touch.min },
   dangerBtn: { borderColor: colors.dangerBorder },
-  actionIcon: { fontSize: 18 },
   actionText: { color: colors.text, fontSize: 14, fontWeight: '500' },
   actionHint: { color: colors.textFaint, fontSize: 12, marginTop: 2 },
   actionBadge: { color: colors.onAccent, fontSize: 12, fontWeight: '700', backgroundColor: colors.accentStrong, borderRadius: 9, minWidth: 18, textAlign: 'center', paddingHorizontal: 5, paddingVertical: 1, overflow: 'hidden' },
-  actionArrow: { color: colors.textFaint, fontSize: 14 },
   disclaimer: { backgroundColor: colors.warningDim, borderRadius: 10, marginHorizontal: 16, padding: 14, borderWidth: 1, borderColor: colors.warningBorder },
   disclaimerText: { color: colors.warning, fontSize: 12, lineHeight: 18 },
   mockNote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 10 },

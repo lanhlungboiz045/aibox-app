@@ -10,6 +10,7 @@ import React, { createContext, useContext, useReducer, useEffect, useRef, useSta
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MARKETS, AI_MODELS, MOCK_AI_RESPONSES } from '../data/mockData';
+import { DEMO_ACCOUNTS } from '../data/demoAccounts';
 import { SEED_ACCOUNTS, createAccount, createWallet, ROLE_LABELS, pickAvatar } from '../data/accounts';
 import { STORE_ITEMS, getStoreItem } from '../data/storeItems';
 import { QUESTS, ensureQuestState, getQuestProgress } from '../data/quests';
@@ -23,6 +24,8 @@ import {
 import {
   subscribeAuth,
   signInWithGoogle as googleSignIn,
+  signInWithEmail as emailSignIn,
+  registerWithEmail as emailRegister,
   signOutGoogle,
   isGoogleSignInConfigured,
 } from '../services/auth';
@@ -321,7 +324,7 @@ function reducer(state, action) {
           : (firebaseUser.photoURL || existing?.photoURL || null),
         role: profile?.role || 'user',
         status: profile?.status || 'active',
-        provider: 'google',
+        provider: profile?.provider || firebaseUser.provider || 'google',
       };
 
       const accounts = existing
@@ -343,10 +346,6 @@ function reducer(state, action) {
     case 'AUTH_SIGNED_OUT':
       return {
         ...state,
-        // Thoát chế độ demo → xoá luôn ví demo cho sạch danh sách tài khoản
-        accounts: action.payload?.removeDemo
-          ? state.accounts.filter(a => a.id !== DEMO_UID)
-          : state.accounts,
         firebaseUser: null,
         profile: null,
         demoMode: false,
@@ -358,39 +357,41 @@ function reducer(state, action) {
     // Chế độ demo (chỉ dev): giả lập phiên đăng nhập bằng ví local để test UI
     // trên Expo Go — nơi không có Google Sign-In native và không có Firestore.
     case 'DEMO_SESSION': {
-      const existing = state.accounts.find(a => a.id === DEMO_UID);
+      const { id = DEMO_UID, email = 'demo@expo-go.local', username = 'Demo Expo Go', role = 'admin' } = action.payload || {};
+      const existing = state.accounts.find(a => a.id === id);
       const account = {
         ...(existing || createAccount({
-          id: DEMO_UID,
-          email: 'demo@expo-go.local',
-          username: 'Demo Expo Go',
+          id,
+          email,
+          username,
           provider: 'demo',
-          // Cho xem luôn tab Admin để test CMS khi demo
-          role: 'admin',
+          role,
         })),
-        role: 'admin',
+        email,
+        username,
+        role,
         status: 'active',
         provider: 'demo',
       };
       const accounts = existing
-        ? state.accounts.map(a => (a.id === DEMO_UID ? account : a))
+        ? state.accounts.map(a => (a.id === id ? account : a))
         : [...state.accounts, account];
 
       return {
         ...state,
         accounts,
         firebaseUser: {
-          uid: DEMO_UID,
+          uid: id,
           email: account.email,
           displayName: account.username,
           photoURL: null,
         },
         profile: {
-          uid: DEMO_UID,
+          uid: id,
           email: account.email,
           username: account.username,
           avatar: account.avatar,
-          role: 'admin',
+          role,
           status: 'active',
           provider: 'demo',
         },
@@ -398,7 +399,7 @@ function reducer(state, action) {
         demoMode: true,
         authReady: true,
         authNotice: null,
-        quests: { ...state.quests, [DEMO_UID]: ensureQuestState(state.quests[DEMO_UID]) },
+        quests: { ...state.quests, [id]: ensureQuestState(state.quests[id]) },
       };
     }
 
@@ -1286,6 +1287,8 @@ export function AppProvider({ children }) {
   }, [state.firebaseUser?.uid]);
 
   const signInWithGoogle = useCallback(() => googleSignIn(), []);
+  const signInWithEmail = useCallback((email, password) => emailSignIn(email, password), []);
+  const registerWithEmail = useCallback((email, password) => emailRegister(email, password), []);
 
   // CHỈ DEV: vào app bằng ví local khi đang chạy Expo Go (không có native module).
   // Không tạo tài khoản Firebase, không đồng bộ Firestore.
@@ -1293,14 +1296,27 @@ export function AppProvider({ children }) {
     if (!__DEV__) return;
     dispatch({ type: 'DEMO_SESSION' });
   }, []);
+  const signInDemoAccount = useCallback((email, password) => {
+    if (!__DEV__) return { ok: false, error: 'Tài khoản mẫu chỉ dùng trong bản dev.' };
+    const account = DEMO_ACCOUNTS.find(item =>
+      item.email === String(email || '').trim().toLowerCase() && item.password === password
+    );
+    if (!account) return { ok: false, error: 'Email hoặc mật khẩu tài khoản mẫu không chính xác.' };
+    dispatch({
+      type: 'DEMO_SESSION',
+      payload: {
+        id: account.id,
+        email: account.email,
+        username: account.username,
+        role: account.role,
+      },
+    });
+    return { ok: true };
+  }, []);
 
   const signOut = useCallback(async () => {
-    const wasDemo = stateRef.current.demoMode;
-    if (!wasDemo) await signOutGoogle();
-    dispatch({
-      type: 'AUTH_SIGNED_OUT',
-      payload: wasDemo ? { removeDemo: true } : undefined,
-    });
+    if (!stateRef.current.demoMode) await signOutGoogle();
+    dispatch({ type: 'AUTH_SIGNED_OUT' });
     // Đăng xuất chủ động → không giữ thông báo cũ (ví dụ "bị khoá")
     dispatch({ type: 'AUTH_NOTICE', payload: null });
   }, []);
@@ -1628,6 +1644,15 @@ export function AppProvider({ children }) {
 
   // Admin: cập nhật cả Firestore (nguồn sự thật) và local (UI phản hồi ngay)
   const setUserStatus = useCallback(async (userId, status) => {
+    if (getCurrentUser(stateRef.current)?.role !== 'admin') {
+      return { ok: false, error: 'Chỉ System Admin mới được cập nhật trạng thái tài khoản.' };
+    }
+    if (!['active', 'banned'].includes(status)) {
+      return { ok: false, error: 'Trạng thái tài khoản không hợp lệ.' };
+    }
+    if (userId === getCurrentUser(stateRef.current)?.id) {
+      return { ok: false, error: 'Không thể tự thay đổi trạng thái tài khoản.' };
+    }
     dispatch({ type: 'ADMIN_SET_USER_STATUS', payload: { userId, status } });
     const result = await updateUserStatus(userId, status);
     if (!result.ok) return { ok: false, error: result.error };
@@ -1635,6 +1660,16 @@ export function AppProvider({ children }) {
   }, []);
 
   const setUserRole = useCallback(async (userId, role) => {
+    const actor = getCurrentUser(stateRef.current);
+    if (actor?.role !== 'admin') {
+      return { ok: false, error: 'Chỉ System Admin mới được thay đổi phân quyền.' };
+    }
+    if (!['admin', 'creator', 'user'].includes(role)) {
+      return { ok: false, error: 'Quyền tài khoản không hợp lệ.' };
+    }
+    if (userId === actor.id) {
+      return { ok: false, error: 'Không thể tự thay đổi quyền của mình.' };
+    }
     dispatch({ type: 'ADMIN_SET_USER_ROLE', payload: { userId, role } });
     const result = await updateUserRole(userId, role);
     if (!result.ok) return { ok: false, error: result.error };
@@ -1696,6 +1731,9 @@ export function AppProvider({ children }) {
         state: { ...state, user: currentUser },
         // auth (Firebase)
         signInWithGoogle,
+        signInWithEmail,
+        registerWithEmail,
+        signInDemoAccount,
         enterDemoMode,
         signOut,
         clearAuthNotice,

@@ -1,6 +1,7 @@
 // screens/admin/AdminRiskScreen.jsx — Theo dõi dòng tiền & phát hiện rửa token
 // Heuristic (demo): tốc độ chuyển, tỷ lệ xả ví, dòng tiền 2 chiều, giao dịch quá lớn.
 import React from 'react';
+import { BackButton } from '../../components/ui/BackButton';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
@@ -108,7 +109,7 @@ export function AdminRiskScreen({ navigation }) {
       contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.title}>Rủi ro dòng tiền</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -127,7 +128,7 @@ export function AdminRiskScreen({ navigation }) {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{'\u{1F6A8}'} Cảnh báo ({flagged.length})</Text>
+        <Text style={styles.sectionTitle}>Cảnh báo ({flagged.length})</Text>
         {flagged.length === 0 ? (
           <Text style={styles.empty}>Chưa phát hiện bất thường. Hãy thử Transfer vài lần rồi quay lại.</Text>
         ) : (
@@ -152,7 +153,7 @@ export function AdminRiskScreen({ navigation }) {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{'\u{1F4CA}'} Tài khoản có dòng tiền lớn nhất</Text>
+        <Text style={styles.sectionTitle}>Tài khoản có dòng tiền lớn nhất</Text>
         {active.length === 0 ? (
           <Text style={styles.empty}>Chưa có giao dịch transfer nào.</Text>
         ) : (
@@ -178,7 +179,7 @@ export function AdminRiskScreen({ navigation }) {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{'\u{1F50E}'} Hoạt động transfer gần nhất</Text>
+        <Text style={styles.sectionTitle}>Hoạt động transfer gần nhất</Text>
         <View style={styles.txList}>
           {state.accounts
             .flatMap(account =>

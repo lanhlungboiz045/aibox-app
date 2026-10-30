@@ -3,6 +3,7 @@
 // Bấm xuống thu nhỏ 0.97 + haptic nhẹ (PressableScale) thay cho activeOpacity.
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { AIProviderLogo } from './AIProviderLogo';
 import { AppIcon } from './ui/AppIcon';
 import { PressableScale } from './ui/PressableScale';
 import { formatTokenShort } from '../utils/format';
@@ -31,7 +32,7 @@ export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
       <View style={styles.content}>
         <View style={styles.topRow}>
           <View style={[styles.iconWrap, { backgroundColor: accent + '22' }]}>
-            <Text style={styles.icon}>{model.icon}</Text>
+            <AIProviderLogo provider={model.provider} size={40} />
           </View>
           <View style={styles.nameCol}>
             <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.8}>{model.name}</Text>
@@ -40,7 +41,7 @@ export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
             </Text>
           </View>
           <View style={styles.costWrap}>
-            <Text style={styles.costIcon}>{'\u{1F4B0}'}</Text>
+            <AppIcon name="database" size={12} color={colors.accentSoft} />
             <Text style={styles.cost} maxFontSizeMultiplier={1.5}>usage</Text>
           </View>
         </View>
@@ -93,7 +94,6 @@ const styles = StyleSheet.create({
   content: { flex: 1, padding: spacing.md, gap: spacing.sm },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   iconWrap: { width: 40, height: 40, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
-  icon: { fontSize: 20 },
   nameCol: { flex: 1, gap: 2 },
   name: { ...type.subtitle, color: colors.text },
   provider: { ...type.small, color: colors.textFaint },
@@ -106,7 +106,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radius.xs,
   },
-  costIcon: { fontSize: 12 },
   cost: { ...type.smallStrong, color: colors.accentSoft },
   description: { ...type.body, color: colors.textDim, lineHeight: 19 },
   bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },

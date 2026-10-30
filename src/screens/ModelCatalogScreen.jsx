@@ -2,12 +2,15 @@
 // Hiển thị danh sách model theo nhà cung cấp, chi phí trừ theo usage, context, capability.
 // Nút "Thử ngay" chuyển sang AI Hub với model đã chọn.
 import React, { useState, useMemo } from 'react';
+import { BackButton } from '../components/ui/BackButton';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, FlatList, Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { TokenBadge } from '../components/TokenBadge';
+import { AppIcon } from '../components/ui/AppIcon';
+import { AIProviderLogo } from '../components/AIProviderLogo';
 import { formatToken } from '../utils/format';
 import { centeredContent, colors, touch } from '../theme/tokens';
 
@@ -49,7 +52,7 @@ export function ModelCatalogScreen({ navigation }) {
     <View style={styles.card}>
       <View style={styles.cardTop}>
         <View style={[styles.iconBox, { backgroundColor: item.accentColor + '22' }]}>
-          <Text style={styles.icon}>{item.icon}</Text>
+          <AIProviderLogo provider={item.provider} size={40} />
         </View>
         <View style={styles.cardInfo}>
           <Text style={styles.name}>{item.name}</Text>
@@ -91,9 +94,7 @@ export function ModelCatalogScreen({ navigation }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>{'\u{276C}'} Quay lại</Text>
-        </TouchableOpacity>
+        <BackButton label="Quay lại" onPress={() => navigation.goBack()} />
         <Text style={styles.title}>Catalog mô hình AI</Text>
         <Text style={styles.sub}>OpenAI-compatible · thanh toán theo usage</Text>
       </View>
@@ -150,13 +151,13 @@ export function ModelCatalogScreen({ navigation }) {
             {detail && (
               <>
                 <View style={styles.modalHeader}>
-                  <Text style={styles.modalIcon}>{detail.icon}</Text>
+                  <AIProviderLogo provider={detail.provider} size={32} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.modalName}>{detail.name}</Text>
                     <Text style={styles.modalProvider}>{detail.providerName} · {detail.type}</Text>
                   </View>
                   <TouchableOpacity accessibilityRole="button" onPress={() => setDetail(null)}>
-                    <Text style={styles.modalClose}>{'\u{2715}'}</Text>
+                    <AppIcon name="x" size={18} color={colors.textDim} />
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.modalDesc}>{detail.description}</Text>

@@ -1,7 +1,7 @@
 # AIBox — React Native App (JavaScript)
 
 Nền tảng AI Marketplace + Prediction Market + Token Trading, xây bằng React Native (Expo) + JavaScript.
-Đăng nhập **chỉ bằng Google** qua Firebase Authentication; hồ sơ người dùng (role, trạng thái, tên, avatar)
+Đăng nhập bằng **email/mật khẩu hoặc Google** qua Firebase Authentication; hồ sơ người dùng (role, trạng thái, tên, avatar)
 lưu trên **Firestore**; ví token / positions / quests lưu local theo `uid` Firebase.
 
 ## 1. Cài đặt
@@ -94,10 +94,32 @@ Các lần sau chỉ cần `npx expo start --dev-client` rồi mở app **AIBox*
 npx expo start -c --go     # -g: mở ở chế độ Expo Go
 ```
 
-Trong Expo Go, màn đăng nhập có nút **"Vào chế độ demo (chỉ dev)"**:
-nút này chỉ hiện khi `__DEV__` và máy không có Google Sign-In native, tạo ví local
-(uid `demo-expo-go`) để test toàn bộ UI/chức năng mà **không** đăng nhập Google.
-Đăng xuất sẽ xoá ví demo. Đây không phải login thật — bản build dev client mới có Google Sign-In.
+Trong màn đăng nhập, tài khoản mẫu chỉ hiện ở bản dev và dùng ví local riêng:
+
+| Role | Email | Mật khẩu |
+|---|---|---|
+| Admin | `admin@aibox.local` | `Admin123!` |
+| Market Creator | `creator@aibox.local` | `Creator123!` |
+| Standard User | `user@aibox.local` | `User123!` |
+
+Đây là tài khoản giả lập để thử giao diện, không phải tài khoản Firebase thật.
+Đăng xuất giữ nguyên ví local của từng tài khoản mẫu.
+
+Đăng nhập/tạo tài khoản email thật dùng Firebase Authentication. Bật provider
+**Email/Password** tại Firebase Console → Authentication → Sign-in method.
+Tài khoản đăng ký mới nhận role `user`; admin có thể cấp role, còn Creator Pass nâng cấp tài khoản thành `creator` trong bản demo local.
+Google Sign-In thật vẫn cần dev client (không chạy trong Expo Go).
+
+### Quyền theo role
+
+| Role | Quyền xem và sử dụng |
+|---|---|
+| `user` | Các chức năng AI, markets, ví, giao dịch và dữ liệu cá nhân; không xem CMS hoặc cấu hình AI dùng chung |
+| `creator` | Như `user`, cộng thêm tạo market |
+| `admin` | Toàn bộ chức năng, Admin CMS và cấu hình AI dùng chung |
+
+Drawer và Profile chỉ hiện mục phù hợp với role. Các màn CMS và cấu hình AI cũng được chặn khi điều hướng trực tiếp; `CreateMarket` chỉ hiển thị biểu mẫu cho creator/admin. API key và lịch sử request thông thường vẫn được giới hạn theo tài khoản đang đăng nhập.
+Đây là kiểm soát ở giao diện/client; không thay thế kiểm tra quyền ở Firestore Rules hoặc backend cho dữ liệu và thao tác production.
 
 Yêu cầu máy build (Windows):
 - JDK 17 (`JAVA_HOME` trỏ tới bản JDK 17)
@@ -111,19 +133,15 @@ Nếu đổi `.env` → phải restart Metro (`npx expo start -c`) vì biến `E
 
 ## 4. Luồng đăng nhập
 
-```
-Bấm "Tiếp tục với Google"
-  → GoogleSignin.signIn()        (native, trả idToken)
-  → GoogleAuthProvider.credential(idToken)
-  → signInWithCredential()       (Firebase Auth, tự lưu phiên vào AsyncStorage)
-  → ensureUserProfile()          (đọc/tạo users/{uid} trên Firestore)
-  → AUTH_SESSION                 (tạo player record local theo uid, giữ ví riêng)
-```
+Email/mật khẩu dùng Firebase `signInWithEmailAndPassword()` / `createUserWithEmailAndPassword()`.
+Google Sign-In dùng `GoogleSignin.signIn()` → `GoogleAuthProvider.credential(idToken)` →
+`signInWithCredential()`. Cả hai luồng đều đọc/tạo `users/{uid}` rồi khởi tạo player record
+local theo UID Firebase để giữ ví riêng.
 
 - Firebase tự restore phiên khi mở lại app → không còn session 7 ngày / refresh watchdog.
 - `onSnapshot` trên `users/{uid}`: admin đổi role hoặc ban → app cập nhật ngay;
   bị ban giữa phiên → tự động đăng xuất kèm thông báo.
-- Admin được xác định bằng `EXPO_PUBLIC_ADMIN_EMAILS`, hoặc sửa field `role` trên Firestore.
+- Tài khoản đăng nhập mới mặc định có role `user`; quyền `admin` chỉ đến từ whitelist quản trị, còn `creator` có thể được mở khoá bằng Creator Pass trong Store.
 - Firestore lỗi (chưa bật / chưa deploy rules) **không chặn đăng nhập**:
   app dùng hồ sơ tạm và hiện cảnh báo đồng bộ.
 
@@ -136,10 +154,11 @@ Bấm "Tiếp tục với Google"
 5. **Leaderboard** — top trader + vị trí của bạn
 6. **Daily Reward** — nhận token miễn phí mỗi ngày + streak bonus
 7. **Quests / Store / Copy Trade / Notifications**
-8. **Admin CMS** — markets, AI models, users (role/ban trên Firestore), risk
-9. **Profile** — sửa tên + avatar, đăng xuất Google
-10. **Cấu hình AI thật** — Profile → Cấu hình AI: nhập Base URL / API key / model (OpenAI-compatible), test kết nối, lưu trên máy
-11. **Catalog / Usage Dashboard / Nạp token** — xem danh mục model, thống kê token theo model, nạp credit (mô phỏng)
+8. **Role access** — user dùng tính năng thường; creator có thêm tạo market; admin có CMS và cấu hình AI dùng chung
+9. **Admin CMS** — markets, AI models, users (role/ban trên Firestore), risk
+10. **Profile** — sửa tên + avatar, đăng xuất
+11. **Cấu hình AI thật** — admin nhập Base URL / API key / model (OpenAI-compatible), test kết nối, lưu trên máy
+12. **Catalog / Usage Dashboard / Nạp token** — xem danh mục model, thống kê token theo model, nạp credit (mô phỏng)
 
 ## 5.1. Gọi AI thật (OpenAI-compatible)
 

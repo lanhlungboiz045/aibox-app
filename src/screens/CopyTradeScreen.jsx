@@ -1,5 +1,7 @@
 // screens/CopyTradeScreen.jsx — Quản lý các trader đang copy
 import React from 'react';
+import { BackButton } from '../components/ui/BackButton';
+import { AppIcon } from '../components/ui/AppIcon';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
@@ -37,7 +39,7 @@ export function CopyTradeScreen({ navigation }) {
       contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.title}>Sao chép lệnh</Text>
         <View style={{ width: 50 }} />
       </View>
@@ -62,7 +64,7 @@ export function CopyTradeScreen({ navigation }) {
         myCopyTrades.map(config => (
           <View key={config.id} style={styles.card}>
             <View style={styles.cardHead}>
-              <Text style={styles.avatar}>{'\u{1F4C8}'}</Text>
+              <AppIcon name="trending-up" size={20} color={colors.accentSoft} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.name}>{config.leaderName}</Text>
                 <Text style={styles.meta}>

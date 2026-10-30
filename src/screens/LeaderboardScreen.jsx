@@ -7,6 +7,7 @@ import { LEADERBOARD } from '../data/mockData';
 import { formatToken } from '../utils/format';
 import { AppDrawer } from '../components/AppDrawer';
 import { IconButton } from '../components/ui';
+import { AppIcon } from '../components/ui/AppIcon';
 import { useAppDrawer } from '../hooks/useAppDrawer';
 import { t } from '../i18n';
 import { colors, centeredContent, touch } from '../theme/tokens';
@@ -64,7 +65,7 @@ export function LeaderboardScreen({ navigation }) {
               <Text style={styles.podiumAvatar}>{user.avatar}</Text>
               <Text style={styles.podiumName} numberOfLines={1}>{user.username}</Text>
               <Text style={styles.podiumTokens}>{formatToken(user.tokenBalance)}</Text>
-              <Text style={styles.podiumTokenLabel}>{'\u{1F4B0}'}</Text>
+              <AppIcon name="dollar-sign" size={14} color={colors.warning} style={styles.podiumTokenLabel} />
             </TouchableOpacity>
           ))}
         </View>
@@ -84,8 +85,8 @@ export function LeaderboardScreen({ navigation }) {
               {user.id === state.user.id && (
                 <View style={styles.youTag}><Text style={styles.youTagText}>Bạn</Text></View>
               )}
-              <Text style={styles.tokenBalance}>{formatToken(user.tokenBalance)} {'\u{1F4B0}'}</Text>
-              <Text style={styles.arrow}>{'\u{276F}'}</Text>
+              <Text style={styles.tokenBalance}>{formatToken(user.tokenBalance)} token</Text>
+              <AppIcon name="chevron-right" size={16} color={colors.textFaint} style={styles.arrow} />
             </TouchableOpacity>
           ))}
         </View>
@@ -112,7 +113,7 @@ const styles = StyleSheet.create({
   podiumAvatar: { fontSize: 32, marginBottom: 6 },
   podiumName: { color: colors.text, fontSize: 13, fontWeight: '600', marginBottom: 4 },
   podiumTokens: { color: colors.accentSoft, fontSize: 15, fontWeight: '700', fontFamily: 'monospace' },
-  podiumTokenLabel: { fontSize: 12 },
+  podiumTokenLabel: {},
   listSection: { paddingHorizontal: 16, gap: 4 },
   listItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: colors.borderSoft, gap: 10, minHeight: touch.min },
   listItemMe: { borderColor: colors.accent, backgroundColor: colors.accentDim },
@@ -122,5 +123,5 @@ const styles = StyleSheet.create({
   youTag: { backgroundColor: colors.accentStrong, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginRight: 8 },
   youTagText: { color: colors.onAccent, fontSize: 12, fontWeight: '600' },
   tokenBalance: { color: colors.accentSoft, fontSize: 13, fontWeight: '600', fontFamily: 'monospace' },
-  arrow: { color: colors.textFaint, fontSize: 12 },
+  arrow: {},
 });

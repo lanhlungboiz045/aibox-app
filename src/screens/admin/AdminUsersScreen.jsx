@@ -2,8 +2,10 @@
 // Nguồn dữ liệu: Firestore users/{uid} (xem src/services/users.js).
 // Ví token / số trade vẫn lấy từ player record local (AsyncStorage) để hiển thị.
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, Alert } from 'react-native';
+import { BackButton } from '../../components/ui/BackButton';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppIcon } from '../../components/ui/AppIcon';
 import { useApp } from '../../context/AppContext';
 import { ROLE_LABELS, ROLE_COLORS, PROVIDER_LABELS } from '../../data/accounts';
 import { formatTokenShort } from '../../utils/format';
@@ -146,7 +148,7 @@ export function AdminUsersScreen({ navigation }) {
       contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={styles.title}>Người dùng</Text>
         <TouchableOpacity
           accessibilityRole="button"
@@ -156,7 +158,7 @@ export function AdminUsersScreen({ navigation }) {
           style={styles.refreshButton}
           onPress={refresh}
         >
-          <Text style={styles.refreshBtn}>{loading ? '…' : '\u{21BB}'}</Text>
+          {loading ? <ActivityIndicator size="small" color={colors.accentSoft} /> : <AppIcon name="refresh-cw" size={16} color={colors.accentSoft} />}
         </TouchableOpacity>
       </View>
 
@@ -192,7 +194,7 @@ export function AdminUsersScreen({ navigation }) {
 
       {error && (
         <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{'\u{26A0}'} {error}</Text>
+          <Text style={styles.errorText}>{error}</Text>
           <Text style={styles.errorHint}>
             Danh sách này đọc từ Firestore — cần deploy firestore.rules và bật Firestore Database.
           </Text>
@@ -229,7 +231,7 @@ export function AdminUsersScreen({ navigation }) {
                 </View>
                 <Text style={styles.email} numberOfLines={1}>{account.email}</Text>
                 <Text style={styles.meta}>
-                  {PROVIDER_LABELS[account.provider] || account.provider} · {formatTokenShort(account.tokenBalance)} {'\u{1F4B0}'} · {trades} trades
+                  {PROVIDER_LABELS[account.provider] || account.provider} · {formatTokenShort(account.tokenBalance)} token · {trades} trades
                 </Text>
               </View>
             </View>
