@@ -333,8 +333,10 @@ không đổi (1 API token = 1 token app), chỉ đổi đơn vị hiển thị 
 từ chính các transaction đó. Nhờ vậy dữ liệu cũ không phải migrate, `sanitizeAccount` giữ nguyên, và lịch sử
 cược xuất hiện luôn trong Portfolio (chip lọc **Game**) và trong `TransactionItem`.
 
-Trải nghiệm: 1 chạm là 1 ván — xúc xắc lắc ~700ms rồi công bố kết quả bằng banner + toast + haptic +
-`AccessibilityInfo.announceForAccessibility`. Máy bật "giảm chuyển động" thì bỏ animation, công bố ngay.
+Trải nghiệm: cùng một cử chỉ cho mọi mức cược — chạm TÀI/XỈU là đặt. Mức **≥ 1.000** mở thêm bảng
+xác nhận (`BottomSheet`: thắng/thua/số dư sau ván thắng) vì một ván lớn ≈ 1–2 câu hỏi AI; mức ≤ 500 vào
+ván ngay. Xúc xắc lắc ~700ms rồi công bố kết quả bằng banner + toast (toast là kênh duy nhất TalkBack đọc,
+nội dung là số dư mới) + haptic. Máy bật "giảm chuyển động" thì bỏ animation, công bố ngay.
 Không đủ 100 token thì hiện `ErrorState` kèm nút **Nạp token** thay vì chặn màn; game chạy local nên offline
 vẫn cược được, chỉ hiện thêm `OfflineBar`.
 
