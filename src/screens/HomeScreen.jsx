@@ -1,195 +1,286 @@
-// screens/HomeScreen.jsx
+// screens/HomeScreen.jsx — Home bản gọn (Phần 2)
+// Header cố định 56px + 4 ô shortcut + banner 1 dòng. Markets đã bỏ khỏi Home.
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
-import { formatToken } from '../utils/format';
-import { QUESTS, QUEST_TOTAL_REWARD } from '../data/quests';
-import { TokenBadge } from '../components/TokenBadge';
-import { MarketCard } from '../components/MarketCard';
-import { AIModelCard } from '../components/AIModelCard';
-import { TransactionItem } from '../components/TransactionItem';
+import { formatToken, formatRelativeTime } from '../utils/format';
+import { QUESTS } from '../data/quests';
+import { AppDrawer } from '../components/AppDrawer';
 import { DailyRewardModal } from '../components/DailyRewardModal';
+import { AppIcon, MiniBanner, SectionHeader, ListRow } from '../components/ui';
+import { colors, layout, radius, spacing } from '../theme/tokens';
+
+// Ngưỡng coi là "số dư thấp" để hiện banner nhắc nạp thêm
+const LOW_BALANCE = 1000;
+
+const SHORTCUTS = [
+  { key: 'keys', icon: 'key', label: 'API Keys', route: 'APIKeys' },
+  { key: 'usage', icon: 'bar-chart-2', label: 'Usage', route: 'UsageDashboard' },
+  { key: 'topup', icon: 'credit-card', label: 'Nạp tiền', route: 'CreditsTopup' },
+  { key: 'chat', icon: 'message-square', label: 'Chat', route: 'AIHub' },
+];
 
 export function HomeScreen({ navigation }) {
-  const { state, canClaimDaily, nextDailyReward, unreadNotifications, questState } = useApp();
+  const {
+    state, canClaimDaily, nextDailyReward, unreadNotifications, questState,
+  } = useApp();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [showDaily, setShowDaily] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
 
-  const trendingMarkets = [...state.markets].sort((a, b) => b.volume - a.volume).slice(0, 4);
-  const popularModels = [...state.aiModels].sort((a, b) => b.popularity - a.popularity).slice(0, 4);
-  const recentTxs = state.user.transactions.slice(0, 5);
+  const user = state.user;
+  const balance = user?.tokenBalance || 0;
   const claimedQuests = questState?.claimed?.length || 0;
+  const unclaimedQuests = Math.max(QUESTS.length - claimedQuests, 0);
 
-  const onRefresh = () => { setRefreshing(true); setTimeout(() => setRefreshing(false), 1000); };
+  // Request gần đây: tạm lấy 3 giao dịch AI_CALL mới nhất (Phần 5 sẽ thay bằng Logs thật)
+  const recentCalls = (user?.transactions || []).filter(t => t.type === 'AI_CALL').slice(0, 3);
+
+  // Banner chỉ hiện 1 dòng, ưu tiên: thưởng ngày > số dư thấp > nhiệm vụ
+  const banner = (() => {
+    if (canClaimDaily) {
+      return {
+        icon: 'gift',
+        tone: 'accent',
+        text: `Nhận ${formatToken(nextDailyReward)} token miễn phí hôm nay`,
+        onPress: () => setShowDaily(true),
+      };
+    }
+    if (balance < LOW_BALANCE) {
+      return {
+        icon: 'alert-triangle',
+        tone: 'warning',
+        text: 'Số dư còn thấp, nạp thêm để tiếp tục gọi AI',
+        onPress: () => navigation.navigate('CreditsTopup'),
+      };
+    }
+    if (unclaimedQuests > 0) {
+      return {
+        icon: 'target',
+        tone: 'accent',
+        text: `Còn ${unclaimedQuests} nhiệm vụ hôm nay chưa nhận thưởng`,
+        onPress: () => navigation.navigate('Quests'),
+      };
+    }
+    return null;
+  })();
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 800);
+  };
 
   return (
-    <ScrollView
-      style={styles.container}
-      // Tab bar bên dưới đã tự chừa insets.bottom → chỉ cần chừa status bar ở trên
-      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: 20 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C5CE7" />}
-    >
-      <View style={styles.header}>
-        <Text style={styles.logo}>AIBox</Text>
-        <View style={styles.headerRight}>
-          <TokenBadge size="medium" />
-          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Notifications')}>
-            <Text style={styles.iconBtnText}>{'\u{1F514}'}</Text>
-            {unreadNotifications > 0 && (
+    <View style={styles.container}>
+      {/* Header cố định: không cuộn theo nội dung */}
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <View style={styles.headerInner}>
+          <TouchableOpacity
+            style={styles.menuBtn}
+            onPress={() => setShowDrawer(true)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <AppIcon name="menu" size={20} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.brand}>AIBox</Text>
+
+          <View style={{ flex: 1 }} />
+
+          <TouchableOpacity
+            style={styles.balancePill}
+            onPress={() => navigation.navigate('CreditsTopup')}
+            activeOpacity={0.85}
+          >
+            <AppIcon name="credit-card" size={12} color={colors.accentSoft} />
+            <Text style={styles.balanceText} numberOfLines={1}>{formatToken(balance)} {'\u{1F4B0}'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => navigation.navigate('Notifications')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <AppIcon name="bell" size={18} color={colors.textDim} />
+            {unreadNotifications > 0 ? (
               <View style={styles.bellBadge}>
                 <Text style={styles.bellBadgeText}>{unreadNotifications > 9 ? '9+' : unreadNotifications}</Text>
               </View>
-            )}
+            ) : null}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.avatarBtn} onPress={() => navigation.navigate('Profile')}>
-            <Text style={styles.avatarText}>{state.user.avatar}</Text>
+
+          <TouchableOpacity style={styles.avatar} onPress={() => navigation.navigate('Profile')} activeOpacity={0.85}>
+            <Text style={styles.avatarText}>{user?.avatar || '\u{1F464}'}</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Lối tắt tới các tính năng kiểu AI Box */}
-      <View style={styles.shortcutRow}>
-        <TouchableOpacity style={styles.shortcutBtn} onPress={() => navigation.navigate('ModelCatalog')} activeOpacity={0.85}>
-          <Text style={styles.shortcutIcon}>{'\u{1F4DA}'}</Text>
-          <Text style={styles.shortcutLabel}>Catalog</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.shortcutBtn} onPress={() => navigation.navigate('UsageDashboard')} activeOpacity={0.85}>
-          <Text style={styles.shortcutIcon}>{'\u{1F4CA}'}</Text>
-          <Text style={styles.shortcutLabel}>Usage</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.shortcutBtn} onPress={() => navigation.navigate('CreditsTopup')} activeOpacity={0.85}>
-          <Text style={styles.shortcutIcon}>{'\u{1F4B3}'}</Text>
-          <Text style={styles.shortcutLabel}>Nạp token</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.shortcutBtn} onPress={() => navigation.navigate('AIHub')} activeOpacity={0.85}>
-          <Text style={styles.shortcutIcon}>{'\u{1F916}'}</Text>
-          <Text style={styles.shortcutLabel}>AI Hub</Text>
-        </TouchableOpacity>
-      </View>
-
-      {canClaimDaily && (
-        <TouchableOpacity style={styles.dailyCard} onPress={() => setShowDaily(true)} activeOpacity={0.8}>
-          <Text style={styles.dailyIcon}>{'\u{1F381}'}</Text>
-          <View style={styles.dailyContent}>
-            <Text style={styles.dailyTitle}>Nhận {formatToken(nextDailyReward)} token miễn phí!</Text>
-            <Text style={styles.dailySub}>Streak hiện tại: {state.user.dailyStreak} ngày</Text>
-          </View>
-          <Text style={styles.dailyArrow}>{'\u{276F}'}</Text>
-        </TouchableOpacity>
-      )}
-
-      <TouchableOpacity style={styles.questCard} onPress={() => navigation.navigate('Quests')} activeOpacity={0.8}>
-        <Text style={styles.questIcon}>{'\u{1F3AF}'}</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.questTitle}>Nhiệm vụ ngày · {claimedQuests}/{QUESTS.length}</Text>
-          <Text style={styles.questSub}>
-            Làm quest để nhận tối đa {formatToken(QUEST_TOTAL_REWARD)} token mỗi ngày
-          </Text>
-        </View>
-        <Text style={styles.questArrow}>{'\u{276F}'}</Text>
-      </TouchableOpacity>
-
-      <View style={styles.quickGrid}>
-        <TouchableOpacity style={[styles.quickCard, { borderColor: 'rgba(16, 163, 127, 0.3)' }]} onPress={() => navigation.navigate('AIHub')}>
-          <Text style={styles.quickIcon}>{'\u{1F916}'}</Text>
-          <Text style={styles.quickLabel}>AI Hub</Text>
-          <Text style={styles.quickSub}>{state.aiModels.length} models</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.quickCard, { borderColor: 'rgba(0, 206, 126, 0.3)' }]} onPress={() => navigation.navigate('Markets')}>
-          <Text style={styles.quickIcon}>{'\u{1F4C8}'}</Text>
-          <Text style={styles.quickLabel}>Markets</Text>
-          <Text style={styles.quickSub}>{state.markets.length} events</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.quickCard, { borderColor: 'rgba(255, 183, 77, 0.3)' }]} onPress={() => navigation.navigate('Transfer')}>
-          <Text style={styles.quickIcon}>{'\u{1F4B8}'}</Text>
-          <Text style={styles.quickLabel}>Transfer</Text>
-          <Text style={styles.quickSub}>Gửi token</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{'\u{1F525}'} Trending Markets</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Markets')}><Text style={styles.seeAll}>Xem tất cả</Text></TouchableOpacity>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
-          {trendingMarkets.map(m => (
-            <View key={m.id} style={{ width: 280 }}>
-              <MarketCard market={m} onPress={() => navigation.navigate('MarketDetail', { marketId: m.id })}
-                onYes={() => navigation.navigate('MarketDetail', { marketId: m.id, initialSide: 'YES' })}
-                onNo={() => navigation.navigate('MarketDetail', { marketId: m.id, initialSide: 'NO' })} />
-            </View>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 4 ô shortcut vuông, chạm là vào thẳng màn tương ứng */}
+        <View style={styles.shortcutRow}>
+          {SHORTCUTS.map(item => (
+            <TouchableOpacity
+              key={item.key}
+              style={styles.shortcut}
+              onPress={() => navigation.navigate(item.route)}
+              activeOpacity={0.85}
+            >
+              <View style={styles.shortcutIcon}>
+                <AppIcon name={item.icon} size={18} color={colors.accentSoft} />
+              </View>
+              <Text style={styles.shortcutLabel} numberOfLines={1}>{item.label}</Text>
+            </TouchableOpacity>
           ))}
-        </ScrollView>
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{'\u{1F916}'} Popular AI</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('AIHub')}><Text style={styles.seeAll}>Xem tất cả</Text></TouchableOpacity>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
-          {popularModels.map(m => (
-            <View key={m.id} style={{ width: 260 }}>
-              <AIModelCard model={m} compact onPress={() => navigation.navigate('AIHub')} />
-            </View>
-          ))}
-        </ScrollView>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{'\u{1F4DD}'} Hoạt động gần đây</Text>
-        {recentTxs.length === 0 ? (
-          <Text style={styles.empty}>Chưa có hoạt động nào. Bắt đầu khám phá!</Text>
-        ) : (
-          <View style={styles.txList}>
-            {recentTxs.map(tx => <TransactionItem key={tx.id} tx={tx} />)}
+        {banner ? (
+          <MiniBanner
+            icon={banner.icon}
+            text={banner.text}
+            tone={banner.tone}
+            onPress={banner.onPress}
+          />
+        ) : null}
+
+        {/* Tạm thời: 3 request AI gần nhất — Phần 5 thay bằng Logs + nút "Xem tất cả" */}
+        <View style={styles.section}>
+          <SectionHeader
+            title="Request gần đây"
+            onAction={() => navigation.navigate('UsageDashboard')}
+          />
+          <View style={styles.card}>
+            {recentCalls.length === 0 ? (
+              <Text style={styles.empty}>Chưa có request nào. Hỏi AI trong tab Chat để bắt đầu.</Text>
+            ) : recentCalls.map((tx, index) => {
+              const model = state.aiModels.find(m => m.id === tx.modelId);
+              return (
+                <View key={tx.id}>
+                  {index > 0 ? <View style={styles.divider} /> : null}
+                  <ListRow
+                    icon="zap"
+                    title={model?.name || 'AI model'}
+                    subtitle={`${formatRelativeTime(tx.timestamp)} · ${formatToken(Math.abs(tx.amount))} token`}
+                    right={<Text style={styles.amount}>-{formatToken(Math.abs(tx.amount))}</Text>}
+                    chevron={false}
+                    onPress={() => navigation.navigate('UsageDashboard')}
+                  />
+                </View>
+              );
+            })}
           </View>
-        )}
-      </View>
+        </View>
+      </ScrollView>
 
+      <AppDrawer visible={showDrawer} onClose={() => setShowDrawer(false)} navigation={navigation} />
       <DailyRewardModal visible={showDaily} onClose={() => setShowDaily(false)} />
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1115' },
-  shortcutRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 12 },
-  shortcutBtn: { flex: 1, backgroundColor: '#1A1D24', borderRadius: 10, borderWidth: 1, borderColor: '#2A2E36', paddingVertical: 10, alignItems: 'center' },
-  shortcutIcon: { fontSize: 18 },
-  shortcutLabel: { color: '#8E8E93', fontSize: 10, marginTop: 2, fontWeight: '600' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logo: { color: '#FFFFFF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
-  iconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#1A1D24', borderWidth: 1, borderColor: '#2A2E36', alignItems: 'center', justifyContent: 'center' },
-  iconBtnText: { fontSize: 17 },
-  bellBadge: { position: 'absolute', top: -2, right: -2, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: '#FF6B6B', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  header: {
+    backgroundColor: colors.bg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headerInner: {
+    height: layout.headerHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: layout.gutter,
+    gap: spacing.sm,
+  },
+  menuBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brand: { color: colors.text, fontSize: 18, fontWeight: '800', letterSpacing: -0.3 },
+  balancePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.45)',
+    backgroundColor: colors.accentDim,
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    maxWidth: 128,
+    flexShrink: 1,
+  },
+  balanceText: { color: colors.accentSoft, fontSize: 12, fontWeight: '700', flexShrink: 1 },
+  iconBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  bellBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    minWidth: 15,
+    height: 15,
+    borderRadius: 8,
+    backgroundColor: colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
   bellBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '800' },
-  avatarBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#22262E', borderWidth: 1, borderColor: '#2A2E36', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: 18 },
-  dailyCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 183, 77, 0.12)', marginHorizontal: 16, marginBottom: 12, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(255, 183, 77, 0.3)', gap: 12 },
-  dailyIcon: { fontSize: 28 },
-  dailyContent: { flex: 1 },
-  dailyTitle: { color: '#FFB74D', fontSize: 14, fontWeight: '600' },
-  dailySub: { color: '#8E8E93', fontSize: 12, marginTop: 2 },
-  dailyArrow: { color: '#FFB74D', fontSize: 16 },
-  questCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1D24', marginHorizontal: 16, marginBottom: 12, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: 'rgba(108, 92, 231, 0.35)', gap: 12 },
-  questIcon: { fontSize: 26 },
-  questTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-  questSub: { color: '#8E8E93', fontSize: 11, marginTop: 2 },
-  questArrow: { color: '#6C5CE7', fontSize: 16 },
-  quickGrid: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 16 },
-  quickCard: { flex: 1, backgroundColor: '#22262E', borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
-  quickIcon: { fontSize: 28, marginBottom: 6 },
-  quickLabel: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-  quickSub: { color: '#5C5C5C', fontSize: 11, marginTop: 2 },
-  section: { marginBottom: 16 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 8 },
-  sectionTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '600', paddingHorizontal: 16, marginBottom: 8 },
-  seeAll: { color: '#6C5CE7', fontSize: 13 },
-  txList: { backgroundColor: '#1A1D24', borderRadius: 12, marginHorizontal: 16, overflow: 'hidden' },
-  empty: { color: '#5C5C5C', fontSize: 13, textAlign: 'center', padding: 20 },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceHi,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { fontSize: 15 },
+  scroll: { flex: 1 },
+  content: {
+    paddingHorizontal: layout.gutter,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xxl,
+    gap: layout.sectionGap,
+  },
+  shortcutRow: { flexDirection: 'row', gap: 10 },
+  shortcut: {
+    flex: 1,
+    aspectRatio: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  shortcutIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.sm,
+    backgroundColor: colors.accentDim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shortcutLabel: { color: colors.text, fontSize: 11, fontWeight: '600' },
+  section: { gap: 0 },
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  divider: { height: 1, backgroundColor: colors.border, marginLeft: layout.gutter },
+  amount: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
+  empty: { color: colors.textFaint, fontSize: 12, padding: spacing.lg, lineHeight: 18 },
 });

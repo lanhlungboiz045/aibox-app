@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors } from '../theme/tokens';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { AIHubScreen } from '../screens/AIHubScreen';
@@ -11,6 +12,7 @@ import { ModelCatalogScreen } from '../screens/ModelCatalogScreen';
 import { UsageDashboardScreen } from '../screens/UsageDashboardScreen';
 import { CreditsTopupScreen } from '../screens/CreditsTopupScreen';
 import { AISettingsScreen } from '../screens/AISettingsScreen';
+import { APIKeysScreen } from '../screens/APIKeysScreen';
 import { MarketsScreen } from '../screens/MarketsScreen';
 import { MarketDetailScreen } from '../screens/MarketDetailScreen';
 import { PortfolioScreen } from '../screens/PortfolioScreen';
@@ -50,16 +52,16 @@ export function MainTabNavigator() {
         // Ẩn tab bar khi mở bàn phím để input chat không bị tab bar + keyboard chồng lên
         tabBarHideOnKeyboard: true,
         tabBarStyle: {
-          backgroundColor: '#1A1D24',
-          borderTopColor: '#2A2E36',
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
           // Tab bar là phần tử cuối màn hình nên phải tự chừa home indicator / nav bar
           paddingBottom: Math.max(insets.bottom, 6),
           paddingTop: 6,
           height: 56 + Math.max(insets.bottom, 6),
         },
-        tabBarActiveTintColor: '#6C5CE7',
-        tabBarInactiveTintColor: '#5C5C5C',
+        tabBarActiveTintColor: colors.accentSoft,
+        tabBarInactiveTintColor: colors.textFaint,
         tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
         tabBarIcon: ({ focused }) => (
           <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>
@@ -87,6 +89,7 @@ export function AppNavigator() {
       <Stack.Screen name="UsageDashboard" component={UsageDashboardScreen} />
       <Stack.Screen name="CreditsTopup" component={CreditsTopupScreen} />
       <Stack.Screen name="AISettings" component={AISettingsScreen} />
+      <Stack.Screen name="APIKeys" component={APIKeysScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Transfer" component={TransferScreen} />
       <Stack.Screen name="Store" component={StoreScreen} />
