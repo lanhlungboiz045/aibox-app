@@ -9,6 +9,25 @@ import { getStoreItem } from '../data/storeItems';
 import { formatToken } from '../utils/format';
 import { MIN_AI_CALL_BALANCE } from '../utils/aiCost';
 
+// Hiển thị kết quả phân tích: bỏ ký hiệu markdown (**bold**) và làm nổi 3 dòng kết luận/hành động
+function AnalysisText({ text }) {
+  const lines = String(text || '').split('\n');
+  return (
+    <View>
+      {lines.map((raw, index) => {
+        const line = raw.replace(/\*\*/g, '').replace(/^#{1,6}\s*/, '').trimEnd();
+        if (!line.trim()) return <View key={index} style={styles.spacer} />;
+        const isVerdict = /^(KẾT LUẬN|HÀNH ĐỘNG|TÓM TẮT)\s*:/.test(line);
+        return (
+          <Text key={index} style={isVerdict ? styles.verdictLine : styles.resultText} selectable>
+            {line}
+          </Text>
+        );
+      })}
+    </View>
+  );
+}
+
 export function MarketAnalystModal({ visible, market, onClose }) {
   const { state, analyzeMarketAI, aiConfig } = useApp();
   const user = state.user;
@@ -150,7 +169,7 @@ export function MarketAnalystModal({ visible, market, onClose }) {
                     {' · '}{result.mode === 'live' ? 'LIVE' : 'MOCK'}
                   </Text>
                 </View>
-                <Text style={styles.resultText} selectable>{result.text}</Text>
+                <AnalysisText text={result.text} />
                 <View style={styles.resultActions}>
                   <TouchableOpacity
                     style={styles.secondaryBtn}
@@ -199,6 +218,8 @@ const styles = StyleSheet.create({
   resultMeta: { backgroundColor: '#22262E', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, alignSelf: 'flex-start', marginTop: 6, marginBottom: 10 },
   resultMetaText: { color: '#8E8E93', fontSize: 11, fontFamily: 'monospace' },
   resultText: { color: '#E0E0E0', fontSize: 13, lineHeight: 21 },
+  verdictLine: { color: '#FFFFFF', fontSize: 13, lineHeight: 20, fontWeight: '600', backgroundColor: '#22262E', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 6, overflow: 'hidden' },
+  spacer: { height: 6 },
   resultActions: { flexDirection: 'row', gap: 8, marginTop: 16 },
   secondaryBtn: { flex: 1, backgroundColor: '#22262E', borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#2A2E36' },
   secondaryText: { color: '#8E8E93', fontSize: 14, fontWeight: '600' },

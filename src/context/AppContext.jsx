@@ -15,7 +15,7 @@ import { STORE_ITEMS, getStoreItem } from '../data/storeItems';
 import { QUESTS, ensureQuestState, getQuestProgress } from '../data/quests';
 import { clamp, generateId, toDayKey, daysBetween } from '../utils/format';
 import { getDailyReward } from '../utils/rewards';
-import { buildMarketAnalysis } from '../utils/analyst';
+import { buildMarketAnalysis, buildMarketPrompt, ANALYST_SYSTEM_PROMPT } from '../utils/analyst';
 import { MIN_AI_CALL_BALANCE, costFromUsage, chargeTokens } from '../utils/aiCost';
 import {
   subscribeAuth,
@@ -1434,27 +1434,12 @@ export function AppProvider({ children }) {
       };
     }
 
-    const marketPrompt = [
-      'Phân tích prediction market dưới đây bằng tiếng Việt.',
-      '',
-      `Câu hỏi: ${market.question}`,
-      market.description ? `Mô tả: ${market.description}` : null,
-      `Giá YES: ${market.yesPrice}% · NO: ${market.noPrice}%`,
-      `Volume: ${market.volume} token · Liquidity: ${market.liquidity} token`,
-      `Danh mục: ${market.category} · Kết thúc: ${market.endDate}`,
-      market.creatorName ? `Người tạo: ${market.creatorName}` : null,
-      extraPrompt ? `Yêu cầu thêm: ${extraPrompt}` : null,
-      '',
-      'Trả lời theo cấu trúc: 1) Định giá & kỳ vọng, 2) Luận điểm YES, 3) Luận điểm NO, '
-        + '4) Rủi ro chính, 5) Gợi ý quản trị vốn. Không hứa hẹn lợi nhuận.',
-    ].filter(Boolean).join('\n');
+    // Prompt ép ra NHẬN ĐỊNH CỤ THỂ (YES/NO + xác suất + edge), không chỉ khuyên chung chung.
+    // Đặt kết luận ở đầu để câu trả lời không bị mất ý chính khi bị cắt token.
+    const marketPrompt = buildMarketPrompt(market, extraPrompt);
 
     const messages = [
-      {
-        role: 'system',
-        content: 'Bạn là chuyên gia phân tích prediction market. Trả lời tiếng Việt, '
-          + 'thực tế, có cấu trúc, không đưa lời khuyên đầu tư chắc chắn.',
-      },
+      { role: 'system', content: ANALYST_SYSTEM_PROMPT },
       { role: 'user', content: marketPrompt },
     ];
 
