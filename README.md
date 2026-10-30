@@ -197,6 +197,28 @@ Chi tiết code: `src/services/chatHistory.js` (`loadChatHistory`, `saveModelHis
 `clearModelHistory`, `clearAllChatHistory`, `countByModel`), UI ở `src/screens/AIHubScreen.jsx`
 (badge 💬 trên `AIModelCard`).
 
+## 5.3. AI Market Analyst
+
+Nút "Hỏi AI về kèo này" trong chi tiết market gửi dữ liệu kèo (câu hỏi, mô tả, giá YES/NO,
+volume, liquidity, hạn kết thúc) lên model đã chọn. Prompt yêu cầu **nhận định cụ thể**, không
+phải lời khuyên chung chung:
+
+```
+KẾT LUẬN: YES | NO | BỎ QUA — xác suất ước tính X% (thị trường Y%) — edge ±Z điểm — độ tin cậy
+HÀNH ĐỘNG: mua bên nào, vùng giá vào %, % số dư, mức chốt lời, điều kiện cắt lỗ
+TÓM TẮT: lý do chính lệch so với giá thị trường
+```
+
+Sau đó là 4 mục phân tích: vì sao lệch giá, 3 luận điểm ủng hộ, 3 luận điểm ngược + điều kiện
+khiến nhận định sai, kịch bản thời gian. Quy tắc trong prompt: phải chọn YES/NO khi edge ≥ 3
+điểm, chỉ bỏ qua khi thị trường đã định giá đúng; giá dùng đơn vị % cho khớp app; vị thế tối đa
+5% số dư với kèo thể thao/crypto/chính trị, 10% với loại khác. Kết luận đặt ở **đầu** câu trả lời
+để không bị mất khi phản hồi bị cắt token.
+
+Khi chưa cấu hình AI thật, `src/utils/analyst.js` sinh bản MOCK theo cùng cấu trúc: ước tính xác
+suất bằng heuristic (giá lệch xa 50 khi thanh khoản mỏng → kéo về gần 50), từ đó chọn YES/NO và
+tính edge, độ tin cậy, vùng giá vào, chốt lời.
+
 ## 6. Cấu trúc project
 
 ```
