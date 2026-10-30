@@ -9,7 +9,7 @@ import { getStoreItem } from '../data/storeItems';
 import { formatToken } from '../utils/format';
 
 export function MarketAnalystModal({ visible, market, onClose }) {
-  const { state, analyzeMarket } = useApp();
+  const { state, analyzeMarketAI, aiConfig } = useApp();
   const user = state.user;
 
   const availableModels = state.aiModels.filter(m => m.isAvailable);
@@ -36,17 +36,18 @@ export function MarketAnalystModal({ visible, market, onClose }) {
   // Prompt pack mua trong Store → dùng làm yêu cầu thêm
   const promptPacks = user.inventory.map(getStoreItem).filter(item => item && item.type === 'prompt');
 
-  const run = () => {
+  const run = async () => {
     if (!model) { setError('Chưa chọn model.'); return; }
     setBusy(true);
     setError(null);
-    // Giả lập độ trễ gọi API
-    setTimeout(() => {
-      const response = analyzeMarket(market.id, model.id, extraPrompt.trim());
-      setBusy(false);
-      if (!response.ok) { setError(response.error); return; }
-      setResult({ text: response.text, modelName: model.name, cost });
-    }, 500);
+    const response = await analyzeMarketAI({
+      marketId: market.id,
+      modelId: model.id,
+      extraPrompt: extraPrompt.trim(),
+    });
+    setBusy(false);
+    if (!response.ok) { setError(response.error); return; }
+    setResult({ text: response.text, modelName: model.name, cost, mode: response.mode });
   };
 
   return (
@@ -124,13 +125,20 @@ export function MarketAnalystModal({ visible, market, onClose }) {
                     : <Text style={styles.runText}>{'\u{2728}'} Phân tích ngay</Text>}
                 </TouchableOpacity>
                 {!canAfford && <Text style={styles.hint}>Không đủ token — vào Store hoặc nhận thưởng quests.</Text>}
+                {aiConfig?.mode !== 'live' && (
+                  <Text style={styles.hint}>
+                    {'\u{26A0}\u{FE0F}'} Chưa cấu hình AI thật — kết quả là phân tích mẫu (Profile → Cấu hình AI).
+                  </Text>
+                )}
               </>
             )}
 
             {result && (
               <>
                 <View style={styles.resultMeta}>
-                  <Text style={styles.resultMetaText}>{result.modelName} · -{result.cost} {'\u{1F4B0}'}</Text>
+                  <Text style={styles.resultMetaText}>
+                    {result.modelName} · -{result.cost} {'\u{1F4B0}'} · {result.mode === 'live' ? 'LIVE' : 'MOCK'}
+                  </Text>
                 </View>
                 <Text style={styles.resultText} selectable>{result.text}</Text>
                 <View style={styles.resultActions}>

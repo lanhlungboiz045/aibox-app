@@ -30,6 +30,16 @@ import {
   updateUserStatus,
   listUserProfiles,
 } from '../services/users';
+import {
+  loadAISettings,
+  saveAISettings,
+  resetAISettings,
+  getAIStatus,
+  isLiveMode,
+  buildChatMessages,
+  chatComplete,
+  testAIConnection,
+} from '../services/ai';
 
 const STORAGE_KEY = '@aibox_state';
 // Key của format cũ (2 key, không version) — chỉ đọc 1 lần để migrate markets
@@ -1049,6 +1059,17 @@ export function AppProvider({ children }) {
   const stateRef = useRef(state);
   const persistTimer = useRef(null);
 
+  // ---------- CẤU HÌNH AI (OpenAI-compatible) ----------
+  // Runtime config nằm ở services/ai.js; ở đây giữ bản copy để UI render lại
+  const [aiConfig, setAiConfig] = useState(() => getAIStatus());
+  useEffect(() => {
+    let cancelled = false;
+    loadAISettings().then(() => {
+      if (!cancelled) setAiConfig(getAIStatus());
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   // Load state từ AsyncStorage khi app start
   useEffect(() => {
     let cancelled = false;
@@ -1314,21 +1335,68 @@ export function AppProvider({ children }) {
     return { ok: true };
   }, []);
 
-  const callAI = useCallback((modelId, prompt) => {
+  // ---------- AI THẬT (OpenAI-compatible) ----------
+
+  // Lưu cấu hình AI từ màn Cấu hình (AsyncStorage) + cập nhật UI
+  const saveAIConfig = useCallback(async (patch) => {
+    await saveAISettings(patch);
+    const status = getAIStatus();
+    setAiConfig(status);
+    return status;
+  }, []);
+
+  const resetAIConfig = useCallback(async () => {
+    await resetAISettings();
+    const status = getAIStatus();
+    setAiConfig(status);
+    return status;
+  }, []);
+
+  const testAIConnect = useCallback(() => testAIConnection(), []);
+
+  // Gửi 1 tin nhắn chat: chỉ trừ token khi AI trả lời thành công
+  const sendAIMessage = useCallback(async ({ modelId, prompt, history = [] } = {}) => {
     const current = stateRef.current;
     const user = getCurrentUser(current);
     const model = current.aiModels.find(m => m.id === modelId);
-    if (!user || !model || !model.isAvailable) return null;
-    if (user.tokenBalance < model.tokenCost) return null;
+    const text = String(prompt || '').trim();
 
-    dispatch({ type: 'AI_CALL', payload: { modelId, prompt } });
-    // Trả mock response ngẫu nhiên
-    const response = MOCK_AI_RESPONSES[Math.floor(Math.random() * MOCK_AI_RESPONSES.length)];
-    return response.replace('X', model.tokenCost.toString());
+    if (!user) return { ok: false, error: 'Bạn cần đăng nhập.' };
+    if (!model) return { ok: false, error: 'Model không tồn tại.' };
+    if (!model.isAvailable) return { ok: false, error: 'Model đang tạm bảo trì.' };
+    if (!text) return { ok: false, error: 'Nội dung trống.' };
+    if (user.tokenBalance < model.tokenCost) {
+      return { ok: false, error: `Cần ${model.tokenCost} token, bạn chỉ có ${user.tokenBalance}.` };
+    }
+
+    // Chưa cấu hình key → dùng mock để app vẫn demo được
+    if (!isLiveMode()) {
+      dispatch({ type: 'AI_CALL', payload: { modelId, prompt: text } });
+      const response = MOCK_AI_RESPONSES[Math.floor(Math.random() * MOCK_AI_RESPONSES.length)]
+        || 'Đây là câu trả lời mô phỏng (chưa cấu hình API key).';
+      return { ok: true, mode: 'mock', text: response.replace('X', model.tokenCost.toString()), model: model.id };
+    }
+
+    const result = await chatComplete({
+      appModelId: modelId,
+      messages: buildChatMessages({ history, prompt: text }),
+    });
+
+    if (!result.ok) return { ok: false, mode: result.mode || 'live', error: result.error };
+
+    dispatch({ type: 'AI_CALL', payload: { modelId, prompt: text } });
+    return {
+      ok: true,
+      mode: 'live',
+      text: result.text,
+      model: result.model,
+      usage: result.usage,
+      latencyMs: result.latencyMs,
+    };
   }, []);
 
-  // AI Market Analyst: dùng market làm context rồi tính phí như 1 lần gọi AI
-  const analyzeMarket = useCallback((marketId, modelId, extraPrompt = '') => {
+  // AI Market Analyst thật: đưa dữ liệu kèo vào prompt, tính phí như 1 lần gọi AI
+  const analyzeMarketAI = useCallback(async ({ marketId, modelId, extraPrompt = '' } = {}) => {
     const current = stateRef.current;
     const user = getCurrentUser(current);
     const market = current.markets.find(m => m.id === marketId);
@@ -1342,12 +1410,46 @@ export function AppProvider({ children }) {
       return { ok: false, error: `Cần ${model.tokenCost} token, bạn chỉ có ${user.tokenBalance}.` };
     }
 
-    dispatch({
-      type: 'AI_CALL',
-      payload: { modelId, prompt: `Phân tích kèo: ${market.question}` },
+    const prompt = `Phân tích kèo: ${market.question}`;
+
+    if (!isLiveMode()) {
+      dispatch({ type: 'AI_CALL', payload: { modelId, prompt } });
+      return { ok: true, mode: 'mock', text: buildMarketAnalysis(market, model, extraPrompt) };
+    }
+
+    const marketPrompt = [
+      'Phân tích prediction market dưới đây bằng tiếng Việt.',
+      '',
+      `Câu hỏi: ${market.question}`,
+      market.description ? `Mô tả: ${market.description}` : null,
+      `Giá YES: ${market.yesPrice}% · NO: ${market.noPrice}%`,
+      `Volume: ${market.volume} token · Liquidity: ${market.liquidity} token`,
+      `Danh mục: ${market.category} · Kết thúc: ${market.endDate}`,
+      market.creatorName ? `Người tạo: ${market.creatorName}` : null,
+      extraPrompt ? `Yêu cầu thêm: ${extraPrompt}` : null,
+      '',
+      'Trả lời theo cấu trúc: 1) Định giá & kỳ vọng, 2) Luận điểm YES, 3) Luận điểm NO, '
+        + '4) Rủi ro chính, 5) Gợi ý quản trị vốn. Không hứa hẹn lợi nhuận.',
+    ].filter(Boolean).join('\n');
+
+    const result = await chatComplete({
+      appModelId: modelId,
+      messages: [
+        {
+          role: 'system',
+          content: 'Bạn là chuyên gia phân tích prediction market. Trả lời tiếng Việt, '
+            + 'thực tế, có cấu trúc, không đưa lời khuyên đầu tư chắc chắn.',
+        },
+        { role: 'user', content: marketPrompt },
+      ],
+      temperature: 0.4,
+      maxTokens: 900,
     });
 
-    return { ok: true, text: buildMarketAnalysis(market, model, extraPrompt) };
+    if (!result.ok) return { ok: false, mode: 'live', error: result.error };
+
+    dispatch({ type: 'AI_CALL', payload: { modelId, prompt } });
+    return { ok: true, mode: 'live', text: result.text, model: result.model, usage: result.usage };
   }, []);
 
   const transfer = useCallback((recipient, amount, note) => {
@@ -1522,8 +1624,13 @@ export function AppProvider({ children }) {
         buyShares,
         sellShares,
         resolveMarket,
-        callAI,
-        analyzeMarket,
+        // AI (OpenAI-compatible)
+        aiConfig,
+        saveAIConfig,
+        resetAIConfig,
+        testAIConnect,
+        sendAIMessage,
+        analyzeMarketAI,
         transfer,
         claimDailyReward,
         claimQuest,

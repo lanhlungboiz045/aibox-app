@@ -136,6 +136,38 @@ Bấm "Tiếp tục với Google"
 7. **Quests / Store / Copy Trade / Notifications**
 8. **Admin CMS** — markets, AI models, users (role/ban trên Firestore), risk
 9. **Profile** — sửa tên + avatar, đăng xuất Google
+10. **Cấu hình AI thật** — Profile → Cấu hình AI: nhập Base URL / API key / model (OpenAI-compatible), test kết nối, lưu trên máy
+11. **Catalog / Usage Dashboard / Nạp token** — xem danh mục model, thống kê token theo model, nạp credit (mô phỏng)
+
+## 5.1. Gọi AI thật (OpenAI-compatible)
+
+App gọi endpoint chuẩn `POST {BASE_URL}/chat/completions` nên dùng được OpenAI,
+OpenRouter, DeepSeek, Groq, Gemini (OpenAI-compat), AI Box, Ollama/LM Studio...
+
+**Cách nhanh nhất khi test trên điện thoại:** mở app → **Profile → Cấu hình AI** →
+bấm preset (Pollinations / OpenAI / OpenRouter / DeepSeek / Groq / Gemini / AI Box / Ollama) → dán API key →
+**Kiểm tra kết nối** → **Lưu cấu hình**. Không cần build lại, không cần sửa `.env`.
+
+> Chưa có API key? Chọn preset **Pollinations (free)** — gateway công khai, **không cần key**,
+> gọi được AI thật ngay (có thể bị giới hạn tốc độ, độ trễ ~5–15s/câu).
+
+**Cách khai báo trong `.env`** (áp dụng cho cả máy khác):
+
+```
+EXPO_PUBLIC_AI_BASE_URL=https://api.groq.com/openai/v1
+EXPO_PUBLIC_AI_API_KEY=gsk_...
+EXPO_PUBLIC_AI_MODEL=llama-3.3-70b-versatile
+EXPO_PUBLIC_AI_FORCE_MODEL=true
+```
+
+Đổi `.env` phải restart Metro với `-c` (biến `EXPO_PUBLIC_*` được nhúng lúc bundle).
+Để trống → app tự dùng câu trả lời **MOCK** (vẫn demo đủ luồng, có nhãn MOCK).
+
+Chi tiết code: `src/config/ai.js` (preset, model map), `src/services/ai.js`
+(fetch + timeout + map lỗi tiếng Việt + test kết nối), `src/screens/AISettingsScreen.jsx`.
+
+⚠️ **Bảo mật:** API key nằm trên thiết bị (AsyncStorage) và biến `EXPO_PUBLIC_*` nằm trong
+bundle → chỉ phù hợp đồ án/demo. Triển khai thật phải đặt key ở backend/proxy, app gọi server của bạn.
 
 ## 6. Cấu trúc project
 
@@ -145,8 +177,8 @@ aibox-app/
     components/   (UI components .jsx)
     screens/      (screens .jsx, admin/ cho CMS)
     data/         (mockData.js, accounts.js, quests.js, storeItems.js)
-    config/       (firebase.js — init Auth/Firestore, đọc .env)
-    services/     (auth.js — Google sign-in, users.js — Firestore users/{uid})
+    config/       (firebase.js — init Auth/Firestore, ai.js — preset AI gateway, đọc .env)
+    services/     (auth.js — Google sign-in, users.js — Firestore users/{uid}, ai.js — gọi AI thật)
     context/      (AppContext.jsx — global state + AsyncStorage)
     utils/        (format, rewards, analyst)
     navigation/   (AppNavigator.jsx)

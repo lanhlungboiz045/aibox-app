@@ -30,7 +30,7 @@ function UserAvatar({ user, size = 96 }) {
 export function ProfileScreen({ navigation }) {
   const {
     state, resetToken, canClaimDaily, claimDailyReward, nextDailyReward,
-    signOut, updateMyProfile, unreadNotifications, myCopyTrades, questState,
+    signOut, updateMyProfile, unreadNotifications, myCopyTrades, questState, aiConfig,
   } = useApp();
   const insets = useSafeAreaInsets();
   const [editing, setEditing] = useState(false);
@@ -254,6 +254,12 @@ export function ProfileScreen({ navigation }) {
         <Text style={styles.sectionTitle}>{'\u{1F9F0}'} Công cụ</Text>
         {canCreateMarket && link('\u{2795}', 'Tạo market', () => navigation.navigate('CreateMarket'), {
           hint: user.role === 'creator' ? 'Bạn là Market Creator · nhận 2% fee' : 'Tạo kèo với tư cách admin',
+        })}
+        {link('\u{1F9F0}', 'Cấu hình AI', () => navigation.navigate('AISettings'), {
+          hint: aiConfig?.mode === 'live'
+            ? `LIVE · ${aiConfig.model}`
+            : 'Chưa có API key · đang trả lời mô phỏng',
+          badge: aiConfig?.mode === 'live' ? 'LIVE' : 'MOCK',
         })}
         {link('\u{1F6D2}', 'Store', () => navigation.navigate('Store'), { hint: 'Khung avatar, màu tên, prompt, Creator Pass' })}
         {link('\u{1F3AF}', 'Nhiệm vụ ngày', () => navigation.navigate('Quests'), { hint: `${claimedQuests} nhiệm vụ đã nhận hôm nay` })}
