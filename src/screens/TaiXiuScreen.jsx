@@ -22,6 +22,7 @@ import { useAppDrawer } from '../hooks/useAppDrawer';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { useReduceMotion } from '../hooks/useReduceMotion';
 import { formatToken, formatRelativeTime } from '../utils/format';
+import { chatsHint } from '../utils/economy';
 import { hapticError, hapticPress, hapticSuccess } from '../utils/feedback';
 import {
   MIN_STAKE, MAX_STAKE, STAKE_STEP, STAKE_PRESETS, SIDES, SIDE_LABELS, SIDE_RANGES,
@@ -41,7 +42,7 @@ export function TaiXiuScreen({ navigation }) {
   const reduceMotion = useReduceMotion();
   const { isOffline, refresh: refreshNetwork } = useNetworkStatus();
 
-  const [stake, setStake] = useState(50);
+  const [stake, setStake] = useState(500);
   const [faces, setFaces] = useState([1, 1, 1]); // mặt đang hiển thị (lúc lắc thì nhảy số)
   const [rolling, setRolling] = useState(false);
 
@@ -358,6 +359,11 @@ export function TaiXiuScreen({ navigation }) {
               );
             })}
           </View>
+
+          {/* Quy đổi ra câu hỏi AI để người chơi thấy mức cược đáng bao nhiêu */}
+          <Text style={styles.convertHint} maxFontSizeMultiplier={1.5}>
+            {chatsHint(stakeAmount || MIN_STAKE)}
+          </Text>
         </View>
 
         {/* ── 2 nút cược lớn ── */}
@@ -636,6 +642,7 @@ const styles = StyleSheet.create({
   presetText: { ...type.bodyStrong, color: colors.textDim, fontFamily: 'monospace' },
   presetTextActive: { color: colors.accentSoft },
   presetTextDisabled: { color: colors.textFaint },
+  convertHint: { ...type.small, color: colors.textFaint, textAlign: 'center' },
 
   // ── Nút cược ──
   betRow: { flexDirection: 'row', gap: spacing.md },

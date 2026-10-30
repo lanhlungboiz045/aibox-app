@@ -11,10 +11,15 @@
 //
 // Tách riêng khỏi UI để test được bằng Node (không import react-native).
 
-export const MIN_STAKE = 10;
-export const MAX_STAKE = 500;
-export const STAKE_STEP = 10;
-export const STAKE_PRESETS = [10, 50, 100, 500];
+// Hạn mức cược neo theo chi phí chat thật (~500–1.000 token/lượt):
+// - cược tối thiểu 100 ≈ 0,1–0,2 câu hỏi AI (một ván "nhỏ" để thử luật);
+// - cược tối đa 5.000 ≈ 5–10 câu hỏi AI (không để một ván nuốt cả ví);
+// - presets 100 / 500 / 1.000 / 5.000 = 0,1 / 0,5 / 1 / 5 câu hỏi AI.
+// Xem src/utils/economy.js để biết cách quy đổi.
+export const MIN_STAKE = 100;
+export const MAX_STAKE = 5000;
+export const STAKE_STEP = 100;
+export const STAKE_PRESETS = [100, 500, 1000, 5000];
 
 export const SIDES = { TAI: 'TAI', XIU: 'XIU' };
 

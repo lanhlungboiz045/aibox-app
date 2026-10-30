@@ -313,10 +313,20 @@ Luật nằm ở `src/utils/taiXiu.js` (thuần JS, test được bằng Node), 
 
 - 3 xúc xắc 1–6; tổng **4–10 = XỈU**, **11–17 = TÀI**; trả **1 ăn 1** (thắng +stake, thua −stake).
 - **Bộ ba 111–666** (tổng 3 hoặc 18): nhà cái ăn cả 2 cửa — lợi thế duy nhất của nhà cái, 6/216 ván (2,78%).
-- Mức cược `MIN_STAKE = 10`, `MAX_STAKE = 500`, bước 10, có preset 10/50/100/500; `clampStake()` kẹp cả
-  theo số dư nên không thể cược quá ví.
+- Mức cược `MIN_STAKE = 100`, `MAX_STAKE = 5000`, bước 100, preset 100/500/1.000/5.000 (mặc định 500);
+  `clampStake()` kẹp cả theo số dư nên không thể cược quá ví.
 - RNG `Math.random` chạy trên máy. Màn hình ghi rõ: token là credit nội bộ, không nạp/rút bằng tiền thật,
   không đổi ra tiền; nội dung 18+.
+
+**Hạn mức neo theo chi phí chat thật.** Một lượt chat (prompt + lịch sử + câu trả lời) tốn khoảng
+**500–1.000 token**, nên `src/utils/economy.js` gom con số đó về một chỗ (`TOKENS_PER_CHAT_MIN/MAX/TYPICAL`)
+và cung cấp `chatsRange(tokens)` để quy đổi token → số câu hỏi AI. Màn Tài xỉu hiện ngay dưới preset:
+cược 500 ≈ `0,5–1` câu hỏi AI; màn Nạp token hiện mỗi gói dùng được bao nhiêu câu. Nhờ vậy hạn mức cược
+không còn lệch thang với chi phí chat (cược 1 ván lớn nhất = 5–10 câu hỏi, không nuốt cả ví).
+
+Gói nạp cũng được nhân 10 để khớp thang token thật, **giữ nguyên giá và tỉ lệ bonus**: 10.000 token/
+29.000đ, 50.000 + 5.000/129.000đ, 100.000 + 15.000/249.000đ, 500.000 + 100.000/999.000đ. Kinh tế token
+không đổi (1 API token = 1 token app), chỉ đổi đơn vị hiển thị cho dễ hình dung.
 
 **Không thêm field vào account.** Mỗi ván ghi 1 transaction `type: 'TAIXIU'` với `amount` = tiền ròng, kèm
 `side`/`dice`/`total`/`triple`; thống kê (số ván, thắng, tỉ lệ, lãi ròng) và dải 12 ván gần nhất đều suy ra
@@ -325,7 +335,7 @@ cược xuất hiện luôn trong Portfolio (chip lọc **Game**) và trong `Tra
 
 Trải nghiệm: 1 chạm là 1 ván — xúc xắc lắc ~700ms rồi công bố kết quả bằng banner + toast + haptic +
 `AccessibilityInfo.announceForAccessibility`. Máy bật "giảm chuyển động" thì bỏ animation, công bố ngay.
-Không đủ 10 token thì hiện `ErrorState` kèm nút **Nạp token** thay vì chặn màn; game chạy local nên offline
+Không đủ 100 token thì hiện `ErrorState` kèm nút **Nạp token** thay vì chặn màn; game chạy local nên offline
 vẫn cược được, chỉ hiện thêm `OfflineBar`.
 
 ## 6. Cấu trúc project
@@ -342,7 +352,7 @@ aibox-app/
     hooks/        (useNetworkStatus.js — mạng, useReduceMotion.js — giảm chuyển động, useAppDrawer.js — mở/đóng drawer)
     theme/        (palettes.js — bảng màu sáng/tối, tokens.js — spacing/type/colors)
     i18n/         (index.js — từ điển vi/en + t()/useI18n)
-    utils/        (format, rewards, analyst, spend, clipboard, apiKeys, taiXiu — luật game Tài xỉu)
+    utils/        (format, rewards, economy — quy đổi token ↔ câu hỏi AI, analyst, spend, clipboard, apiKeys, taiXiu — luật game Tài xỉu)
     navigation/   (AppNavigator.jsx)
   App.js
   firestore.rules

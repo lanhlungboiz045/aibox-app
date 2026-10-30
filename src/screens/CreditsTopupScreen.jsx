@@ -8,6 +8,9 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatToken } from '../utils/format';
+import {
+  TOKENS_PER_CHAT_MIN, TOKENS_PER_CHAT_MAX, chatsRange,
+} from '../utils/economy';
 import { copyText } from '../utils/clipboard';
 import { hapticError, hapticSuccess } from '../utils/feedback';
 import {
@@ -16,11 +19,14 @@ import {
 import { centeredContent, colors, layout, radius, spacing, type } from '../theme/tokens';
 import { t } from '../i18n';
 
+// Gói nạp neo theo chi phí chat thật: mỗi lượt chat tốn ~500–1.000 token.
+// Nhân 10 so với bản cũ để một gói dùng được nhiều lượt (Starter ≈ 10–20 câu),
+// giá và tỉ lệ bonus giữ nguyên nên kinh tế token không đổi.
 const PACKAGES = [
-  { id: 'p1', tokens: 1000, bonus: 0, price: '29.000đ', label: 'Starter' },
-  { id: 'p2', tokens: 5000, bonus: 500, price: '129.000đ', label: 'Pro' },
-  { id: 'p3', tokens: 10000, bonus: 1500, price: '249.000đ', label: 'Team' },
-  { id: 'p4', tokens: 50000, bonus: 10000, price: '999.000đ', label: 'Enterprise' },
+  { id: 'p1', tokens: 10000, bonus: 0, price: '29.000đ', label: 'Starter' },
+  { id: 'p2', tokens: 50000, bonus: 5000, price: '129.000đ', label: 'Pro' },
+  { id: 'p3', tokens: 100000, bonus: 15000, price: '249.000đ', label: 'Team' },
+  { id: 'p4', tokens: 500000, bonus: 100000, price: '999.000đ', label: 'Enterprise' },
 ];
 
 // Thông tin chuyển khoản mô phỏng (đồ án) — không phải tài khoản thật
@@ -74,7 +80,7 @@ export function CreditsTopupScreen({ navigation }) {
       topUpTokens(order.tokens, `Gói ${order.label} · ${order.code}`);
       hapticSuccess();
       setStep('done');
-      toast.success(`Đã nạp ${formatToken(order.tokens)} token`);
+      toast.success(`Đã nạp ${formatToken(order.tokens)} token · ≈ ${chatsRange(order.tokens)} câu hỏi AI`);
     }, 1400);
   };
 
@@ -112,7 +118,8 @@ export function CreditsTopupScreen({ navigation }) {
             <Text style={styles.balanceUnit}> {'\u{1F4B0}'}</Text>
           </Text>
           <Text style={styles.balanceHint} maxFontSizeMultiplier={1.6}>
-            1 token = 1 token xử lý của AI. Chỉ trừ khi AI trả lời thành công.
+            1 token = 1 token AI xử lý. Mỗi lượt chat tốn ~{formatToken(TOKENS_PER_CHAT_MIN)}–{formatToken(TOKENS_PER_CHAT_MAX)} token;
+            gói {PACKAGES[0].label} ≈ {chatsRange(PACKAGES[0].tokens + PACKAGES[0].bonus)} câu hỏi AI.
           </Text>
         </View>
 
@@ -129,7 +136,7 @@ export function CreditsTopupScreen({ navigation }) {
                 onPress={() => setSelected(p.id)}
                 activeOpacity={0.85}
                 accessibilityState={{ selected: active }}
-                accessibilityLabel={`${p.label}, ${formatToken(p.tokens)} token${bonus ? `, tặng ${formatToken(p.bonus)}` : ''}, ${p.price}`}
+                accessibilityLabel={`${p.label}, ${formatToken(p.tokens)} token${bonus ? `, tặng ${formatToken(p.bonus)}` : ''}, ≈ ${chatsRange(p.tokens + p.bonus)} câu hỏi AI, ${p.price}`}
               >
                 <View style={styles.pkgTop}>
                   <Text style={[styles.pkgName, active && { color: colors.accentSoft }]} maxFontSizeMultiplier={1.5}>
@@ -142,6 +149,9 @@ export function CreditsTopupScreen({ navigation }) {
                 </Text>
                 <Text style={styles.pkgUnit} maxFontSizeMultiplier={1.5}>
                   token{bonus ? ` +${formatToken(p.bonus)}` : ''}
+                </Text>
+                <Text style={styles.pkgChats} numberOfLines={1} maxFontSizeMultiplier={1.5}>
+                  ≈ {chatsRange(p.tokens + p.bonus)} câu hỏi AI
                 </Text>
                 <Text style={styles.pkgPrice} maxFontSizeMultiplier={1.5}>{p.price}</Text>
               </TouchableOpacity>
@@ -236,7 +246,7 @@ export function CreditsTopupScreen({ navigation }) {
               <Text style={styles.amountLabel} maxFontSizeMultiplier={1.5}>Số tiền cần chuyển</Text>
               <Text style={styles.amountValue} maxFontSizeMultiplier={1.5}>{order?.amount}</Text>
               <Text style={styles.amountNote} maxFontSizeMultiplier={1.6}>
-                Nhận {formatToken(order?.tokens || 0)} token (đã gồm bonus)
+                Nhận {formatToken(order?.tokens || 0)} token (đã gồm bonus) · ≈ {chatsRange(order?.tokens || 0)} câu hỏi AI
               </Text>
             </View>
 
@@ -354,7 +364,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
     gap: 2,
-    minHeight: 116,
+    minHeight: 132,
     justifyContent: 'center',
   },
   pkgCardActive: { borderColor: colors.accentBorder, backgroundColor: colors.accentDim },
@@ -362,6 +372,7 @@ const styles = StyleSheet.create({
   pkgName: { ...type.smallStrong, color: colors.textDim },
   pkgTokens: { ...type.h1, color: colors.text, marginTop: spacing.xs },
   pkgUnit: { ...type.small, color: colors.textFaint },
+  pkgChats: { ...type.small, color: colors.accentSoft },
   pkgPrice: { ...type.smallStrong, color: colors.warning, marginTop: spacing.xs },
   payNote: { ...type.small, color: colors.textFaint, textAlign: 'center', marginTop: -spacing.sm },
   txRow: {
