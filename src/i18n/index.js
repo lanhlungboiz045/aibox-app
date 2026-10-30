@@ -58,6 +58,8 @@ const vi = {
   'nav.markets': 'Markets',
   'nav.portfolio': 'Portfolio',
   'nav.leaderboard': 'Xếp hạng',
+  'nav.play': 'Giải trí',
+  'nav.taixiu': 'Tài xỉu',
   'nav.usage': 'Usage / Billing',
   'nav.topup': 'Nạp token',
   'nav.quests': 'Nhiệm vụ',
@@ -72,6 +74,7 @@ const vi = {
   'screen.apiKeys': 'API Keys',
   'screen.logs': 'Lịch sử AI',
   'screen.topup': 'Nạp token',
+  'screen.taixiu': 'Tài xỉu',
 
   // ── Home ──
   'home.spend7d': 'Chi tiêu 7 ngày',
@@ -132,6 +135,8 @@ const en = {
   'nav.markets': 'Markets',
   'nav.portfolio': 'Portfolio',
   'nav.leaderboard': 'Leaderboard',
+  'nav.play': 'Play',
+  'nav.taixiu': 'Tai Xiu',
   'nav.usage': 'Usage / Billing',
   'nav.topup': 'Top up',
   'nav.quests': 'Quests',
@@ -145,6 +150,7 @@ const en = {
   'screen.apiKeys': 'API Keys',
   'screen.logs': 'AI call logs',
   'screen.topup': 'Top up',
+  'screen.taixiu': 'Tai Xiu',
 
   'home.spend7d': 'Spend · last 7 days',
   'home.recentRequests': 'Recent requests',

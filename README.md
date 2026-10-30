@@ -305,13 +305,36 @@ cộng `insets.bottom` vào thanh nhập. Drawer vẫn chỉ mở được từ 
 Đánh đổi: đổi màn tốn 2 chạm (☰ → mục) thay vì 1 chạm, bù lại nội dung không bị chiếm 56px + safe area ở
 đáy và không còn tab bar che bàn phím.
 
+## 5.8. Game Tài xỉu — cá cược token nội bộ
+
+Màn `TaiXiuScreen` (vào từ drawer → nhóm **Giải trí**) là game 3 xúc xắc dùng token của app.
+Luật nằm ở `src/utils/taiXiu.js` (thuần JS, test được bằng Node), tiền được tính **trong reducer**
+`PLACE_TAIXIU_BET` của `AppContext` để số dư và lịch sử không bao giờ lệch nhau:
+
+- 3 xúc xắc 1–6; tổng **4–10 = XỈU**, **11–17 = TÀI**; trả **1 ăn 1** (thắng +stake, thua −stake).
+- **Bộ ba 111–666** (tổng 3 hoặc 18): nhà cái ăn cả 2 cửa — lợi thế duy nhất của nhà cái, 6/216 ván (2,78%).
+- Mức cược `MIN_STAKE = 10`, `MAX_STAKE = 500`, bước 10, có preset 10/50/100/500; `clampStake()` kẹp cả
+  theo số dư nên không thể cược quá ví.
+- RNG `Math.random` chạy trên máy. Màn hình ghi rõ: token là credit nội bộ, không nạp/rút bằng tiền thật,
+  không đổi ra tiền; nội dung 18+.
+
+**Không thêm field vào account.** Mỗi ván ghi 1 transaction `type: 'TAIXIU'` với `amount` = tiền ròng, kèm
+`side`/`dice`/`total`/`triple`; thống kê (số ván, thắng, tỉ lệ, lãi ròng) và dải 12 ván gần nhất đều suy ra
+từ chính các transaction đó. Nhờ vậy dữ liệu cũ không phải migrate, `sanitizeAccount` giữ nguyên, và lịch sử
+cược xuất hiện luôn trong Portfolio (chip lọc **Game**) và trong `TransactionItem`.
+
+Trải nghiệm: 1 chạm là 1 ván — xúc xắc lắc ~700ms rồi công bố kết quả bằng banner + toast + haptic +
+`AccessibilityInfo.announceForAccessibility`. Máy bật "giảm chuyển động" thì bỏ animation, công bố ngay.
+Không đủ 10 token thì hiện `ErrorState` kèm nút **Nạp token** thay vì chặn màn; game chạy local nên offline
+vẫn cược được, chỉ hiện thêm `OfflineBar`.
+
 ## 6. Cấu trúc project
 
 ```
 aibox-app/
   src/
-    components/   (UI components .jsx, ui/ cho UI kit, Onboarding.jsx)
-    screens/      (screens .jsx, admin/ cho CMS)
+    components/   (UI components .jsx, ui/ cho UI kit, Onboarding.jsx, Die.jsx — mặt xúc xắc)
+    screens/      (screens .jsx, admin/ cho CMS, TaiXiuScreen.jsx — game Tài xỉu)
     data/         (mockData.js, accounts.js, quests.js, storeItems.js)
     config/       (firebase.js — init Auth/Firestore, ai.js — preset AI gateway, đọc .env)
     services/     (auth.js — Google sign-in, users.js — Firestore users/{uid}, ai.js — gọi AI thật)
@@ -319,7 +342,7 @@ aibox-app/
     hooks/        (useNetworkStatus.js — mạng, useReduceMotion.js — giảm chuyển động, useAppDrawer.js — mở/đóng drawer)
     theme/        (palettes.js — bảng màu sáng/tối, tokens.js — spacing/type/colors)
     i18n/         (index.js — từ điển vi/en + t()/useI18n)
-    utils/        (format, rewards, analyst, spend, clipboard, apiKeys)
+    utils/        (format, rewards, analyst, spend, clipboard, apiKeys, taiXiu — luật game Tài xỉu)
     navigation/   (AppNavigator.jsx)
   App.js
   firestore.rules

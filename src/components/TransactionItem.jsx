@@ -7,10 +7,12 @@ import { colors } from '../theme/tokens';
 const TYPE_ICONS = {
   AI_CALL: '\u{1F916}', BUY: '\u{1F4C8}', SELL: '\u{1F4B9}', RESOLVE: '\u{2696}',
   TRANSFER_OUT: '\u{1F4E8}', TRANSFER_IN: '\u{1F4E9}', DAILY_REWARD: '\u{1F381}',
+  TOPUP: '\u{1F4B3}', TAIXIU: '\u{1F3B2}',
 };
 const TYPE_COLORS = {
   AI_CALL: colors.openai, BUY: colors.danger, SELL: colors.success, RESOLVE: colors.warning,
   TRANSFER_OUT: colors.danger, TRANSFER_IN: colors.success, DAILY_REWARD: colors.warning,
+  TOPUP: colors.accentSoft, TAIXIU: colors.accentSoft,
 };
 
 export function TransactionItem({ tx }) {

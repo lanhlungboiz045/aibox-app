@@ -21,6 +21,7 @@ export function PortfolioScreen() {
   const txFilters = [
     { key: 'all', label: 'Tất cả' }, { key: 'ai', label: 'AI' },
     { key: 'market', label: 'Market' }, { key: 'transfer', label: 'Transfer' },
+    { key: 'game', label: 'Game' },
   ];
 
   const positionsWithMarket = state.user.positions.map(p => {
@@ -40,6 +41,7 @@ export function PortfolioScreen() {
     if (txFilter === 'ai') return tx.type === 'AI_CALL';
     if (txFilter === 'market') return ['BUY', 'SELL', 'RESOLVE'].includes(tx.type);
     if (txFilter === 'transfer') return ['TRANSFER_OUT', 'TRANSFER_IN'].includes(tx.type);
+    if (txFilter === 'game') return tx.type === 'TAIXIU';
     return true;
   });
 

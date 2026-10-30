@@ -27,6 +27,13 @@ const GROUPS = [
     ],
   },
   {
+    id: 'play',
+    label: 'nav.play',
+    items: [
+      { label: 'nav.taixiu', icon: 'zap', route: 'TaiXiu' },
+    ],
+  },
+  {
     id: 'tools',
     label: 'nav.tools',
     items: [

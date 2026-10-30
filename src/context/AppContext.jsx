@@ -18,6 +18,9 @@ import { getDailyReward } from '../utils/rewards';
 import { buildMarketAnalysis, buildMarketPrompt, ANALYST_SYSTEM_PROMPT } from '../utils/analyst';
 import { MIN_AI_CALL_BALANCE, costFromUsage, chargeTokens } from '../utils/aiCost';
 import {
+  MIN_STAKE, SIDES, SIDE_LABELS, clampStake, rollDice, settleTaiXiu,
+} from '../utils/taiXiu';
+import {
   subscribeAuth,
   signInWithGoogle as googleSignIn,
   signOutGoogle,
@@ -660,6 +663,45 @@ function reducer(state, action) {
       }
 
       return bumpQuestCounters(next, user.id, 'transfers');
+    }
+
+    // ---------- TÀI XỈU (game cá cược token nội bộ) ----------
+    // Token và lịch sử cược phải luôn khớp nhau nên tiền được tính ở đây,
+    // không tính ở UI. Thống kê của game đọc lại từ transactions type 'TAIXIU'
+    // → KHÔNG thêm field mới vào account (giữ nguyên cấu trúc dữ liệu cũ).
+    case 'PLACE_TAIXIU_BET': {
+      const user = getCurrentUser(state);
+      const { side, stake, dice } = action.payload || {};
+      if (!user || !SIDES[side]) return state;
+
+      // Chặn cược vượt số dư / dưới mức tối thiểu, làm tròn bội số 10
+      const amount = clampStake(stake, user.tokenBalance);
+      if (!amount) return state;
+
+      // Chỉ nhận mảng 3 mặt 1..6 do provider quay; dữ liệu lạ thì quay lại cho an toàn
+      const rolled = Array.isArray(dice) && dice.length === 3 && dice.every(v => v >= 1 && v <= 6)
+        ? dice
+        : rollDice();
+      const settled = settleTaiXiu(rolled, side, amount);
+      const resultText = settled.triple
+        ? 'bộ ba, nhà cái ăn'
+        : settled.win ? `thắng +${amount}` : `thua -${amount}`;
+
+      const updated = {
+        ...user,
+        tokenBalance: user.tokenBalance + settled.net,
+        transactions: addTransaction(user, {
+          type: 'TAIXIU',
+          description: `Tài xỉu · ${SIDE_LABELS[side]} ${amount} token · ${rolled.join('-')} (tổng ${settled.total}) → ${resultText}`,
+          amount: settled.net,
+          side,
+          dice: rolled,
+          total: settled.total,
+          triple: settled.triple,
+        }),
+      };
+
+      return withAccount(state, updated);
     }
 
     // ---------- DAILY REWARD ----------
@@ -1487,6 +1529,22 @@ export function AppProvider({ children }) {
     return { ok: true };
   }, []);
 
+  // Game Tài xỉu: quay xúc xắc ở provider rồi mới dispatch để UI nhận kết quả
+  // ngay trong lần gọi; reducer chỉ áp luật và cộng/trừ token.
+  const placeTaiXiuBet = useCallback(({ side, stake }) => {
+    const user = getCurrentUser(stateRef.current);
+    if (!user) return { ok: false, error: 'Bạn cần đăng nhập.' };
+    if (!SIDES[side]) return { ok: false, error: 'Cửa cược không hợp lệ.' };
+
+    const amount = clampStake(stake, user.tokenBalance);
+    if (!amount) return { ok: false, error: `Cần tối thiểu ${MIN_STAKE} token để cược.` };
+
+    const dice = rollDice();
+    const settled = settleTaiXiu(dice, side, amount);
+    dispatch({ type: 'PLACE_TAIXIU_BET', payload: { side, stake: amount, dice } });
+    return { ok: true, side, stake: amount, ...settled };
+  }, []);
+
   const claimDailyReward = useCallback(() => {
     dispatch({ type: 'DAILY_REWARD' });
   }, []);
@@ -1647,6 +1705,7 @@ export function AppProvider({ children }) {
         sendAIMessage,
         analyzeMarketAI,
         transfer,
+        placeTaiXiuBet,
         claimDailyReward,
         claimQuest,
         addComment,

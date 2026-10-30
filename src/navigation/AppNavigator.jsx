@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { AIHubScreen } from '../screens/AIHubScreen';
+import { TaiXiuScreen } from '../screens/TaiXiuScreen';
 import { ModelCatalogScreen } from '../screens/ModelCatalogScreen';
 import { UsageDashboardScreen } from '../screens/UsageDashboardScreen';
 import { CreditsTopupScreen } from '../screens/CreditsTopupScreen';
@@ -41,6 +42,7 @@ export function AppNavigator() {
       <Stack.Screen name="Markets" component={MarketsScreen} />
       <Stack.Screen name="Portfolio" component={PortfolioScreen} />
       <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+      <Stack.Screen name="TaiXiu" component={TaiXiuScreen} />
 
       {/* ── Màn phụ ── */}
       <Stack.Screen name="MarketDetail" component={MarketDetailScreen} />
