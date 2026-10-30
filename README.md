@@ -179,6 +179,24 @@ Chi tiết code: `src/config/ai.js` (preset, model map), `src/services/ai.js`
 ⚠️ **Bảo mật:** API key nằm trên thiết bị (AsyncStorage) và biến `EXPO_PUBLIC_*` nằm trong
 bundle → chỉ phù hợp đồ án/demo. Triển khai thật phải đặt key ở backend/proxy, app gọi server của bạn.
 
+## 5.2. Lịch sử chat
+
+Mỗi cuộc chat được lưu tự động vào AsyncStorage theo từng cặp **(uid, modelId)** với key
+`@aibox_chat_history_v1:{uid}:{modelId}` → đăng nhập tài khoản khác hoặc mở model khác không
+thấy lẫn lịch sử của nhau.
+
+- Giữ **40 tin nhắn gần nhất** mỗi model; nội dung cắt tối đa 8000 ký tự (tránh phình storage).
+- Chỉ lưu dữ liệu hiển thị: `role`, `content`, `timestamp`, `tokenCost`.
+- Khi gọi API chỉ gửi **20 tin gần nhất** làm context để prompt không phình to.
+- Xoá: nút 🗑️ trên header khi đang chat (xoá cuộc chat hiện tại) hoặc nút
+  "Xoá lịch sử chat (N tin nhắn)" ở danh sách model (xoá toàn bộ). Cả hai đều hỏi xác nhận và
+  ghi rõ **token đã trừ không được hoàn lại**.
+- Xoá lịch sử chỉ xoá nội dung chat, không ảnh hưởng số dư token.
+
+Chi tiết code: `src/services/chatHistory.js` (`loadChatHistory`, `saveModelHistory`,
+`clearModelHistory`, `clearAllChatHistory`, `countByModel`), UI ở `src/screens/AIHubScreen.jsx`
+(badge 💬 trên `AIModelCard`).
+
 ## 6. Cấu trúc project
 
 ```
