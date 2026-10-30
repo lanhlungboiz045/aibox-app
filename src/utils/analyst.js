@@ -11,6 +11,40 @@ const CATEGORY_RISK = {
   politics: { label: 'chính trị', risk: 'có thể bị ảnh hưởng bởi quyết định bất ngờ', riskLevel: 3 },
 };
 
+// Yếu tố cần soi theo từng lĩnh vực — để bản MOCK cũng phân tích đúng "chất" của kèo
+const CATEGORY_FOCUS = {
+  sports: [
+    'Phong độ 5 trận gần nhất và hiệu số bàn thắng/bại',
+    'Lực lượng: chấn thương, treo giò, trụ cột có đá chính không',
+    'Lịch thi đấu, lợi thế sân nhà và động lực ở giải đấu này',
+  ],
+  crypto: [
+    'Mốc giá hiện tại cách ngưỡng của kèo bao xa',
+    'Dòng tiền ETF/tổ chức và thanh khoản thị trường',
+    'Lịch vĩ mô: CPI, quyết định lãi suất, halving/unlock token',
+  ],
+  tech: [
+    'Lộ trình sản phẩm và mốc ra mắt đã công bố',
+    'Tin rò rỉ/benchmark gần đây và độ tin cậy của nguồn',
+    'Mức độ cạnh tranh và phản ứng của người dùng',
+  ],
+  entertainment: [
+    'Mức độ lan truyền trên mạng xã hội và xu hướng tìm kiếm',
+    'Lịch công bố chính thức (trailer, tập mới, giải thưởng)',
+    'Tiền lệ các mùa/giải trước và sai lệch của đám đông',
+  ],
+  life: [
+    'Dữ liệu tham chiếu chính thức và tần suất cập nhật',
+    'Tin đồn gần đây có nguồn kiểm chứng hay không',
+    'Yếu tố mùa vụ/thời tiết ảnh hưởng tới kết quả',
+  ],
+  politics: [
+    'Dữ liệu thăm dò mới nhất và biên độ sai số',
+    'Tiền lệ các cuộc bầu cử/quyết định tương tự',
+    'Lịch sự kiện và khả năng xảy ra biến cố bất ngờ',
+  ],
+};
+
 function sentimentOf(yesPrice) {
   if (yesPrice >= 65) return 'thị trường đang khá tự tin vào YES';
   if (yesPrice >= 55) return 'thị trường nghiêng nhẹ về YES';
@@ -108,21 +142,24 @@ export function buildMarketAnalysis(market, model, extraPrompt = '') {
     `- Chênh lệch ${edgeYes >= 0 ? '+' : ''}${edgeYes} điểm cho YES, ${edgeNo >= 0 ? '+' : ''}${edgeNo} điểm cho NO.`,
     `- ${verdict === 'BỎ QUA' ? 'Cả hai bên đều không có edge ≥ 3 điểm → đứng ngoài là quyết định tốt nhất.' : `Vào ${verdict} vì đó là bên được trả giá thấp hơn xác suất ước tính.`}`,
     '',
-    '2) Dòng tiền',
+    '2) Yếu tố quyết định của kèo này',
+    ...(CATEGORY_FOCUS[market.category] || CATEGORY_FOCUS.life).map(item => `- ${item}.`),
+    '',
+    '3) Dòng tiền',
     `- ${liquidityNote(market.volume || 0, market.liquidity || 0)}.`,
     `- Loại kèo ${category.label}: ${category.risk}.`,
     '',
-    '3) Luận điểm ủng hộ',
+    '4) Luận điểm ủng hộ',
     `- Giá hiện tại lệch ${Math.abs(edge)} điểm so với ước tính → còn dư địa điều chỉnh.`,
     `- ${sentimentOf(yesPrice)}; khi đám đông nghiêng quá mạnh về một bên, bên còn lại thường được trả giá tốt hơn.`,
     `- Thanh khoản ${formatTokenShort(market.liquidity || 0)} \u{1F4B0} đủ để vào lệnh nhỏ mà không trượt giá nhiều.`,
     '',
-    '4) Rủi ro & điều kiện sai',
+    '5) Rủi ro & điều kiện sai',
     `- Giá có thể nhảy mạnh trước giờ đóng; đừng mua đuổi sát hạn (${formatTimeLeft(market.endDate)}).`,
     `- Nếu có tin mới đẩy xác suất YES thực tế ${verdict === 'NO' ? 'vượt' : 'giảm dưới'} ${invalidYes}% thì nhận định này sai, phải thoát.`,
     `- Market nhỏ khó bán lại đúng giá; kết quả do admin xử lý theo nguồn công bố, cần đọc kỹ mô tả.`,
     '',
-    '5) Quản trị vốn',
+    '6) Quản trị vốn',
     `- ${riskAdvice(category.riskLevel)}.`,
     `- Chốt lời từng phần khi giá lệch +15 điểm so với giá vào; không dùng toàn bộ số dư cho một kèo.`,
     '',
@@ -136,15 +173,17 @@ export function buildMarketAnalysis(market, model, extraPrompt = '') {
 
 // Prompt dùng cho lời gọi AI THẬT (src/context/AppContext.jsx).
 // Tách ra đây để test được prompt mà không phải render React.
+// Lưu ý: KHÔNG ép khuôn cố định — mỗi loại kèo (bóng đá, tài chính, chính trị...) cần cách
+// phân tích khác nhau. Chỉ ràng buộc: phải có quan điểm rõ + con số + lý do cụ thể.
 export const ANALYST_SYSTEM_PROMPT =
   'Bạn là chuyên gia phân tích prediction market, trả lời tiếng Việt, thực tế, có số liệu. '
-  + 'Bạn luôn kết luận dứt khoát: nghiêng YES hay NO (hoặc bỏ qua), kèm xác suất ước tính, '
-  + 'edge so với giá thị trường, mức tin cậy và hành động cụ thể. '
-  + 'Không né tránh bằng lời khuyên chung chung; chỉ nêu rủi ro như một phần của phân tích.';
+  + 'Bạn luôn nêu quan điểm rõ ràng (nghiêng YES, nghiêng NO hay đứng ngoài) kèm xác suất ước tính '
+  + 'và lý do cụ thể, nhưng tự chọn cách trình bày phù hợp với loại kèo. '
+  + 'Không né tránh bằng lời khuyên chung chung; rủi ro chỉ là một phần của phân tích.';
 
 export function buildMarketPrompt(market, extraPrompt = '', today = new Date()) {
   return [
-    'Đưa ra nhận định cụ thể cho prediction market dưới đây, bằng tiếng Việt.',
+    'Phân tích prediction market dưới đây bằng tiếng Việt, như một chuyên gia thực thụ về lĩnh vực của kèo.',
     '',
     `Hôm nay: ${today.toISOString().slice(0, 10)}`,
     `Câu hỏi: ${market.question}`,
@@ -155,22 +194,24 @@ export function buildMarketPrompt(market, extraPrompt = '', today = new Date()) 
     market.creatorName ? `Người tạo: ${market.creatorName}` : null,
     extraPrompt ? `Yêu cầu thêm của người dùng: ${extraPrompt}` : null,
     '',
-    'MỞ ĐẦU BẰNG ĐÚNG 3 DÒNG SAU (không viết gì trước đó):',
-    'KẾT LUẬN: <YES hoặc NO hoặc BỎ QUA> — xác suất ước tính của tôi: <X>% (thị trường đang định giá Y%) — edge: <±Z> điểm — độ tin cậy: <cao/trung bình/thấp>',
-    'HÀNH ĐỘNG: <mua bên nào, vùng giá vào cụ thể, % số dư token nên dùng, chốt lời ở mức nào, điều kiện cắt lỗ/huỷ kèo>',
-    'TÓM TẮT: <một câu nêu lý do chính khiến bạn lệch so với giá thị trường>',
+    'Bạn được tự do chọn cách trình bày (đoạn văn, gạch đầu dòng, hay chia mục ngắn) miễn là người đọc',
+    'thấy rõ: (a) bạn nghiêng bên nào và vì sao, (b) xác suất bạn ước tính so với giá thị trường,',
+    '(c) bằng chứng/yếu tố cụ thể của chính lĩnh vực đó, (d) rủi ro và điều kiện khiến bạn sai,',
+    '(e) nên làm gì tiếp theo. Không cần theo một khuôn cố định.',
     '',
-    'Sau đó phân tích theo 4 mục:',
-    '1) Vì sao xác suất thực tế khác giá thị trường: nêu cơ chế/dữ kiện cụ thể, tránh câu chung chung.',
-    '2) 3 luận điểm ủng hộ nhận định trên.',
-    '3) 3 luận điểm ngược lại + điều kiện nào sẽ khiến nhận định của bạn SAI.',
-    '4) Kịch bản theo thời gian: trước hạn điều gì sẽ đẩy giá YES lên/xuống, nên vào lệnh lúc nào.',
+    'Gợi ý trọng tâm theo loại kèo (chọn cái phù hợp, bỏ qua cái không liên quan):',
+    '- Thể thao: phong độ gần đây, lực lượng/chấn thương, lịch thi đấu, đối đầu, sân nhà/khách, động lực, HLV.',
+    '- Tài chính/crypto: mốc giá hiện tại, dòng tiền, thanh khoản, sự kiện vĩ mô, lịch công bố dữ liệu, biến động.',
+    '- Chính trị/đời sống: dữ liệu thăm dò, tiền lệ, lịch sự kiện, nguồn tin và độ tin cậy của nguồn.',
+    '- Công nghệ/giải trí: lộ trình sản phẩm, tin rò rỉ, lịch ra mắt, mức độ lan truyền.',
     '',
-    'Quy tắc bắt buộc:',
-    '- Phải chọn YES hoặc NO khi edge ≥ 3 điểm; chỉ chọn BỎ QUA khi giá thị trường đã đúng và không có lợi thế.',
-    '- Xác suất phải là con số cụ thể; không dùng "có thể", "tùy thuộc", "hãy cân nhắc" thay cho kết luận.',
+    'Quy tắc:',
+    '- Phải nêu quan điểm dứt khoát kèm xác suất là con số cụ thể; không thay kết luận bằng "cần theo dõi thêm".',
+    '- Nếu thấy giá thị trường đã hợp lý và không có lợi thế, nói thẳng nên đứng ngoài và chờ tín hiệu gì.',
+    '- Mỗi luận điểm phải gắn với dữ kiện/cơ chế cụ thể, tránh câu chung chung kiểu "cần cân nhắc rủi ro".',
     '- Giá trong app tính bằng % xác suất (YES 68% tương đương 0.68) → khi nêu vùng giá vào/chốt lời hãy dùng %.',
-    '- Vị thế tối đa mỗi kèo: 5% số dư với kèo thể thao/crypto/chính trị, 10% với các loại còn lại.',
+    '- Nếu khuyến nghị vào lệnh: nêu bên mua, vùng giá, % số dư (tối đa 5% với thể thao/crypto/chính trị, 10% loại khác),',
+    '  mức chốt lời và điều kiện cắt lỗ.',
     '- Nêu rõ đây là nhận định từ dữ liệu được cung cấp, không phải cam kết lợi nhuận.',
   ].filter(Boolean).join('\n');
 }

@@ -17,7 +17,7 @@ function AnalysisText({ text }) {
       {lines.map((raw, index) => {
         const line = raw.replace(/\*\*/g, '').replace(/^#{1,6}\s*/, '').trimEnd();
         if (!line.trim()) return <View key={index} style={styles.spacer} />;
-        const isVerdict = /^(KẾT LUẬN|HÀNH ĐỘNG|TÓM TẮT)\s*:/.test(line);
+        const isVerdict = /^(kết luận|nhận định|chốt lại|quan điểm|khuyến nghị|verdict)\b/i.test(line);
         return (
           <Text key={index} style={isVerdict ? styles.verdictLine : styles.resultText} selectable>
             {line}

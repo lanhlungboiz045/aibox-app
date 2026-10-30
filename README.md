@@ -200,24 +200,27 @@ Chi tiết code: `src/services/chatHistory.js` (`loadChatHistory`, `saveModelHis
 ## 5.3. AI Market Analyst
 
 Nút "Hỏi AI về kèo này" trong chi tiết market gửi dữ liệu kèo (câu hỏi, mô tả, giá YES/NO,
-volume, liquidity, hạn kết thúc) lên model đã chọn. Prompt yêu cầu **nhận định cụ thể**, không
-phải lời khuyên chung chung:
+volume, liquidity, hạn kết thúc) lên model đã chọn.
 
-```
-KẾT LUẬN: YES | NO | BỎ QUA — xác suất ước tính X% (thị trường Y%) — edge ±Z điểm — độ tin cậy
-HÀNH ĐỘNG: mua bên nào, vùng giá vào %, % số dư, mức chốt lời, điều kiện cắt lỗ
-TÓM TẮT: lý do chính lệch so với giá thị trường
-```
+Prompt **không ép khuôn cố định** vì mỗi loại kèo cần cách phân tích khác nhau (bóng đá khác
+tài chính, chính trị khác giải trí). Model được tự chọn cách trình bày — đoạn văn, gạch đầu dòng
+hay chia mục ngắn — miễn là người đọc thấy rõ:
 
-Sau đó là 4 mục phân tích: vì sao lệch giá, 3 luận điểm ủng hộ, 3 luận điểm ngược + điều kiện
-khiến nhận định sai, kịch bản thời gian. Quy tắc trong prompt: phải chọn YES/NO khi edge ≥ 3
-điểm, chỉ bỏ qua khi thị trường đã định giá đúng; giá dùng đơn vị % cho khớp app; vị thế tối đa
-5% số dư với kèo thể thao/crypto/chính trị, 10% với loại khác. Kết luận đặt ở **đầu** câu trả lời
-để không bị mất khi phản hồi bị cắt token.
+- quan điểm nghiêng bên nào và vì sao,
+- xác suất ước tính (con số cụ thể) so với giá thị trường,
+- bằng chứng/yếu tố đặc thù của lĩnh vực đó,
+- rủi ro và điều kiện khiến nhận định sai,
+- nên làm gì tiếp theo (bên mua, vùng giá %, % số dư, chốt lời/cắt lỗ) hoặc đứng ngoài chờ tín hiệu.
 
-Khi chưa cấu hình AI thật, `src/utils/analyst.js` sinh bản MOCK theo cùng cấu trúc: ước tính xác
-suất bằng heuristic (giá lệch xa 50 khi thanh khoản mỏng → kéo về gần 50), từ đó chọn YES/NO và
-tính edge, độ tin cậy, vùng giá vào, chốt lời.
+Prompt chỉ **gợi ý trọng tâm** theo danh mục: thể thao → phong độ, lực lượng, sân nhà, đối đầu;
+tài chính/crypto → mốc giá, dòng tiền, vĩ mô, thanh khoản; chính trị → thăm dò, tiền lệ, lịch sự
+kiện; công nghệ/giải trí → lộ trình sản phẩm, tin rò rỉ, độ lan truyền. Quy tắc giữ lại: phải nêu
+quan điểm dứt khoát kèm con số (không thay bằng "cần theo dõi thêm"), giá dùng đơn vị % cho khớp
+app, vị thế tối đa 5% số dư với kèo thể thao/crypto/chính trị và 10% với loại khác.
+
+Khi chưa cấu hình AI thật, `src/utils/analyst.js` sinh bản MOCK: ước tính xác suất bằng heuristic
+(giá lệch xa 50 khi thanh khoản mỏng → kéo về gần 50), từ đó chọn YES/NO, tính edge, độ tin cậy,
+vùng giá vào, chốt lời; kèm 3 yếu tố cần soi theo đúng danh mục của kèo.
 
 ## 6. Cấu trúc project
 
