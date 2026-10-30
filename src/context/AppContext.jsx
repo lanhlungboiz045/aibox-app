@@ -53,7 +53,7 @@ const STORAGE_VERSION = 4;
 const DEMO_UID = 'demo-expo-go';
 const PERSIST_DEBOUNCE_MS = 400;
 // Giới hạn lịch sử để JSON.stringify không phình dần theo thời gian
-const MAX_TRANSACTIONS = 200;
+export const MAX_TRANSACTIONS = 200;
 const MAX_NOTIFICATIONS = 80;
 const MAX_COMMENTS_PER_MARKET = 100;
 export const CREATOR_FEE_PCT = 2;

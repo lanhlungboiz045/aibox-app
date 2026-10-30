@@ -49,6 +49,7 @@ gọi API.
   Nạp token là **thanh toán mô phỏng** (BANK demo), không nối cổng thật.
 - **Game Tài xỉu:** token là credit nội bộ, **không nạp/rút/đổi ra tiền thật**, nội dung 18+; luật công
   khai; không thêm field mới vào account — lịch sử/thống kê suy ra từ `transactions` type `'TAIXIU'`.
+  Nội dung trong game (luật, nhãn cửa, toast) chỉ có tiếng Việt — quyết định có chủ đích cho bản đồ án.
 - **Kỹ thuật:** Expo SDK 52, JavaScript/JSX (không TypeScript), React Navigation stack-only + drawer,
   `StyleSheet`, không hard-code màu/cỡ chữ/khoảng cách ngoài token.
 - **i18n:** tiếng Việt mặc định, có tiếng Anh; chốt bằng `EXPO_PUBLIC_LANG`.

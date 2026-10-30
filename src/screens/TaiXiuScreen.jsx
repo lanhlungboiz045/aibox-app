@@ -9,9 +9,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Animated, Easing, Pressable, TouchableOpacity,
+  AccessibilityInfo,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useApp } from '../context/AppContext';
+import { useApp, MAX_TRANSACTIONS } from '../context/AppContext';
 import { TokenBadge } from '../components/TokenBadge';
 import { Die } from '../components/Die';
 import {
@@ -25,7 +26,7 @@ import { formatToken, formatRelativeTime } from '../utils/format';
 import { chatsRange } from '../utils/economy';
 import { hapticError, hapticPress, hapticSuccess, hapticTap } from '../utils/feedback';
 import {
-  MIN_STAKE, MAX_STAKE, STAKE_PRESETS, SIDES, SIDE_LABELS, SIDE_RANGES,
+  MIN_STAKE, STAKE_PRESETS, SIDES, SIDE_LABELS, SIDE_RANGES,
   clampStake, rollDice,
 } from '../utils/taiXiu';
 import { colors, centeredContent, layout, radius, spacing, touch, type } from '../theme/tokens';
@@ -50,6 +51,8 @@ export function TaiXiuScreen({ navigation }) {
   const [stake, setStake] = useState(500);
   const [faces, setFaces] = useState([1, 1, 1]); // mặt đang hiển thị (lúc lắc thì nhảy số)
   const [rolling, setRolling] = useState(false);
+  // TalkBack: double-tap không thể "giữ" → cho đặt bằng 1 lần kích hoạt
+  const [screenReader, setScreenReader] = useState(false);
 
   const spin = useRef(new Animated.Value(0)).current;
   const rollTimer = useRef(null);
@@ -57,16 +60,18 @@ export function TaiXiuScreen({ navigation }) {
 
   // Thanh tiến trình "giữ để cược" riêng cho từng cửa
   const holdTimer = useRef(null);
+  // Đánh dấu lần giữ vừa rồi đã đủ 0,4 giây (để không báo "giữ lâu hơn" oan)
+  const holdDone = useRef(false);
   const holdTai = useRef(new Animated.Value(0)).current;
   const holdXiu = useRef(new Animated.Value(0)).current;
 
   const balance = state.user?.tokenBalance || 0;
   const stakeAmount = clampStake(stake, balance);
-  const maxStake = Math.min(MAX_STAKE, balance);
   const canBet = stakeAmount >= MIN_STAKE && !rolling;
-  // Mức cao phải giữ; preset vượt số dư cần lời giải thích tại chỗ
-  const holdMode = stakeAmount >= HOLD_FROM;
-  const hasBlockedPreset = STAKE_PRESETS.some(value => value > balance);
+  // Mức ≥ 1.000 phải giữ 0,4 giây; trình đọc màn hình thì miễn (xem pressBet)
+  const holdMode = stakeAmount >= HOLD_FROM && !screenReader;
+  // Lịch sử bị cắt ở MAX_TRANSACTIONS → thống kê chỉ đúng trong cửa sổ đó
+  const capped = (state.user?.transactions || []).length >= MAX_TRANSACTIONS;
 
   // Lịch sử/thống kê suy ra từ transactions type 'TAIXIU' → không cần field mới
   const rounds = (state.user?.transactions || []).filter(tx => tx.type === 'TAIXIU');
@@ -77,6 +82,21 @@ export function TaiXiuScreen({ navigation }) {
   const net = rounds.reduce((sum, tx) => sum + (tx.amount || 0), 0);
   const recent = rounds.slice(0, RECENT_LIMIT);
 
+  // Theo dõi trình đọc màn hình: bật thì bỏ yêu cầu "giữ để cược"
+  useEffect(() => {
+    let alive = true;
+    AccessibilityInfo.isScreenReaderEnabled?.()
+      .then(value => { if (alive) setScreenReader(Boolean(value)); })
+      .catch(() => {});
+    const sub = AccessibilityInfo.addEventListener?.('screenReaderChanged', value => {
+      setScreenReader(Boolean(value));
+    });
+    return () => {
+      alive = false;
+      sub?.remove?.();
+    };
+  }, []);
+
   // Dọn timer khi rời màn (tránh setState sau khi unmount)
   useEffect(() => () => {
     if (rollTimer.current) clearInterval(rollTimer.current);
@@ -85,8 +105,8 @@ export function TaiXiuScreen({ navigation }) {
   }, []);
 
   // Công bố kết quả: gọi action (quay + áp luật trong reducer) rồi báo bằng
-  // toast + haptic. Banner kết quả đã có accessibilityLiveRegion nên không
-  // announce thêm lần nữa (TalkBack sẽ đọc 2 lần).
+  // toast + haptic. Toast là kênh thông báo DUY NHẤT (banner không đặt
+  // liveRegion) nên TalkBack chỉ đọc kết quả 1 lần.
   const settle = useCallback((side, amount) => {
     if (rollTimer.current) { clearInterval(rollTimer.current); rollTimer.current = null; }
     if (spinTimer.current) { clearTimeout(spinTimer.current); spinTimer.current = null; }
@@ -161,8 +181,9 @@ export function TaiXiuScreen({ navigation }) {
   }, [holdXiu, holdTai]);
 
   const startHold = useCallback((side) => {
-    if (!canBet || stakeAmount < HOLD_FROM || holdTimer.current) return;
+    if (!canBet || !holdMode || holdTimer.current) return;
     const bar = side === SIDES.TAI ? holdTai : holdXiu;
+    holdDone.current = false;
     bar.setValue(0);
     Animated.timing(bar, {
       toValue: 1,
@@ -173,21 +194,32 @@ export function TaiXiuScreen({ navigation }) {
     }).start();
     holdTimer.current = setTimeout(() => {
       holdTimer.current = null;
+      holdDone.current = true;
       play(side);
     }, HOLD_MS);
-  }, [canBet, holdXiu, holdTai, play, stakeAmount]);
+  }, [canBet, holdMode, holdXiu, holdTai, play]);
 
-  // Nhấn ngắn: mức nhỏ đặt ngay, mức lớn bỏ qua (phải giữ đủ 0,4 giây)
+  // Nhấn ngắn: mức nhỏ đặt ngay; mức lớn phải giữ đủ 0,4 giây.
+  // Thả sớm thì nói rõ lý do (kèm rung) thay vì im lặng như nút hỏng.
   const pressBet = (side) => {
-    if (stakeAmount >= HOLD_FROM) return;
-    play(side);
+    if (!holdMode) {
+      play(side);
+      return;
+    }
+    const completed = holdDone.current;
+    holdDone.current = false;
+    if (!completed) {
+      hapticError();
+      toast.info(`Giữ lâu hơn 0,4 giây rồi thả để đặt ${formatToken(stakeAmount)} token.`);
+    }
   };
 
   // Xúc xắc đang hiển thị: lúc lắc lấy mặt ngẫu nhiên, còn lại lấy ván gần nhất
   const shown = rolling ? faces : (latest?.dice || [1, 2, 3]);
+  // Bộ ba: tín hiệu cảnh báo (hổ phách) để khớp với banner, không dùng đỏ "thua"
   const diceTone = rolling || !latest
     ? 'normal'
-    : (latest.amount || 0) > 0 ? 'win' : 'lose';
+    : latest.triple ? 'warn' : (latest.amount || 0) > 0 ? 'win' : 'lose';
 
   const animatedStyle = {
     transform: [
@@ -203,21 +235,33 @@ export function TaiXiuScreen({ navigation }) {
     ],
   };
 
-  // Câu kết quả 1 dòng
+  // Câu kết quả 1 dòng. Số (tổng, token) dùng font mono để cột số thẳng hàng.
   let bannerTone = 'muted';
-  let bannerText = 'Chọn cửa rồi bấm TÀI hoặc XỈU để bắt đầu.';
+  let bannerNode = 'Chọn cửa rồi bấm TÀI hoặc XỈU để bắt đầu.';
   if (rolling) {
-    bannerText = 'Đang lắc xúc xắc…';
+    bannerNode = 'Đang lắc xúc xắc…';
   } else if (latest) {
     const diceText = (latest.dice || []).join('-');
+    const totalNode = <Text style={styles.num}>{latest.total}</Text>;
+    const amountNode = (
+      <Text style={styles.num}>{formatToken(Math.abs(latest.amount || 0))}</Text>
+    );
     if (latest.triple) {
       bannerTone = 'warning';
-      bannerText = `Bộ ba ${diceText} · tổng ${latest.total} → nhà cái ăn cả 2 cửa`;
+      bannerNode = (
+        <>
+          {`Bộ ba ${diceText} · tổng `}{totalNode}{' → nhà cái ăn cả 2 cửa · mất '}{amountNode}
+        </>
+      );
     } else {
       const isWin = (latest.amount || 0) > 0;
       bannerTone = isWin ? 'success' : 'danger';
       const outcome = latest.total >= 11 ? 'TÀI' : 'XỈU';
-      bannerText = `${diceText} · tổng ${latest.total} → ${outcome} · ${isWin ? `thắng +${formatToken(latest.amount)}` : `thua ${formatToken(Math.abs(latest.amount || 0))}`}`;
+      bannerNode = (
+        <>
+          {`${diceText} · tổng `}{totalNode}{` → ${outcome} · ${isWin ? 'thắng +' : 'thua '}`}{amountNode}
+        </>
+      );
     }
   }
 
@@ -261,7 +305,7 @@ export function TaiXiuScreen({ navigation }) {
             }
           >
             {[0, 1, 2].map(index => (
-              <Die key={index} value={shown[index] || 1} size={56} tone={diceTone} />
+              <Die key={index} value={shown[index] || 1} size={64} tone={diceTone} />
             ))}
           </Animated.View>
 
@@ -272,7 +316,6 @@ export function TaiXiuScreen({ navigation }) {
               bannerTone === 'danger' && styles.bannerDanger,
               bannerTone === 'warning' && styles.bannerWarning,
             ]}
-            accessibilityLiveRegion="polite"
           >
             <Text
               style={[
@@ -283,7 +326,7 @@ export function TaiXiuScreen({ navigation }) {
               ]}
               maxFontSizeMultiplier={1.6}
             >
-              {bannerText}
+              {bannerNode}
             </Text>
           </View>
 
@@ -291,7 +334,7 @@ export function TaiXiuScreen({ navigation }) {
           <View style={styles.statsLine}>
             {played > 0 ? (
               <Text style={styles.statsText} maxFontSizeMultiplier={1.5}>
-                {`${formatToken(played)} ván · ${winRate}% thắng · `}
+                {`${played}${capped ? ' ván gần nhất' : ' ván'} · ${winRate}% thắng · `}
                 <Text style={{ color: net > 0 ? colors.success : net < 0 ? colors.danger : colors.textDim }}>
                   {`${net > 0 ? '+' : ''}${formatToken(net)} ${net > 0 ? 'lãi' : net < 0 ? 'lỗ' : 'hoà'}`}
                 </Text>
@@ -319,17 +362,13 @@ export function TaiXiuScreen({ navigation }) {
         <View style={styles.card}>
           <View style={styles.cardHead}>
             <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.6}>Ván gần nhất</Text>
-            <View style={styles.cardHeadRight}>
-              <AppIcon name="clock" size={12} color={colors.textFaint} />
-              <Text style={styles.sectionHint} maxFontSizeMultiplier={1.5}>{recent.length}/{RECENT_LIMIT}</Text>
-            </View>
           </View>
 
           {recent.length === 0 ? (
             <View style={styles.emptyBox}>
               <Text style={styles.emptyTitle} maxFontSizeMultiplier={1.6}>Chưa có ván nào</Text>
               <Text style={styles.emptyText} maxFontSizeMultiplier={1.6}>
-                Kết quả 12 ván gần nhất sẽ hiện ở đây, kèm tổng điểm và cửa đã đặt.
+                Kết quả các ván sẽ hiện ở đây, kèm tổng điểm và cửa đã đặt.
               </Text>
             </View>
           ) : (
@@ -419,6 +458,15 @@ export function TaiXiuScreen({ navigation }) {
           </Text>
         </View>
 
+        {/* Trả thưởng ngay tại điểm đặt cược, không bắt cuộn xuống đọc luật */}
+        <Text style={styles.betBarOdds} maxFontSizeMultiplier={1.4}>
+          {'Thắng '}
+          <Text style={styles.num}>{`+${formatToken(stakeAmount || MIN_STAKE)}`}</Text>
+          {' · thua '}
+          <Text style={styles.num}>{`−${formatToken(stakeAmount || MIN_STAKE)}`}</Text>
+          {' · bộ ba: nhà cái ăn'}
+        </Text>
+
         <View style={styles.presets}>
           {STAKE_PRESETS.map(value => {
             const active = stakeAmount === value;
@@ -446,12 +494,6 @@ export function TaiXiuScreen({ navigation }) {
             );
           })}
         </View>
-
-        {hasBlockedPreset ? (
-          <Text style={styles.betBarNote} maxFontSizeMultiplier={1.4}>
-            Mức mờ = vượt số dư hiện tại (tối đa {formatToken(maxStake)} token)
-          </Text>
-        ) : null}
 
         <View style={styles.betRow}>
           <BetButton
@@ -590,6 +632,8 @@ const styles = StyleSheet.create({
   bannerDanger: { backgroundColor: colors.dangerDim, borderColor: colors.dangerBorder },
   bannerWarning: { backgroundColor: colors.warningDim, borderColor: colors.warningBorder },
   bannerText: { ...type.bodyStrong, color: colors.textDim, textAlign: 'center' },
+  // Số trong câu: mono để tổng/số token thẳng cột (The Money Is Monospace Rule)
+  num: { fontFamily: 'monospace' },
 
   // ── Thống kê: 1 dòng ngay dưới banner, không tách card ──
   statsLine: {
@@ -609,9 +653,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  cardHeadRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   sectionTitle: { ...type.section, color: colors.text },
-  sectionHint: { ...type.small, color: colors.textFaint },
 
   // ── Thanh cược cố định ở đáy ──
   betBar: {
@@ -626,7 +668,7 @@ const styles = StyleSheet.create({
   betBarLabel: { ...type.smallStrong, color: colors.textDim },
   betBarValue: { ...type.bodyStrong, color: colors.text, fontFamily: 'monospace' },
   betBarHint: { ...type.small, color: colors.textFaint },
-  betBarNote: { ...type.small, color: colors.textFaint, marginTop: -spacing.xs },
+  betBarOdds: { ...type.small, color: colors.textFaint, marginTop: -spacing.xs },
   presets: { flexDirection: 'row', gap: spacing.sm },
   preset: {
     flex: 1,
@@ -661,7 +703,7 @@ const styles = StyleSheet.create({
   },
   betDisabled: { opacity: 0.55 },
   betLabel: { fontSize: type.h1.fontSize, lineHeight: type.h1.lineHeight, fontWeight: '800', letterSpacing: 0.5, color: colors.text },
-  betRange: { ...type.small, color: colors.textDim },
+  betRange: { ...type.small, color: colors.textDim, fontFamily: 'monospace' },
   betHold: { ...type.smallStrong, color: colors.accentSoft },
   betProgress: {
     position: 'absolute',
@@ -689,7 +731,7 @@ const styles = StyleSheet.create({
   historyWin: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
   historyLose: { backgroundColor: colors.dangerDim, borderColor: colors.dangerBorder },
   historyDice: { ...type.bodyStrong, fontFamily: 'monospace' },
-  historyMeta: { ...type.small, color: colors.textDim },
+  historyMeta: { ...type.small, color: colors.textDim, fontFamily: 'monospace' },
   historyAmount: { ...type.smallStrong, fontFamily: 'monospace' },
 
   // ── Luật chơi ──

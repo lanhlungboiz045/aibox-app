@@ -1,8 +1,14 @@
 // utils/format.js — Hàm format hiển thị (JavaScript)
 
-// Format số token với dấu phẩy (VD: 10000 -> "10,000")
+// Format số token theo kiểu Việt Nam, dấu chấm ngăn cách nghìn (VD: 10000 -> "10.000")
+// Tự nhóm bằng regex thay vì toLocaleString để không phụ thuộc bộ dữ liệu locale
+// của máy — cùng quy ước với group() trong utils/economy.js.
 export function formatToken(amount) {
-  return amount.toLocaleString('en-US');
+  const value = Math.round((Number(amount) || 0) * 10) / 10;
+  const [intPart, decPart] = String(Math.abs(value)).split('.');
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const sign = value < 0 ? '-' : '';
+  return decPart ? `${sign}${grouped},${decPart}` : `${sign}${grouped}`;
 }
 
 // Format token rút gọn (VD: 125000 -> "125K", 1000000 -> "1M")

@@ -19,12 +19,14 @@ const TONE_BORDER = {
   normal: colors.borderSoft,
   win: colors.successBorder,
   lose: colors.dangerBorder,
+  warn: colors.warningBorder,
 };
 
 const TONE_BG = {
   normal: colors.surfaceHi,
   win: colors.successDim,
   lose: colors.dangerDim,
+  warn: colors.warningDim,
 };
 
 export function Die({ value = 1, size = 56, tone = 'normal' }) {

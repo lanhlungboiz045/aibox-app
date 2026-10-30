@@ -21,7 +21,7 @@ const TONES = {
 export function useToast() {
   const ctx = useContext(ToastContext);
   // Fallback để màn hình không crash khi quên bọc provider (ví dụ test đơn lẻ)
-  return ctx || { show() {}, success() {}, error() {}, info() {}, hide() {} };
+  return ctx || { show() {}, success() {}, error() {}, warning() {}, info() {}, hide() {} };
 }
 
 export function ToastProvider({ children }) {
@@ -82,6 +82,8 @@ export function ToastProvider({ children }) {
     hide: dismiss,
     success: (message, options) => show(message, { ...options, tone: 'success' }),
     error: (message, options) => show(message, { ...options, tone: 'error' }),
+    // Cảnh báo: việc hợp lệ nhưng người dùng cần biết (bộ ba ăn cả 2 cửa, thả tay quá sớm)
+    warning: (message, options) => show(message, { ...options, tone: 'warning' }),
     info: (message, options) => show(message, { ...options, tone: 'info' }),
   }).current;
   api.show = show;
@@ -116,6 +118,9 @@ function ToastHost({ current, anim, onHide }) {
         accessibilityRole="alert"
         accessibilityLiveRegion="polite"
         accessibilityLabel={current.message}
+        // Không có nút hành động thì cho chạm xuyên qua: toast nổi ở đáy,
+        // không được chặn thanh cược cố định bên dưới.
+        pointerEvents={current.action ? 'auto' : 'none'}
       >
         <AppIcon name={tone.icon} size={18} color={tone.color} />
         <Text style={styles.text} numberOfLines={3} maxFontSizeMultiplier={1.8}>
