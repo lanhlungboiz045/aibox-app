@@ -17,7 +17,7 @@ import { hapticError, hapticSuccess } from '../utils/feedback';
 import {
   createApiKey, loadApiKeys, peekApiKeys, removeApiKey, restoreApiKey, setApiKeyActive, MAX_API_KEYS,
 } from '../services/apiKeys';
-import { colors, layout, motion, radius, spacing, type } from '../theme/tokens';
+import { centeredContent, colors, layout, motion, radius, spacing, type } from '../theme/tokens';
 import { t } from '../i18n';
 
 export function APIKeysScreen({ navigation }) {

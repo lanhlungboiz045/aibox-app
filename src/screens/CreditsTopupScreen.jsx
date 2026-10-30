@@ -13,7 +13,7 @@ import { hapticError, hapticSuccess } from '../utils/feedback';
 import {
   AppIcon, BottomSheet, Button, EmptyState, IconButton, Row, useToast,
 } from '../components/ui';
-import { colors, layout, radius, spacing, type } from '../theme/tokens';
+import { centeredContent, colors, layout, radius, spacing, type } from '../theme/tokens';
 import { t } from '../i18n';
 
 const PACKAGES = [

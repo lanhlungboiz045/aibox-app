@@ -12,7 +12,7 @@ import { copyText } from '../utils/clipboard';
 import {
   BottomSheet, Button, Chip, EmptyState, FadeIn, IconButton, ListRow, Row, AppIcon, useToast,
 } from '../components/ui';
-import { colors, layout, radius, spacing, touch, type } from '../theme/tokens';
+import { centeredContent, colors, layout, radius, spacing, touch, type } from '../theme/tokens';
 import { t } from '../i18n';
 
 const RANGES = [

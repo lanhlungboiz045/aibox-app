@@ -6,7 +6,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatToken } from '../utils/format';
-import { colors, touch } from '../theme/tokens';
+import { centeredContent, colors, touch } from '../theme/tokens';
 
 export function UsageDashboardScreen({ navigation }) {
   const insets = useSafeAreaInsets();

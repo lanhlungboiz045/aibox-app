@@ -13,7 +13,7 @@ import { AppDrawer } from '../components/AppDrawer';
 import { DailyRewardModal } from '../components/DailyRewardModal';
 import { AppIcon, MiniBanner, SectionHeader, ListRow, StatTile, Sparkline, IconButton, EmptyState, PressableScale } from '../components/ui';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
-import { colors, layout, radius, spacing, touch, type } from '../theme/tokens';
+import { centeredContent, colors, layout, radius, spacing, touch, type } from '../theme/tokens';
 
 // Ngưỡng coi là "số dư thấp" để hiện banner nhắc nạp thêm
 const LOW_BALANCE = 1000;

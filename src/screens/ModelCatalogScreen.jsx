@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { TokenBadge } from '../components/TokenBadge';
 import { formatToken } from '../utils/format';
-import { colors, touch } from '../theme/tokens';
+import { centeredContent, colors, touch } from '../theme/tokens';
 
 const TYPE_FILTERS = [
   { key: 'all', label: 'Tất cả' },
