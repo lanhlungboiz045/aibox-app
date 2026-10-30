@@ -7,6 +7,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { getStoreItem } from '../data/storeItems';
 import { formatToken } from '../utils/format';
+import { MIN_AI_CALL_BALANCE } from '../utils/aiCost';
 
 export function MarketAnalystModal({ visible, market, onClose }) {
   const { state, analyzeMarketAI, aiConfig } = useApp();
@@ -31,8 +32,8 @@ export function MarketAnalystModal({ visible, market, onClose }) {
   if (!market || !user) return null;
 
   const model = availableModels.find(m => m.id === modelId) || null;
-  const cost = model?.tokenCost || 0;
-  const canAfford = user.tokenBalance >= cost;
+  // Trừ theo usage thật nên chưa biết trước chi phí → chỉ cần số dư tối thiểu
+  const canAfford = user.tokenBalance >= MIN_AI_CALL_BALANCE;
   // Prompt pack mua trong Store → dùng làm yêu cầu thêm
   const promptPacks = user.inventory.map(getStoreItem).filter(item => item && item.type === 'prompt');
 
@@ -47,7 +48,13 @@ export function MarketAnalystModal({ visible, market, onClose }) {
     });
     setBusy(false);
     if (!response.ok) { setError(response.error); return; }
-    setResult({ text: response.text, modelName: model.name, cost, mode: response.mode });
+    setResult({
+      text: response.text,
+      modelName: model.name,
+      cost: response.cost || 0,
+      usage: response.usage,
+      mode: response.mode,
+    });
   };
 
   return (
@@ -74,7 +81,6 @@ export function MarketAnalystModal({ visible, market, onClose }) {
                     >
                       <Text style={styles.modelIcon}>{m.icon}</Text>
                       <Text style={[styles.modelName, m.id === modelId && styles.modelNameActive]}>{m.name}</Text>
-                      <Text style={styles.modelCost}>{m.tokenCost} {'\u{1F4B0}'}</Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -109,7 +115,7 @@ export function MarketAnalystModal({ visible, market, onClose }) {
                 <View style={styles.costRow}>
                   <Text style={styles.costLabel}>Chi phí</Text>
                   <Text style={[styles.costValue, !canAfford && { color: '#FF6B6B' }]}>
-                    {cost} {'\u{1F4B0}'} · số dư {formatToken(user.tokenBalance)}
+                    trừ theo token thật · số dư {formatToken(user.tokenBalance)}
                   </Text>
                 </View>
 
@@ -124,7 +130,7 @@ export function MarketAnalystModal({ visible, market, onClose }) {
                     ? <ActivityIndicator color="#FFFFFF" />
                     : <Text style={styles.runText}>{'\u{2728}'} Phân tích ngay</Text>}
                 </TouchableOpacity>
-                {!canAfford && <Text style={styles.hint}>Không đủ token — vào Store hoặc nhận thưởng quests.</Text>}
+                {!canAfford && <Text style={styles.hint}>Không đủ token — cần tối thiểu {MIN_AI_CALL_BALANCE} 💰 để gọi AI.</Text>}
                 {aiConfig?.mode !== 'live' && (
                   <Text style={styles.hint}>
                     {'\u{26A0}\u{FE0F}'} Chưa cấu hình AI thật — kết quả là phân tích mẫu (Profile → Cấu hình AI).
@@ -137,7 +143,11 @@ export function MarketAnalystModal({ visible, market, onClose }) {
               <>
                 <View style={styles.resultMeta}>
                   <Text style={styles.resultMetaText}>
-                    {result.modelName} · -{result.cost} {'\u{1F4B0}'} · {result.mode === 'live' ? 'LIVE' : 'MOCK'}
+                    {result.modelName} · -{formatToken(result.cost)} {'\u{1F4B0}'}
+                    {result.usage && result.usage.total_tokens
+                      ? ` (${result.usage.total_tokens}${result.usage.estimated ? ' ~' : ''} token)`
+                      : ''}
+                    {' · '}{result.mode === 'live' ? 'LIVE' : 'MOCK'}
                   </Text>
                 </View>
                 <Text style={styles.resultText} selectable>{result.text}</Text>
@@ -174,7 +184,6 @@ const styles = StyleSheet.create({
   modelIcon: { fontSize: 16, marginBottom: 2 },
   modelName: { color: '#8E8E93', fontSize: 12, fontWeight: '600' },
   modelNameActive: { color: '#FFFFFF' },
-  modelCost: { color: '#A78BFA', fontSize: 10, marginTop: 2, fontFamily: 'monospace' },
   packChip: { backgroundColor: '#22262E', borderRadius: 8, borderWidth: 1, borderColor: '#2A2E36', paddingHorizontal: 10, paddingVertical: 6 },
   packChipActive: { borderColor: '#00CE7E' },
   packText: { color: '#E0E0E0', fontSize: 11 },

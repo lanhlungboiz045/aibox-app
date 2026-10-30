@@ -18,8 +18,7 @@ export function AIModelCard({ model, onPress, compact }) {
           </View>
           <View style={styles.costWrap}>
             <Text style={styles.costIcon}>{'\u{1F4B0}'}</Text>
-            <Text style={styles.cost}>{model.tokenCost}</Text>
-            <Text style={styles.costSuffix}>/call</Text>
+            <Text style={styles.cost}>usage</Text>
           </View>
         </View>
         <Text style={styles.description} numberOfLines={2}>{model.description}</Text>
@@ -54,8 +53,7 @@ const styles = StyleSheet.create({
   provider: { color: '#8E8E93', fontSize: 12, marginTop: 2 },
   costWrap: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: 'rgba(108, 92, 231, 0.12)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   costIcon: { fontSize: 12 },
-  cost: { color: '#A78BFA', fontSize: 13, fontWeight: '700', fontFamily: 'monospace' },
-  costSuffix: { color: '#5C5C5C', fontSize: 11 },
+  cost: { color: '#A78BFA', fontSize: 12, fontWeight: '700' },
   description: { color: '#8E8E93', fontSize: 13, lineHeight: 18, marginBottom: 10 },
   bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   capWrap: { flexDirection: 'row', gap: 4 },

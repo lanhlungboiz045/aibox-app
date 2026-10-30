@@ -9,6 +9,7 @@ import { AIModelCard } from '../components/AIModelCard';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { ChatBubble } from '../components/ChatBubble';
 import { formatToken, generateId } from '../utils/format';
+import { MIN_AI_CALL_BALANCE } from '../utils/aiCost';
 
 // Bong bóng "AI đang trả lời..." với dấu chấm nhấp nháy
 function TypingRow() {
@@ -67,8 +68,12 @@ export function AIHubScreen() {
     const prompt = input.trim();
     const model = selectedModel;
 
-    if (state.user.tokenBalance < model.tokenCost) {
-      Alert.alert('Không đủ token', `Cần ${model.tokenCost} token, bạn chỉ có ${formatToken(state.user.tokenBalance)}.`);
+    // Chưa biết trước chi phí thật (trừ theo usage) → chỉ yêu cầu số dư tối thiểu
+    if (state.user.tokenBalance < MIN_AI_CALL_BALANCE) {
+      Alert.alert(
+        'Không đủ token',
+        `Cần tối thiểu ${MIN_AI_CALL_BALANCE} token để gọi AI, bạn chỉ có ${formatToken(state.user.tokenBalance)}.`
+      );
       return;
     }
 
@@ -113,13 +118,15 @@ export function AIHubScreen() {
       content: res.text,
       modelId: model.id,
       timestamp: new Date().toISOString(),
-      tokenCost: model.tokenCost,
+      // Token thực tế đã bị trừ theo usage của API
+      tokenCost: res.cost || 0,
     }]);
     setLastMeta({
       mode: res.mode,
       model: res.model,
       latencyMs: res.latencyMs,
       usage: res.usage,
+      cost: res.cost || 0,
     });
   };
 
@@ -140,7 +147,7 @@ export function AIHubScreen() {
             <View>
               <Text style={styles.chatHeaderName}>{selectedModel.name}</Text>
               <Text style={styles.chatHeaderSub}>
-                {selectedModel.tokenCost} {'\u{1F4B0}'}/call ·{' '}
+                trừ theo token thực tế ·{' '}
                 {aiConfig?.mode === 'live' ? `LIVE · ${aiConfig.model}` : 'MOCK (chưa có key)'}
               </Text>
             </View>
@@ -167,7 +174,10 @@ export function AIHubScreen() {
             <Text style={styles.metaText} numberOfLines={1}>
               {lastMeta.mode === 'live' ? `\u{2705} ${lastMeta.model}` : '\u{1F9EA} Trả lời mô phỏng'}
               {lastMeta.latencyMs ? ` · ${lastMeta.latencyMs}ms` : ''}
-              {lastMeta.usage && lastMeta.usage.total_tokens ? ` · ${lastMeta.usage.total_tokens} tokens` : ''}
+              {lastMeta.cost ? ` · -${formatToken(lastMeta.cost)} token` : ''}
+              {lastMeta.usage && lastMeta.usage.total_tokens
+                ? ` · usage ${lastMeta.usage.total_tokens}${lastMeta.usage.estimated ? ' (ước lượng)' : ''}`
+                : ''}
             </Text>
           </View>
         )}

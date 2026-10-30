@@ -1,5 +1,5 @@
 // screens/ModelCatalogScreen.jsx — Catalog mô hình AI (kiểu AI Box)
-// Hiển thị danh sách model theo nhà cung cấp, giá/token, context, capability.
+// Hiển thị danh sách model theo nhà cung cấp, chi phí trừ theo usage, context, capability.
 // Nút "Thử ngay" chuyển sang AI Hub với model đã chọn.
 import React, { useState, useMemo } from 'react';
 import {
@@ -56,8 +56,8 @@ export function ModelCatalogScreen({ navigation }) {
           <Text style={styles.provider}>{item.providerName}</Text>
         </View>
         <View style={styles.priceBox}>
-          <Text style={styles.price}>{item.tokenCost}</Text>
-          <Text style={styles.priceUnit}>token/lần</Text>
+          <Text style={styles.price}>usage</Text>
+          <Text style={styles.priceUnit}>token thật</Text>
         </View>
       </View>
 
@@ -157,7 +157,7 @@ export function ModelCatalogScreen({ navigation }) {
                 </View>
                 <Text style={styles.modalDesc}>{detail.description}</Text>
                 <View style={styles.modalMeta}>
-                  <Text style={styles.modalMetaText}>Giá: {detail.tokenCost} token / lần gọi</Text>
+                  <Text style={styles.modalMetaText}>Giá: trừ theo token API báo về (usage)</Text>
                   <Text style={styles.modalMetaText}>Context: {detail.inputLimit.toLocaleString('vi-VN')} token</Text>
                   <Text style={styles.modalMetaText}>Đánh giá: {detail.rating} / 5</Text>
                   <Text style={styles.modalMetaText}>Lượt dùng: {detail.popularity.toLocaleString('vi-VN')}</Text>

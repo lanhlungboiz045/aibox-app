@@ -127,7 +127,7 @@ Bấm "Tiếp tục với Google"
 
 ## 5. Tính năng
 
-1. **AI Hub** — 12 model AI (GPT-4o, Claude 3.5, Gemini Pro, DALL-E 3, Midjourney...) — chat interface, mỗi call tốn token
+1. **AI Hub** — 12 model AI (GPT-4o, Claude 3.5, Gemini Pro, DALL-E 3, Midjourney...) — chat interface, trừ token theo usage thật của API
 2. **Markets** — 12 prediction markets — mua YES/NO shares bằng token
 3. **Portfolio** — positions + P&L + transaction history
 4. **Transfer** — chuyển token cho người dùng khác (chỉ thấy người đã đăng nhập trên cùng máy + trader nền)
@@ -154,6 +154,12 @@ bấm preset (Pollinations / OpenAI / OpenRouter / DeepSeek / Groq / Gemini / AI
 > Với **Gemini** nên dùng `gemini-3.1-flash-lite`: trả lời nhanh và không tốn token cho phần
 > "thinking". Các model Gemini 3.x khác bật suy luận mặc định, có thể ăn hết `max_tokens`
 > khiến câu trả lời ngắn/rỗng — khi đó tăng max token hoặc đổi model.
+
+**Cách tính token bị trừ:** app không còn dùng giá cố định cho từng model. Sau mỗi lần gọi
+thành công, app đọc `usage.total_tokens` do API trả về (prompt + completion, gồm cả token
+"thinking") và trừ đúng số đó. Nếu gateway không trả `usage`, app ước lượng ~4 ký tự/token.
+Ví cần tối thiểu **10 token** để bắt đầu; nếu số dư ít hơn chi phí thật thì chỉ trừ tối đa
+bằng số dư (không âm ví). Gọi lỗi/timeout thì không trừ token.
 
 **Cách khai báo trong `.env`** (áp dụng cho cả máy khác):
 

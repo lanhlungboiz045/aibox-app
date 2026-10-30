@@ -16,6 +16,7 @@ import { QUESTS, ensureQuestState, getQuestProgress } from '../data/quests';
 import { clamp, generateId, toDayKey, daysBetween } from '../utils/format';
 import { getDailyReward } from '../utils/rewards';
 import { buildMarketAnalysis } from '../utils/analyst';
+import { MIN_AI_CALL_BALANCE, costFromUsage, chargeTokens } from '../utils/aiCost';
 import {
   subscribeAuth,
   signInWithGoogle as googleSignIn,
@@ -572,20 +573,24 @@ function reducer(state, action) {
     // ---------- AI ----------
     case 'AI_CALL': {
       const user = getCurrentUser(state);
-      const { modelId, prompt } = action.payload;
+      const { modelId, prompt, cost } = action.payload || {};
       const model = state.aiModels.find(m => m.id === modelId);
       if (!user || !model) return state;
-      if (user.tokenBalance < model.tokenCost) return state;
+
+      // Trừ đúng số token API đã dùng; nếu ví không đủ thì trừ tối đa bằng số dư
+      const charged = chargeTokens(user.tokenBalance, cost);
+      if (charged <= 0) return state;
 
       const updated = {
         ...user,
-        tokenBalance: user.tokenBalance - model.tokenCost,
-        totalSpentOnAI: user.totalSpentOnAI + model.tokenCost,
+        tokenBalance: user.tokenBalance - charged,
+        totalSpentOnAI: (user.totalSpentOnAI || 0) + charged,
         transactions: addTransaction(user, {
           type: 'AI_CALL',
           description: `Gọi ${model.name}: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}"`,
-          amount: -model.tokenCost,
+          amount: -charged,
           modelId,
+          tokens: charged,
         }),
       };
 
@@ -878,18 +883,6 @@ function reducer(state, action) {
       if (userId === actor.id) return state;
       if (!['admin', 'creator', 'user'].includes(role)) return state;
       return withAccounts(state, state.accounts.map(a => (a.id === userId ? { ...a, role } : a)));
-    }
-
-    case 'ADMIN_SET_MODEL_PRICE': {
-      const actor = getCurrentUser(state);
-      const { modelId, tokenCost } = action.payload;
-      const price = Math.round(Number(tokenCost));
-      if (!actor || actor.role !== 'admin') return state;
-      if (!Number.isFinite(price) || price < 1 || price > 10000) return state;
-      return {
-        ...state,
-        aiModels: state.aiModels.map(m => (m.id === modelId ? { ...m, tokenCost: price } : m)),
-      };
     }
 
     case 'ADMIN_TOGGLE_MODEL': {
@@ -1365,32 +1358,45 @@ export function AppProvider({ children }) {
     if (!model) return { ok: false, error: 'Model không tồn tại.' };
     if (!model.isAvailable) return { ok: false, error: 'Model đang tạm bảo trì.' };
     if (!text) return { ok: false, error: 'Nội dung trống.' };
-    if (user.tokenBalance < model.tokenCost) {
-      return { ok: false, error: `Cần ${model.tokenCost} token, bạn chỉ có ${user.tokenBalance}.` };
+    if (user.tokenBalance < MIN_AI_CALL_BALANCE) {
+      return {
+        ok: false,
+        error: `Cần tối thiểu ${MIN_AI_CALL_BALANCE} token để gọi AI, bạn chỉ có ${user.tokenBalance}.`,
+      };
     }
 
     // Chưa cấu hình key → dùng mock để app vẫn demo được
     if (!isLiveMode()) {
-      dispatch({ type: 'AI_CALL', payload: { modelId, prompt: text } });
-      const response = MOCK_AI_RESPONSES[Math.floor(Math.random() * MOCK_AI_RESPONSES.length)]
+      const raw = MOCK_AI_RESPONSES[Math.floor(Math.random() * MOCK_AI_RESPONSES.length)]
         || 'Đây là câu trả lời mô phỏng (chưa cấu hình API key).';
-      return { ok: true, mode: 'mock', text: response.replace('X', model.tokenCost.toString()), model: model.id };
+      const cost = costFromUsage({ prompt: text, reply: raw });
+      dispatch({ type: 'AI_CALL', payload: { modelId, prompt: text, cost } });
+      return {
+        ok: true,
+        mode: 'mock',
+        text: raw.replace('X', cost.toString()),
+        model: model.id,
+        cost,
+        usage: { total_tokens: cost, estimated: true },
+      };
     }
 
-    const result = await chatComplete({
-      appModelId: modelId,
-      messages: buildChatMessages({ history, prompt: text }),
-    });
+    const messages = buildChatMessages({ history, prompt: text });
+    const result = await chatComplete({ appModelId: modelId, messages });
 
     if (!result.ok) return { ok: false, mode: result.mode || 'live', error: result.error };
 
-    dispatch({ type: 'AI_CALL', payload: { modelId, prompt: text } });
+    // Trừ token theo usage thật của API (fallback ước lượng nếu gateway không trả)
+    const cost = costFromUsage({ usage: result.usage, messages, reply: result.text });
+
+    dispatch({ type: 'AI_CALL', payload: { modelId, prompt: text, cost } });
     return {
       ok: true,
       mode: 'live',
       text: result.text,
       model: result.model,
       usage: result.usage,
+      cost,
       latencyMs: result.latencyMs,
     };
   }, []);
@@ -1406,15 +1412,26 @@ export function AppProvider({ children }) {
     if (!market) return { ok: false, error: 'Market không tồn tại.' };
     if (!model) return { ok: false, error: 'Model không tồn tại.' };
     if (!model.isAvailable) return { ok: false, error: 'Model đang tạm bảo trì.' };
-    if (user.tokenBalance < model.tokenCost) {
-      return { ok: false, error: `Cần ${model.tokenCost} token, bạn chỉ có ${user.tokenBalance}.` };
+    if (user.tokenBalance < MIN_AI_CALL_BALANCE) {
+      return {
+        ok: false,
+        error: `Cần tối thiểu ${MIN_AI_CALL_BALANCE} token để gọi AI, bạn chỉ có ${user.tokenBalance}.`,
+      };
     }
 
     const prompt = `Phân tích kèo: ${market.question}`;
 
     if (!isLiveMode()) {
-      dispatch({ type: 'AI_CALL', payload: { modelId, prompt } });
-      return { ok: true, mode: 'mock', text: buildMarketAnalysis(market, model, extraPrompt) };
+      const mockText = buildMarketAnalysis(market, model, extraPrompt);
+      const cost = costFromUsage({ prompt, reply: mockText });
+      dispatch({ type: 'AI_CALL', payload: { modelId, prompt, cost } });
+      return {
+        ok: true,
+        mode: 'mock',
+        text: mockText,
+        cost,
+        usage: { total_tokens: cost, estimated: true },
+      };
     }
 
     const marketPrompt = [
@@ -1432,16 +1449,18 @@ export function AppProvider({ children }) {
         + '4) Rủi ro chính, 5) Gợi ý quản trị vốn. Không hứa hẹn lợi nhuận.',
     ].filter(Boolean).join('\n');
 
+    const messages = [
+      {
+        role: 'system',
+        content: 'Bạn là chuyên gia phân tích prediction market. Trả lời tiếng Việt, '
+          + 'thực tế, có cấu trúc, không đưa lời khuyên đầu tư chắc chắn.',
+      },
+      { role: 'user', content: marketPrompt },
+    ];
+
     const result = await chatComplete({
       appModelId: modelId,
-      messages: [
-        {
-          role: 'system',
-          content: 'Bạn là chuyên gia phân tích prediction market. Trả lời tiếng Việt, '
-            + 'thực tế, có cấu trúc, không đưa lời khuyên đầu tư chắc chắn.',
-        },
-        { role: 'user', content: marketPrompt },
-      ],
+      messages,
       temperature: 0.4,
       // Đủ chỗ cho câu trả lời dài + token suy luận của model mới
       maxTokens: 1600,
@@ -1449,8 +1468,17 @@ export function AppProvider({ children }) {
 
     if (!result.ok) return { ok: false, mode: 'live', error: result.error };
 
-    dispatch({ type: 'AI_CALL', payload: { modelId, prompt } });
-    return { ok: true, mode: 'live', text: result.text, model: result.model, usage: result.usage };
+    const cost = costFromUsage({ usage: result.usage, messages, reply: result.text });
+
+    dispatch({ type: 'AI_CALL', payload: { modelId, prompt, cost } });
+    return {
+      ok: true,
+      mode: 'live',
+      text: result.text,
+      model: result.model,
+      usage: result.usage,
+      cost,
+    };
   }, []);
 
   const transfer = useCallback((recipient, amount, note) => {
@@ -1544,10 +1572,6 @@ export function AppProvider({ children }) {
     const result = await updateUserRole(userId, role);
     if (!result.ok) return { ok: false, error: result.error };
     return { ok: true };
-  }, []);
-
-  const setModelPrice = useCallback((modelId, tokenCost) => {
-    dispatch({ type: 'ADMIN_SET_MODEL_PRICE', payload: { modelId, tokenCost } });
   }, []);
 
   const toggleModelAvailability = useCallback((modelId) => {
@@ -1645,7 +1669,6 @@ export function AppProvider({ children }) {
         // admin actions
         setUserStatus,
         setUserRole,
-        setModelPrice,
         toggleModelAvailability,
         // copy trade
         followTrader,

@@ -246,7 +246,7 @@ export function ProfileScreen({ navigation }) {
       {isAdmin && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{'\u{1F6E1}'} System Admin</Text>
-          {link('\u{2699}', 'Admin Dashboard', () => navigation.navigate('AdminHome'), { hint: 'Markets, giá AI, users, rủi ro dòng tiền' })}
+          {link('\u{2699}', 'Admin Dashboard', () => navigation.navigate('AdminHome'), { hint: 'Markets, AI models, users, rủi ro dòng tiền' })}
         </View>
       )}
 
