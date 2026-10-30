@@ -151,6 +151,10 @@ bấm preset (Pollinations / OpenAI / OpenRouter / DeepSeek / Groq / Gemini / AI
 > Chưa có API key? Chọn preset **Pollinations (free)** — gateway công khai, **không cần key**,
 > gọi được AI thật ngay (có thể bị giới hạn tốc độ, độ trễ ~5–15s/câu).
 
+> Với **Gemini** nên dùng `gemini-3.1-flash-lite`: trả lời nhanh và không tốn token cho phần
+> "thinking". Các model Gemini 3.x khác bật suy luận mặc định, có thể ăn hết `max_tokens`
+> khiến câu trả lời ngắn/rỗng — khi đó tăng max token hoặc đổi model.
+
 **Cách khai báo trong `.env`** (áp dụng cho cả máy khác):
 
 ```

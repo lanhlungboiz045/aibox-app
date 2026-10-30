@@ -213,6 +213,9 @@ async function requestOnce({ baseUrl, apiKey, model, messages, temperature, maxT
       };
     }
 
+    // Gemini (OpenAI-compat) đôi khi bọc kết quả trong mảng 1 phần tử
+    if (Array.isArray(data)) data = data[0] || null;
+
     if (!res.ok) {
       return {
         ok: false,
@@ -226,12 +229,19 @@ async function requestOnce({ baseUrl, apiKey, model, messages, temperature, maxT
 
     const text = extractText(data);
     if (!text) {
+      // Model "thinking" (Gemini 2.5+/3.x) có thể dùng hết max_tokens cho phần
+      // suy luận nội bộ → content rỗng dù HTTP 200.
+      const finish = data && data.choices && data.choices[0] && data.choices[0].finish_reason;
       return {
         ok: false,
         status: res.status,
         latencyMs,
         model,
-        error: 'AI trả về nội dung rỗng. Thử lại hoặc đổi model.',
+        finishReason: finish,
+        code: finish === 'length' ? 'EMPTY_LENGTH' : 'EMPTY_CONTENT',
+        error: finish === 'length'
+          ? 'AI trả về nội dung rỗng vì model dùng hết token cho phần suy luận (thinking). Tăng max token trong prompt hoặc đổi sang model nhẹ hơn (vd gemini-3.1-flash-lite).'
+          : 'AI trả về nội dung rỗng. Thử lại hoặc đổi model.',
       };
     }
 
@@ -270,8 +280,10 @@ export async function chatComplete({
   appModelId,
   messages,
   temperature = 0.7,
-  maxTokens = 1024,
-  timeoutMs = 45000,
+  // Model "thinking" tiêu tốn token cho suy luận trước khi trả lời → để rộng tay
+  maxTokens = 1500,
+  // Model "thinking" có thể lâu hơn; 60s an toàn cho mạng di động
+  timeoutMs = 60000,
 } = {}) {
   const cfg = getAISettings();
   if (!isAIConfigured(cfg)) {
@@ -321,8 +333,9 @@ export async function testAIConnection() {
       { role: 'user', content: 'Trả lời đúng một từ: OK' },
     ],
     temperature: 0,
-    maxTokens: 16,
-    timeoutMs: 20000,
+    // Model thinking (Gemini 3.x) cần chỗ cho token suy luận, đặt quá thấp sẽ rỗng
+    maxTokens: 512,
+    timeoutMs: 40000,
   });
   return {
     ...result,

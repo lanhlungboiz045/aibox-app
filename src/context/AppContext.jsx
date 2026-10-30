@@ -1443,7 +1443,8 @@ export function AppProvider({ children }) {
         { role: 'user', content: marketPrompt },
       ],
       temperature: 0.4,
-      maxTokens: 900,
+      // Đủ chỗ cho câu trả lời dài + token suy luận của model mới
+      maxTokens: 1600,
     });
 
     if (!result.ok) return { ok: false, mode: 'live', error: result.error };

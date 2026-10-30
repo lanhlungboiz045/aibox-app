@@ -63,8 +63,8 @@ export const AI_PRESETS = [
     name: 'Google Gemini',
     icon: '\u{2728}',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-    model: 'gemini-2.0-flash',
-    hint: 'Có free tier · aistudio.google.com/apikey',
+    model: 'gemini-3.1-flash-lite',
+    hint: 'Free tier · aistudio.google.com/apikey · flash-lite trả lời nhanh, không tốn token "thinking"',
   },
   {
     id: 'aibox',
