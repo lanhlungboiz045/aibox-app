@@ -24,7 +24,7 @@ import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { useReduceMotion } from '../hooks/useReduceMotion';
 import { formatToken, formatRelativeTime } from '../utils/format';
 import { chatsRange } from '../utils/economy';
-import { hapticError, hapticPress, hapticSuccess, hapticTap } from '../utils/feedback';
+import { hapticError, hapticPress, hapticTap } from '../utils/feedback';
 import {
   MIN_STAKE, STAKE_PRESETS, SIDES, SIDE_LABELS, SIDE_RANGES,
   clampStake, rollDice,
@@ -67,7 +67,9 @@ export function TaiXiuScreen({ navigation }) {
 
   const balance = state.user?.tokenBalance || 0;
   const stakeAmount = clampStake(stake, balance);
-  const canBet = stakeAmount >= MIN_STAKE && !rolling;
+  // Số dư dưới mức tối thiểu → không có mức cược hợp lệ: đừng hứa "thắng +100"
+  const hasStake = stakeAmount >= MIN_STAKE;
+  const canBet = hasStake && !rolling;
   // Mức ≥ 1.000 phải giữ 0,4 giây; trình đọc màn hình thì miễn (xem pressBet)
   const holdMode = stakeAmount >= HOLD_FROM && !screenReader;
   // Lịch sử bị cắt ở MAX_TRANSACTIONS → thống kê chỉ đúng trong cửa sổ đó
@@ -121,18 +123,21 @@ export function TaiXiuScreen({ navigation }) {
 
     setFaces(result.dice || [1, 1, 1]);
     const diceText = (result.dice || []).join('-');
+    // Số dư sau ván: reducer đã cộng/trừ, ở đây tính lại để toast nói con số
+    // người chơi cần biết (số dư), không phải tổng xúc xắc.
+    const after = balance + (result.net || 0);
     if (result.triple) {
       hapticError();
-      toast.warning(`Bộ ba ${diceText} — nhà cái ăn cả 2 cửa.`);
+      toast.warning(`Bộ ba ${diceText} — mất ${formatToken(amount)} token · số dư ${formatToken(after)}`);
     } else if (result.win) {
-      hapticSuccess();
-      toast.success(`Thắng +${formatToken(amount)} token · tổng ${result.total}`);
+      // Toast success đã rung mừng → không rung thêm lần nữa
+      toast.success(`Thắng +${formatToken(amount)} · số dư ${formatToken(after)}`);
     } else {
       // Thua là kết quả hợp lệ, không phải lỗi hệ thống → rung nhẹ
       hapticTap();
-      toast.info(`Thua ${formatToken(amount)} token · tổng ${result.total}`);
+      toast.info(`Thua ${formatToken(amount)} · số dư ${formatToken(after)}`, { duration: 2000 });
     }
-  }, [placeTaiXiuBet, toast]);
+  }, [balance, placeTaiXiuBet, toast]);
 
   // 1 chạm đặt cược: lắc ~700ms rồi công bố (bỏ animation nếu máy bật giảm chuyển động)
   const play = useCallback((side) => {
@@ -334,8 +339,13 @@ export function TaiXiuScreen({ navigation }) {
           <View style={styles.statsLine}>
             {played > 0 ? (
               <Text style={styles.statsText} maxFontSizeMultiplier={1.5}>
-                {`${played}${capped ? ' ván gần nhất' : ' ván'} · ${winRate}% thắng · `}
-                <Text style={{ color: net > 0 ? colors.success : net < 0 ? colors.danger : colors.textDim }}>
+                {`${capped ? `${played}+ ván gần nhất` : `${played} ván`} · ${winRate}% thắng · `}
+                <Text
+                  style={[
+                    styles.num,
+                    { color: net > 0 ? colors.success : net < 0 ? colors.danger : colors.textDim },
+                  ]}
+                >
                   {`${net > 0 ? '+' : ''}${formatToken(net)} ${net > 0 ? 'lãi' : net < 0 ? 'lỗ' : 'hoà'}`}
                 </Text>
               </Text>
@@ -417,8 +427,7 @@ export function TaiXiuScreen({ navigation }) {
             <View style={styles.ruleRow}>
               <AppIcon name="info" size={14} color={colors.textFaint} />
               <Text style={styles.ruleText} maxFontSizeMultiplier={1.6}>
-                Đặt đúng cửa: thắng +1 lần cược, sai: −1 lần cược. Không có cửa hoà. Với mức
-                cược hiện tại: thắng +{formatToken(stakeAmount || MIN_STAKE)}, thua −{formatToken(stakeAmount || MIN_STAKE)}.
+                {`Đặt đúng cửa: thắng +1 lần cược, sai: −1 lần cược. Không có cửa hoà.${hasStake ? ` Với mức cược hiện tại: thắng +${formatToken(stakeAmount)}, thua −${formatToken(stakeAmount)}.` : ''}`}
               </Text>
             </View>
             <View style={styles.ruleRow}>
@@ -450,22 +459,37 @@ export function TaiXiuScreen({ navigation }) {
       {/* ── Thanh cược cố định ở đáy: mức cược + 2 cửa, luôn trong tầm ngón cái ── */}
       <View style={[styles.betBar, centeredContent, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
         <View style={styles.betBarHead}>
-          <Text style={styles.betBarLabel} maxFontSizeMultiplier={1.4}>
-            Mức cược <Text style={styles.betBarValue}>{formatToken(stakeAmount)}</Text>
-          </Text>
-          <Text style={styles.betBarHint} maxFontSizeMultiplier={1.4}>
-            ≈ {chatsRange(stakeAmount || MIN_STAKE)} câu hỏi AI
-          </Text>
+          {hasStake ? (
+            <>
+              <Text style={styles.betBarLabel} maxFontSizeMultiplier={1.4}>
+                Mức cược <Text style={styles.betBarValue}>{formatToken(stakeAmount)}</Text>
+              </Text>
+              <Text style={styles.betBarHint} maxFontSizeMultiplier={1.4}>
+                ≈ {chatsRange(stakeAmount)} câu hỏi AI
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.betBarLabel} maxFontSizeMultiplier={1.4}>
+                Chưa đủ token để cược
+              </Text>
+              <Text style={styles.betBarHint} maxFontSizeMultiplier={1.4}>
+                {`Tối thiểu ${formatToken(MIN_STAKE)}/ván`}
+              </Text>
+            </>
+          )}
         </View>
 
         {/* Trả thưởng ngay tại điểm đặt cược, không bắt cuộn xuống đọc luật */}
-        <Text style={styles.betBarOdds} maxFontSizeMultiplier={1.4}>
-          {'Thắng '}
-          <Text style={styles.num}>{`+${formatToken(stakeAmount || MIN_STAKE)}`}</Text>
-          {' · thua '}
-          <Text style={styles.num}>{`−${formatToken(stakeAmount || MIN_STAKE)}`}</Text>
-          {' · bộ ba: nhà cái ăn'}
-        </Text>
+        {hasStake ? (
+          <Text style={styles.betBarOdds} maxFontSizeMultiplier={1.4}>
+            {'Thắng '}
+            <Text style={styles.num}>{`+${formatToken(stakeAmount)}`}</Text>
+            {' · thua '}
+            <Text style={styles.num}>{`−${formatToken(stakeAmount)}`}</Text>
+            {' · bộ ba: nhà cái ăn'}
+          </Text>
+        ) : null}
 
         <View style={styles.presets}>
           {STAKE_PRESETS.map(value => {
@@ -503,7 +527,9 @@ export function TaiXiuScreen({ navigation }) {
             disabled={!canBet}
             reduceMotion={reduceMotion}
             progress={holdTai}
-            accessibilityLabel={`${holdMode ? 'Giữ 0,4 giây để đặt' : 'Đặt'} ${formatToken(stakeAmount || 0)} token cửa Tài, tổng ${SIDE_RANGES.TAI}`}
+            accessibilityLabel={hasStake
+              ? `${holdMode ? 'Giữ 0,4 giây để đặt' : 'Đặt'} ${formatToken(stakeAmount)} token cửa Tài, tổng ${SIDE_RANGES.TAI}`
+              : `Chưa đủ token để đặt cửa Tài, cần tối thiểu ${formatToken(MIN_STAKE)}`}
             onPress={() => pressBet(SIDES.TAI)}
             onPressIn={() => startHold(SIDES.TAI)}
             onPressOut={() => clearHold(SIDES.TAI)}
@@ -515,7 +541,9 @@ export function TaiXiuScreen({ navigation }) {
             disabled={!canBet}
             reduceMotion={reduceMotion}
             progress={holdXiu}
-            accessibilityLabel={`${holdMode ? 'Giữ 0,4 giây để đặt' : 'Đặt'} ${formatToken(stakeAmount || 0)} token cửa Xỉu, tổng ${SIDE_RANGES.XIU}`}
+            accessibilityLabel={hasStake
+              ? `${holdMode ? 'Giữ 0,4 giây để đặt' : 'Đặt'} ${formatToken(stakeAmount)} token cửa Xỉu, tổng ${SIDE_RANGES.XIU}`
+              : `Chưa đủ token để đặt cửa Xỉu, cần tối thiểu ${formatToken(MIN_STAKE)}`}
             onPress={() => pressBet(SIDES.XIU)}
             onPressIn={() => startHold(SIDES.XIU)}
             onPressOut={() => clearHold(SIDES.XIU)}
@@ -641,7 +669,7 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     paddingTop: spacing.sm,
   },
-  statsText: { ...type.small, color: colors.textDim, fontFamily: 'monospace' },
+  statsText: { ...type.small, color: colors.textDim },
 
   // ── Card chung ──
   card: {
