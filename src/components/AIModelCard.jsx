@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { formatTokenShort } from '../utils/format';
 
-export function AIModelCard({ model, onPress, compact }) {
+export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
   return (
     <TouchableOpacity style={[styles.card, compact && styles.cardCompact]} onPress={onPress} activeOpacity={0.7}>
       <View style={[styles.stripe, { backgroundColor: model.accentColor }]} />
@@ -31,6 +31,9 @@ export function AIModelCard({ model, onPress, compact }) {
             ))}
           </View>
           <View style={styles.stats}>
+            {historyCount > 0 && (
+              <Text style={styles.history}>{'\u{1F4AC}'} {historyCount}</Text>
+            )}
             <Text style={styles.rating}>{'\u{2B50}'} {model.rating}</Text>
             <Text style={styles.popularity}>{formatTokenShort(model.popularity)} uses</Text>
           </View>
@@ -60,6 +63,7 @@ const styles = StyleSheet.create({
   capTag: { backgroundColor: '#1A1D24', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 4, borderWidth: 1, borderColor: '#2A2E36' },
   capText: { color: '#8E8E93', fontSize: 11 },
   stats: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  history: { color: '#A78BFA', fontSize: 11, fontWeight: '600' },
   rating: { color: '#FFB74D', fontSize: 12, fontWeight: '600' },
   popularity: { color: '#5C5C5C', fontSize: 12 },
 });
