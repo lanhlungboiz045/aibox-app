@@ -5,11 +5,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { LEADERBOARD } from '../data/mockData';
 import { formatToken } from '../utils/format';
+import { AppDrawer } from '../components/AppDrawer';
+import { IconButton } from '../components/ui';
+import { useAppDrawer } from '../hooks/useAppDrawer';
+import { t } from '../i18n';
 import { colors, centeredContent, touch } from '../theme/tokens';
 
 export function LeaderboardScreen({ navigation }) {
   const { state } = useApp();
   const insets = useSafeAreaInsets();
+  const { open: openDrawer, drawerProps } = useAppDrawer();
 
   // Lấy số dư live từ accounts (transfer/copy trade có thể đã thay đổi mock balance)
   const baseRows = LEADERBOARD.map(row => {
@@ -35,61 +40,68 @@ export function LeaderboardScreen({ navigation }) {
   const openTrader = (trader) => navigation.navigate('TraderProfile', { trader });
 
   return (
-    <ScrollView
-      style={styles.container}
-      // Tab bar bên dưới đã tự chừa insets.bottom → chỉ cần chừa status bar ở trên
-      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: 20 }]}
-    >
-      <View style={styles.header}>
-        <Text style={styles.title}>{'\u{1F3C6}'} Xếp hạng</Text>
-        <Text style={styles.subtitle}>Chạm vào trader để xem profile & copy trade</Text>
-      </View>
+    <View style={styles.root}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 20 }]}
+      >
+        <View style={styles.headerRow}>
+          <IconButton icon="menu" label={t('nav.openMenu')} onPress={openDrawer} />
+          <View style={styles.header}>
+            <Text style={styles.title}>{'\u{1F3C6}'} Xếp hạng</Text>
+            <Text style={styles.subtitle}>Chạm vào trader để xem profile & copy trade</Text>
+          </View>
+        </View>
 
-      <View style={styles.podium}>
-        {top3.map((user, i) => (
-          <TouchableOpacity
-            accessibilityRole="button"
-            key={user.id}
-            style={[styles.podiumCard, i === 0 && styles.podiumFirst, i === 1 && styles.podiumSecond, i === 2 && styles.podiumThird]}
-            onPress={() => openTrader(user)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.medal}>{medals[i]}</Text>
-            <Text style={styles.podiumAvatar}>{user.avatar}</Text>
-            <Text style={styles.podiumName} numberOfLines={1}>{user.username}</Text>
-            <Text style={styles.podiumTokens}>{formatToken(user.tokenBalance)}</Text>
-            <Text style={styles.podiumTokenLabel}>{'\u{1F4B0}'}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        <View style={styles.podium}>
+          {top3.map((user, i) => (
+            <TouchableOpacity
+              accessibilityRole="button"
+              key={user.id}
+              style={[styles.podiumCard, i === 0 && styles.podiumFirst, i === 1 && styles.podiumSecond, i === 2 && styles.podiumThird]}
+              onPress={() => openTrader(user)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.medal}>{medals[i]}</Text>
+              <Text style={styles.podiumAvatar}>{user.avatar}</Text>
+              <Text style={styles.podiumName} numberOfLines={1}>{user.username}</Text>
+              <Text style={styles.podiumTokens}>{formatToken(user.tokenBalance)}</Text>
+              <Text style={styles.podiumTokenLabel}>{'\u{1F4B0}'}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      <View style={styles.listSection}>
-        {rest.map(user => (
-          <TouchableOpacity
-            accessibilityRole="button"
-            key={user.id}
-            style={[styles.listItem, user.id === state.user.id && styles.listItemMe]}
-            onPress={() => openTrader(user)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.rank}>#{user.rank}</Text>
-            <Text style={styles.avatar}>{user.avatar}</Text>
-            <Text style={styles.username}>{user.username}</Text>
-            {user.id === state.user.id && (
-              <View style={styles.youTag}><Text style={styles.youTagText}>Bạn</Text></View>
-            )}
-            <Text style={styles.tokenBalance}>{formatToken(user.tokenBalance)} {'\u{1F4B0}'}</Text>
-            <Text style={styles.arrow}>{'\u{276F}'}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
+        <View style={styles.listSection}>
+          {rest.map(user => (
+            <TouchableOpacity
+              accessibilityRole="button"
+              key={user.id}
+              style={[styles.listItem, user.id === state.user.id && styles.listItemMe]}
+              onPress={() => openTrader(user)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.rank}>#{user.rank}</Text>
+              <Text style={styles.avatar}>{user.avatar}</Text>
+              <Text style={styles.username}>{user.username}</Text>
+              {user.id === state.user.id && (
+                <View style={styles.youTag}><Text style={styles.youTagText}>Bạn</Text></View>
+              )}
+              <Text style={styles.tokenBalance}>{formatToken(user.tokenBalance)} {'\u{1F4B0}'}</Text>
+              <Text style={styles.arrow}>{'\u{276F}'}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+      <AppDrawer {...drawerProps} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.bg },
   container: { flex: 1, backgroundColor: colors.bg },
-  header: { paddingHorizontal: 16, paddingVertical: 14 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', paddingLeft: 4 },
+  header: { flex: 1, paddingHorizontal: 16, paddingVertical: 14 },
   title: { color: colors.text, fontSize: 22, fontWeight: '700' },
   subtitle: { color: colors.textFaint, fontSize: 12, marginTop: 3 },
   podium: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 20 },

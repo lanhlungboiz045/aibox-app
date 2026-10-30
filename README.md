@@ -278,7 +278,7 @@ không nháy màn đăng nhập rồi mới bật onboarding.
 **Trạng thái rỗng có minh hoạ.** `EmptyState` dựng minh hoạ 2 lớp bằng `View` (vòng `accentDim` +
 đĩa `accentStrong` + 2 chấm nhấn) thay cho 1 icon đơn, nên Home / AI Hub / Logs / danh sách trống trông "có
 chủ đích" thay vì giống thông báo lỗi. Minh hoạ đặt `accessibilityElementsHidden` để screen reader chỉ đọc
-tiêu đề + gợi ý + nút hành động. Có biến thể `compact` cho khối nhỏ trong tab.
+tiêu đề + gợi ý + nút hành động. Có biến thể `compact` cho khối nhỏ trong thẻ.
 
 **Micro-interaction.** `PressableScale` (`src/components/ui/PressableScale.jsx`) = `Pressable` + scale 0.97
 trong 120ms + 1 nhịp haptic nhẹ: dùng cho card model AI và 4 ô shortcut ở Home; `Button` giữ nguyên nhún
@@ -289,6 +289,21 @@ cho cả app (cache ở module + 1 listener `reduceMotionChanged`), export `useR
 `getReduceMotion()` cho hàm thường (onPress, Modal). Khi bật: `FadeIn` hiện ngay, `Skeleton` đứng yên ở 1
 mức sáng, drawer mở không trượt (`animationType="none"`), toast hiện/ẩn tức thì, nút/card không scale (chỉ
 đổi độ mờ nhẹ để vẫn có phản hồi). Haptic vẫn giữ vì không ảnh hưởng tiền đình.
+
+## 5.7. Bỏ bottom tab bar — điều hướng bằng drawer
+
+`AppNavigator` **không còn** `createBottomTabNavigator`: 5 màn chính (`Home`, `AIHub`, `Markets`, `Portfolio`,
+`Leaderboard`) nằm chung stack với các màn phụ, `initialRouteName="Home"`. Chuyển màn bằng nút **☰** ở header:
+`useAppDrawer()` (`src/hooks/useAppDrawer.js`) giữ state mở/đóng và trả `drawerProps` để rải vào
+`<AppDrawer {...drawerProps} />`; `AppDrawer` gọi `navigation.navigate(route)` nên quay lại màn đã có trong
+stack thay vì chồng thêm màn mới.
+
+Vì tab bar trước đây tự chừa `insets.bottom`, các màn chính đã cộng `insets.bottom` vào `paddingBottom`
+của danh sách (Home, AI Hub) và của `contentContainerStyle` (Markets, Portfolio, Leaderboard); chat AI Hub
+cộng `insets.bottom` vào thanh nhập. Drawer vẫn chỉ mở được từ 5 màn chính — màn phụ đi bằng nút back.
+
+Đánh đổi: đổi màn tốn 2 chạm (☰ → mục) thay vì 1 chạm, bù lại nội dung không bị chiếm 56px + safe area ở
+đáy và không còn tab bar che bàn phím.
 
 ## 6. Cấu trúc project
 
@@ -301,7 +316,7 @@ aibox-app/
     config/       (firebase.js — init Auth/Firestore, ai.js — preset AI gateway, đọc .env)
     services/     (auth.js — Google sign-in, users.js — Firestore users/{uid}, ai.js — gọi AI thật)
     context/      (AppContext.jsx — global state + AsyncStorage)
-    hooks/        (useNetworkStatus.js — mạng, useReduceMotion.js — giảm chuyển động)
+    hooks/        (useNetworkStatus.js — mạng, useReduceMotion.js — giảm chuyển động, useAppDrawer.js — mở/đóng drawer)
     theme/        (palettes.js — bảng màu sáng/tối, tokens.js — spacing/type/colors)
     i18n/         (index.js — từ điển vi/en + t()/useI18n)
     utils/        (format, rewards, analyst, spend, clipboard, apiKeys)
@@ -319,7 +334,7 @@ aibox-app/
 - React Native (Expo SDK 52) + Expo Dev Client
 - Firebase Auth (Google) + Cloud Firestore (`firebase@10.14.1` — bản có RN persistence)
 - `@react-native-google-signin/google-signin`
-- React Navigation (bottom tab 5 mục + stack cho màn phụ; điều hướng phụ bằng header + drawer)
+- React Navigation (stack: 5 màn chính + màn phụ, **không bottom tab**; chuyển màn bằng drawer ☰ trên header mọi màn chính)
 - AsyncStorage (ví token, markets, quests, comments theo uid)
 - `@react-native-community/netinfo` (trạng thái mạng), `expo-haptics`, `expo-clipboard`
 - React Native SVG (charts), theme sáng/tối (theo hệ điều hành hoặc `EXPO_PUBLIC_THEME`)

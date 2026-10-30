@@ -27,6 +27,8 @@ import {
 import { formatToken, generateId } from '../utils/format';
 import { MIN_AI_CALL_BALANCE } from '../utils/aiCost';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { useAppDrawer } from '../hooks/useAppDrawer';
+import { AppDrawer } from '../components/AppDrawer';
 import { hapticError } from '../utils/feedback';
 import {
   loadChatHistory, loadModelHistory, saveModelHistory,
@@ -84,6 +86,7 @@ export function AIHubScreen() {
   const route = useRoute();
   const navigation = useNavigation();
   const toast = useToast();
+  const { open: openDrawer, drawerProps } = useAppDrawer();
 
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -609,8 +612,8 @@ export function AIHubScreen() {
           </View>
         ) : null}
 
-        {/* Tab bar vẫn hiển thị dưới chat nên input bar không cộng thêm insets.bottom */}
-        <View style={[styles.inputBar, { paddingBottom: spacing.sm }]}>
+        {/* Bỏ bottom tab → input bar tự chừa insets.bottom để không bị home indicator che */}
+        <View style={[styles.inputBar, { paddingBottom: spacing.sm + insets.bottom }]}>
           <TextInput
             style={styles.input}
             value={input}
@@ -656,6 +659,7 @@ export function AIHubScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <View style={styles.headerRow}>
+          <IconButton icon="menu" label={t('nav.openMenu')} size={20} onPress={openDrawer} />
           <View style={styles.headerTitleWrap}>
             <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.5}>{t('screen.aihub')}</Text>
             <Text style={styles.headerMeta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
@@ -675,7 +679,7 @@ export function AIHubScreen() {
       ) : null}
 
       <ScrollView
-        contentContainerStyle={[centeredContent, { paddingBottom: spacing.xxl }]}
+        contentContainerStyle={[centeredContent, { paddingBottom: spacing.xxl + insets.bottom }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -732,6 +736,8 @@ export function AIHubScreen() {
           />
         ) : null}
       </ScrollView>
+
+      <AppDrawer {...drawerProps} />
     </View>
   );
 }

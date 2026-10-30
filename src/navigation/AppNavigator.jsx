@@ -1,10 +1,8 @@
-// navigation/AppNavigator.jsx — Bottom tab + stack navigation (JavaScript)
+// navigation/AppNavigator.jsx — Stack navigation (JavaScript)
+// Điều hướng: KHÔNG dùng bottom tab bar. 5 màn chính nằm cùng stack, chuyển màn bằng
+// AppDrawer (nút ☰ ở header mọi màn). Các màn phụ vẫn push lên stack như cũ.
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Text } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '../theme/tokens';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { AIHubScreen } from '../screens/AIHubScreen';
@@ -32,59 +30,19 @@ import { AdminAIModelsScreen } from '../screens/admin/AdminAIModelsScreen';
 import { AdminUsersScreen } from '../screens/admin/AdminUsersScreen';
 import { AdminRiskScreen } from '../screens/admin/AdminRiskScreen';
 
-const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-const tabIcons = {
-  Home: '\u{1F3E0}',
-  AIHub: '\u{1F916}',
-  Markets: '\u{1F4C8}',
-  Portfolio: '\u{1F4BC}',
-  Leaderboard: '\u{1F3C6}',
-};
-
-export function MainTabNavigator() {
-  const insets = useSafeAreaInsets();
-
-  return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        // Ẩn tab bar khi mở bàn phím để input chat không bị tab bar + keyboard chồng lên
-        tabBarHideOnKeyboard: true,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          // Tab bar là phần tử cuối màn hình nên phải tự chừa home indicator / nav bar
-          paddingBottom: Math.max(insets.bottom, 6),
-          paddingTop: 6,
-          height: 56 + Math.max(insets.bottom, 6),
-        },
-        tabBarActiveTintColor: colors.accentSoft,
-        tabBarInactiveTintColor: colors.textFaint,
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '500' },
-        tabBarIcon: ({ focused }) => (
-          <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>
-            {tabIcons[route.name] || '\u{1F4B0}'}
-          </Text>
-        ),
-      })}
-    >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
-      <Tab.Screen name="AIHub" component={AIHubScreen} options={{ title: 'AI Hub' }} />
-      <Tab.Screen name="Markets" component={MarketsScreen} options={{ title: 'Markets' }} />
-      <Tab.Screen name="Portfolio" component={PortfolioScreen} options={{ title: 'Portfolio' }} />
-      <Tab.Screen name="Leaderboard" component={LeaderboardScreen} options={{ title: 'Xếp hạng' }} />
-    </Tab.Navigator>
-  );
-}
-
-// Root stack (tabs + modal screens like Profile, Transfer, MarketDetail)
 export function AppNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Home">
+      {/* ── 5 màn chính: vào bằng drawer ── */}
+      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="AIHub" component={AIHubScreen} />
+      <Stack.Screen name="Markets" component={MarketsScreen} />
+      <Stack.Screen name="Portfolio" component={PortfolioScreen} />
+      <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+
+      {/* ── Màn phụ ── */}
       <Stack.Screen name="MarketDetail" component={MarketDetailScreen} />
       <Stack.Screen name="ModelCatalog" component={ModelCatalogScreen} />
       <Stack.Screen name="UsageDashboard" component={UsageDashboardScreen} />

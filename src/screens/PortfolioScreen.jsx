@@ -6,11 +6,16 @@ import { useApp } from '../context/AppContext';
 import { TokenBadge } from '../components/TokenBadge';
 import { TransactionItem } from '../components/TransactionItem';
 import { formatToken } from '../utils/format';
+import { AppDrawer } from '../components/AppDrawer';
+import { IconButton } from '../components/ui';
+import { useAppDrawer } from '../hooks/useAppDrawer';
+import { t } from '../i18n';
 import { colors, centeredContent } from '../theme/tokens';
 
 export function PortfolioScreen() {
   const { state } = useApp();
   const insets = useSafeAreaInsets();
+  const { open: openDrawer, drawerProps } = useAppDrawer();
   const [txFilter, setTxFilter] = useState('all');
 
   const txFilters = [
@@ -39,74 +44,81 @@ export function PortfolioScreen() {
   });
 
   return (
-    <ScrollView
-      style={styles.container}
-      // Tab bar bên dưới đã tự chừa insets.bottom → chỉ cần chừa status bar ở trên
-      contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: 20 }]}
-    >
-      <View style={styles.header}>
-        <Text style={styles.title}>Portfolio</Text>
-        <TokenBadge size="medium" />
-      </View>
-
-      <View style={styles.statsGrid}>
-        <View style={styles.statCard}><Text style={styles.statLabel}>Token balance</Text><Text style={styles.statValue}>{formatToken(state.user.tokenBalance)} {'\u{1F4B0}'}</Text></View>
-        <View style={styles.statCard}><Text style={styles.statLabel}>Portfolio value</Text><Text style={styles.statValue}>{formatToken(Math.round(portfolioValue))} {'\u{1F4B0}'}</Text></View>
-        <View style={styles.statCard}><Text style={styles.statLabel}>Total P&L</Text><Text style={[styles.statValue, { color: totalPnL >= 0 ? colors.success : colors.danger }]}>{totalPnL >= 0 ? '+' : ''}{formatToken(Math.round(totalPnL))} {'\u{1F4B0}'}</Text></View>
-        <View style={styles.statCard}><Text style={styles.statLabel}>Spent on AI</Text><Text style={[styles.statValue, { color: colors.danger }]}>{formatToken(state.user.totalSpentOnAI)} {'\u{1F4B0}'}</Text></View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{'\u{1F4BC}'} Positions ({state.user.positions.length})</Text>
-        {positionsWithMarket.length === 0 ? (
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyIcon}>{'\u{1F4BC}'}</Text>
-            <Text style={styles.emptyText}>Bạn chưa có position nào.</Text>
-            <Text style={styles.emptySub}>Khám phá markets và đặt cược ngay!</Text>
+    <View style={styles.root}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 20 }]}
+      >
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <IconButton icon="menu" label={t('nav.openMenu')} onPress={openDrawer} />
+            <Text style={styles.title}>Portfolio</Text>
           </View>
-        ) : (
-          <View style={styles.positionsList}>
-            {positionsWithMarket.map((p) => (
-              <View key={`${p.marketId}-${p.side}`} style={styles.positionCard}>
-                <View style={styles.positionTop}>
-                  <Text style={styles.positionQuestion} numberOfLines={2}>{p.market?.question || 'Unknown'}</Text>
-                  <View style={[styles.positionSideTag, p.side === 'YES' ? styles.tagYes : styles.tagNo]}><Text style={styles.tagText}>{p.side}</Text></View>
+          <TokenBadge size="medium" />
+        </View>
+
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}><Text style={styles.statLabel}>Token balance</Text><Text style={styles.statValue}>{formatToken(state.user.tokenBalance)} {'\u{1F4B0}'}</Text></View>
+          <View style={styles.statCard}><Text style={styles.statLabel}>Portfolio value</Text><Text style={styles.statValue}>{formatToken(Math.round(portfolioValue))} {'\u{1F4B0}'}</Text></View>
+          <View style={styles.statCard}><Text style={styles.statLabel}>Total P&L</Text><Text style={[styles.statValue, { color: totalPnL >= 0 ? colors.success : colors.danger }]}>{totalPnL >= 0 ? '+' : ''}{formatToken(Math.round(totalPnL))} {'\u{1F4B0}'}</Text></View>
+          <View style={styles.statCard}><Text style={styles.statLabel}>Spent on AI</Text><Text style={[styles.statValue, { color: colors.danger }]}>{formatToken(state.user.totalSpentOnAI)} {'\u{1F4B0}'}</Text></View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{'\u{1F4BC}'} Positions ({state.user.positions.length})</Text>
+          {positionsWithMarket.length === 0 ? (
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyIcon}>{'\u{1F4BC}'}</Text>
+              <Text style={styles.emptyText}>Bạn chưa có position nào.</Text>
+              <Text style={styles.emptySub}>Khám phá markets và đặt cược ngay!</Text>
+            </View>
+          ) : (
+            <View style={styles.positionsList}>
+              {positionsWithMarket.map((p) => (
+                <View key={`${p.marketId}-${p.side}`} style={styles.positionCard}>
+                  <View style={styles.positionTop}>
+                    <Text style={styles.positionQuestion} numberOfLines={2}>{p.market?.question || 'Unknown'}</Text>
+                    <View style={[styles.positionSideTag, p.side === 'YES' ? styles.tagYes : styles.tagNo]}><Text style={styles.tagText}>{p.side}</Text></View>
+                  </View>
+                  <View style={styles.positionStats}>
+                    <View style={styles.posStat}><Text style={styles.posStatLabel}>Shares</Text><Text style={styles.posStatValue}>{p.shares}</Text></View>
+                    <View style={styles.posStat}><Text style={styles.posStatLabel}>Avg price</Text><Text style={styles.posStatValue}>{p.avgPrice.toFixed(1)}</Text></View>
+                    <View style={styles.posStat}><Text style={styles.posStatLabel}>Current</Text><Text style={styles.posStatValue}>{p.currentPrice.toFixed(1)}</Text></View>
+                    <View style={styles.posStat}><Text style={styles.posStatLabel}>P&L</Text><Text style={[styles.posStatValue, { color: p.pnl >= 0 ? colors.success : colors.danger }]}>{p.pnl >= 0 ? '+' : ''}{formatToken(Math.round(p.pnl))}</Text></View>
+                  </View>
                 </View>
-                <View style={styles.positionStats}>
-                  <View style={styles.posStat}><Text style={styles.posStatLabel}>Shares</Text><Text style={styles.posStatValue}>{p.shares}</Text></View>
-                  <View style={styles.posStat}><Text style={styles.posStatLabel}>Avg price</Text><Text style={styles.posStatValue}>{p.avgPrice.toFixed(1)}</Text></View>
-                  <View style={styles.posStat}><Text style={styles.posStatLabel}>Current</Text><Text style={styles.posStatValue}>{p.currentPrice.toFixed(1)}</Text></View>
-                  <View style={styles.posStat}><Text style={styles.posStatLabel}>P&L</Text><Text style={[styles.posStatValue, { color: p.pnl >= 0 ? colors.success : colors.danger }]}>{p.pnl >= 0 ? '+' : ''}{formatToken(Math.round(p.pnl))}</Text></View>
-                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{'\u{1F4DD}'} Lịch sử giao dịch</Text>
+          <View style={styles.txFilterRow}>
+            {txFilters.map(f => (
+              <View key={f.key} style={[styles.txFilterChip, txFilter === f.key && styles.txFilterChipActive]}>
+                <Text style={[styles.txFilterText, txFilter === f.key && styles.txFilterTextActive]} onPress={() => setTxFilter(f.key)}>{f.label}</Text>
               </View>
             ))}
           </View>
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{'\u{1F4DD}'} Lịch sử giao dịch</Text>
-        <View style={styles.txFilterRow}>
-          {txFilters.map(f => (
-            <View key={f.key} style={[styles.txFilterChip, txFilter === f.key && styles.txFilterChipActive]}>
-              <Text style={[styles.txFilterText, txFilter === f.key && styles.txFilterTextActive]} onPress={() => setTxFilter(f.key)}>{f.label}</Text>
+          {filteredTxs.length === 0 ? (
+            <Text style={styles.emptyTextSmall}>Chưa có giao dịch nào</Text>
+          ) : (
+            <View style={styles.txList}>
+              {filteredTxs.slice(0, 50).map(tx => <TransactionItem key={tx.id} tx={tx} />)}
             </View>
-          ))}
+          )}
         </View>
-        {filteredTxs.length === 0 ? (
-          <Text style={styles.emptyTextSmall}>Chưa có giao dịch nào</Text>
-        ) : (
-          <View style={styles.txList}>
-            {filteredTxs.slice(0, 50).map(tx => <TransactionItem key={tx.id} tx={tx} />)}
-          </View>
-        )}
-      </View>
-    </ScrollView>
+      </ScrollView>
+      <AppDrawer {...drawerProps} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.bg },
   container: { flex: 1, backgroundColor: colors.bg },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
   title: { color: colors.text, fontSize: 22, fontWeight: '700' },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, gap: 8, marginBottom: 16 },

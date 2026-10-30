@@ -13,6 +13,7 @@ import { AppDrawer } from '../components/AppDrawer';
 import { DailyRewardModal } from '../components/DailyRewardModal';
 import { AppIcon, MiniBanner, SectionHeader, ListRow, StatTile, Sparkline, IconButton, EmptyState, PressableScale } from '../components/ui';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { useAppDrawer } from '../hooks/useAppDrawer';
 import { centeredContent, colors, layout, radius, spacing, touch, type } from '../theme/tokens';
 
 // Ngưỡng coi là "số dư thấp" để hiện banner nhắc nạp thêm
@@ -32,7 +33,7 @@ export function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [showDaily, setShowDaily] = useState(false);
-  const [showDrawer, setShowDrawer] = useState(false);
+  const { open: openDrawer, drawerProps } = useAppDrawer();
 
   const user = state.user;
   const { isOffline, refresh: refreshNetwork } = useNetworkStatus();
@@ -106,9 +107,9 @@ export function HomeScreen({ navigation }) {
         <View style={styles.headerInner}>
           <IconButton
             icon="menu"
-            label="Mở menu"
+            label={t('nav.openMenu')}
             size={22}
-            onPress={() => setShowDrawer(true)}
+            onPress={openDrawer}
           />
           <Text style={styles.brand} numberOfLines={1} maxFontSizeMultiplier={1.5}>AIBox</Text>
 
@@ -160,7 +161,7 @@ export function HomeScreen({ navigation }) {
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
         showsVerticalScrollIndicator={false}
       >
@@ -275,7 +276,7 @@ export function HomeScreen({ navigation }) {
         </View>
       </ScrollView>
 
-      <AppDrawer visible={showDrawer} onClose={() => setShowDrawer(false)} navigation={navigation} />
+      <AppDrawer {...drawerProps} />
       <DailyRewardModal visible={showDaily} onClose={() => setShowDaily(false)} />
     </View>
   );
@@ -340,7 +341,6 @@ const styles = StyleSheet.create({
     ...centeredContent,
     paddingHorizontal: layout.gutter,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.xxl,
     gap: layout.sectionGap,
   },
   shortcutRow: { flexDirection: 'row', gap: 10 },
