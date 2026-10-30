@@ -69,16 +69,24 @@ export function ProfileScreen({ navigation }) {
       return;
     }
     setSaving(true);
-    const result = await updateMyProfile({ username: name, avatar: draftAvatar });
-    setSaving(false);
-    setEditing(false);
-    if (result.ok) {
-      // Firestore lỗi thì thay đổi vẫn được giữ trên máy, chỉ cảnh báo đồng bộ
-      if (result.syncError) {
-        Alert.alert('Đã lưu trên máy', `Chưa đồng bộ được lên Firestore:\n${result.syncError}`);
+    try {
+      const result = await updateMyProfile({ username: name, avatar: draftAvatar });
+      setEditing(false);
+      if (result.ok) {
+        // Firestore lỗi thì thay đổi vẫn được giữ trên máy, chỉ cảnh báo đồng bộ
+        if (result.syncError) {
+          Alert.alert('Đã lưu trên máy', `Chưa đồng bộ được lên Firestore:\n${result.syncError}`);
+        }
+      } else {
+        Alert.alert('Không lưu được', result.error || 'Không thể cập nhật hồ sơ.');
       }
-    } else {
-      Alert.alert('Không lưu được', result.error);
+    } catch (error) {
+      Alert.alert(
+        'Không lưu được',
+        error instanceof Error ? error.message : 'Đã xảy ra lỗi khi cập nhật hồ sơ.',
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -296,7 +304,7 @@ export function ProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 10 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600' },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
   headerTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
   profileCard: { backgroundColor: colors.surface, borderRadius: 16, marginHorizontal: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft, marginBottom: 12 },
   avatarWrap: { backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginBottom: 10, overflow: 'hidden' },

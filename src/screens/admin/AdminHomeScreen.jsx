@@ -1,6 +1,6 @@
 // screens/admin/AdminHomeScreen.jsx — Dashboard CMS (chỉ System Admin)
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { formatToken, formatTokenShort, formatTimeLeft } from '../../utils/format';
@@ -20,6 +20,20 @@ export function AdminHomeScreen({ navigation }) {
   const banned = realAccounts.filter(a => a.status === 'banned');
   const aiSpend = accounts.reduce((sum, a) => sum + (a.totalSpentOnAI || 0), 0);
   const storeSpend = accounts.reduce((sum, a) => sum + (a.totalSpentOnStore || 0), 0);
+
+  const unban = async (account) => {
+    try {
+      const result = await setUserStatus(account.id, 'active');
+      if (!result.ok) {
+        Alert.alert('Không mở khoá được', result.error || 'Trạng thái tài khoản chưa được lưu.');
+      }
+    } catch (error) {
+      Alert.alert(
+        'Không mở khoá được',
+        error instanceof Error ? error.message : 'Đã xảy ra lỗi khi cập nhật tài khoản.',
+      );
+    }
+  };
 
   const stats = [
     { label: 'Người dùng', value: realAccounts.length, icon: '\u{1F465}', color: colors.accentSoft },
@@ -86,7 +100,7 @@ export function AdminHomeScreen({ navigation }) {
           {banned.map(account => (
             <View key={account.id} style={styles.banRow}>
               <Text style={styles.banName}>{account.avatar} {account.username}</Text>
-              <TouchableOpacity accessibilityRole="button" style={styles.unbanBtn} onPress={() => setUserStatus(account.id, 'active')}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Mở khoá ${account.username}`} style={styles.unbanBtn} onPress={() => unban(account)}>
                 <Text style={styles.unbanText}>Mở khoá</Text>
               </TouchableOpacity>
             </View>
@@ -105,7 +119,7 @@ export function AdminHomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minWidth: 50, minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
   title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   alertBox: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 12, padding: 12, borderRadius: 10, backgroundColor: colors.dangerDim, borderWidth: 1, borderColor: colors.dangerBorder, minHeight: touch.min },
   alertText: { flex: 1, color: colors.danger, fontSize: 12 },
@@ -124,7 +138,7 @@ const styles = StyleSheet.create({
   linkArrow: { color: colors.textFaint, fontSize: 14 },
   banRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: colors.dangerBorder, marginBottom: 6 },
   banName: { flex: 1, color: colors.text, fontSize: 13 },
-  unbanBtn: { backgroundColor: colors.successDim, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: colors.successBorder, minHeight: touch.min },
+  unbanBtn: { backgroundColor: colors.successDim, borderRadius: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.successBorder, minHeight: touch.min, justifyContent: 'center' },
   unbanText: { color: colors.success, fontSize: 12, fontWeight: '700' },
   footnote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, paddingHorizontal: 16, marginTop: 20 },
 });

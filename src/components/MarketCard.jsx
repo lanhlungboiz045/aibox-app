@@ -2,14 +2,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { formatTokenShort, formatTimeLeft } from '../utils/format';
-import { colors, touch } from '../theme/tokens';
+import { colors, marketCategoryColors, touch } from '../theme/tokens';
 
 export function MarketCard({ market, onPress, onYes, onNo }) {
-  const categoryColors = {
-    sports: colors.success, crypto: '#F7931A', tech: colors.google,
-    entertainment: colors.danger, life: colors.warning, politics: '#9333EA',
-  };
-  const accent = categoryColors[market.category] || colors.accent;
+  const accent = marketCategoryColors[market.category] || colors.accent;
 
   return (
     <TouchableOpacity accessibilityRole="button" style={styles.card} onPress={onPress} activeOpacity={0.7}>

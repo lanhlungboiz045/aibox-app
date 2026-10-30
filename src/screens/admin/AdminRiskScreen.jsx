@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { ROLE_LABELS } from '../../data/accounts';
 import { formatToken, formatTokenShort, formatRelativeTime } from '../../utils/format';
-import { colors, centeredContent } from '../../theme/tokens';
+import { colors, centeredContent, touch } from '../../theme/tokens';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -24,7 +24,10 @@ export function AdminRiskScreen({ navigation }) {
     const outs = transactions.filter(tx => isTransfer(tx, 'TRANSFER_OUT'));
     const ins = transactions.filter(tx => isTransfer(tx, 'TRANSFER_IN'));
 
-    const outs24h = outs.filter(tx => now - Date.parse(tx.timestamp) <= DAY_MS);
+    const outs24h = outs.filter(tx => {
+      const age = now - Date.parse(tx.timestamp);
+      return Number.isFinite(age) && age >= 0 && age <= DAY_MS;
+    });
     const sent24h = outs24h.reduce((sum, tx) => sum + Math.abs(tx.amount || 0), 0);
     const sentTotal = outs.reduce((sum, tx) => sum + Math.abs(tx.amount || 0), 0);
     const receivedTotal = ins.reduce((sum, tx) => sum + (tx.amount || 0), 0);
@@ -109,6 +112,10 @@ export function AdminRiskScreen({ navigation }) {
         <Text style={styles.title}>Rủi ro dòng tiền</Text>
         <View style={{ width: 50 }} />
       </View>
+
+      <Text style={styles.notice}>
+        Tín hiệu dưới đây là heuristic trên dữ liệu local, không phải kết luận về hành vi của tài khoản.
+      </Text>
 
       <View style={styles.grid}>
         {money.map(item => (
@@ -206,8 +213,9 @@ export function AdminRiskScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minWidth: 50, minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
   title: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  notice: { color: colors.textDim, fontSize: 12, lineHeight: 17, paddingHorizontal: 16, marginBottom: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginBottom: 4 },
   gridCard: { width: '47%', flexGrow: 1, backgroundColor: colors.surface, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
   gridValue: { fontSize: 16, fontWeight: '700', fontFamily: 'monospace' },

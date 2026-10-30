@@ -164,7 +164,7 @@ Bố cục dày vừa phải: mỗi màn là một chồng card trên cùng mộ
 1px thay vì đổ bóng khắp nơi. Màu trạng thái (xanh bạc hà, hổ phách, san hô) chỉ xuất hiện khi có tin
 để báo — thắng, thua, cảnh báo, lỗi. Tím neon không bao giờ là màu nền lớn; nó là đèn báo.
 
-Mọi thứ phải "chắc tay": vùng chạm ≥44px, nút nhún nhẹ 0.97 kèm haptic, chữ không nhỏ hơn 12px, và mọi
+Mọi thứ phải "chắc tay": vùng chạm ≥48dp trên Android (≥44pt trên iOS), nút nhún nhẹ 0.97 kèm haptic, chữ không nhỏ hơn 12px, và mọi
 hành động tốn token đều nói trước giá. Giao diện thân thiện nhưng không giả vờ rằng tiền là giả.
 
 **Key Characteristics:**
@@ -250,8 +250,8 @@ Trên tablet/màn rộng, nội dung canh giữa với `maxWidth: 720px` (`cente
 chiều ngang; danh sách chip được phép cuộn ngang tràn lề. Không có bottom tab: điều hướng bằng drawer
 mở từ nút ☰ ở header, nên nội dung được toàn bộ chiều cao.
 
-Thang khoảng cách chỉ có 4/8/12/16/20/24/32. Khoảng cách giữa hai nút kề nhau ≥8px, vùng chạm ≥44px
-(iOS HIG) và mục tiêu 48px theo Material.
+Thang khoảng cách chỉ có 4/8/12/16/20/24/32. Khoảng cách giữa hai nút kề nhau ≥8dp, vùng chạm ≥48dp
+trên Android theo Material và ≥44pt trên iOS theo HIG.
 
 ### Named Rules
 **The One Column Rule.** Không chia cột nội dung trên điện thoại; chỉ số liệu ngắn mới nằm cạnh nhau
@@ -294,7 +294,7 @@ thức này trong cùng một hàng.
 ## Components
 
 ### Buttons
-- **Shape:** bo 12px, viền 1px cùng màu nền, cao 44/48/52px theo size sm/md/lg.
+- **Shape:** bo 12px, viền 1px cùng màu nền, cao tối thiểu 48/48/52dp theo size sm/md/lg.
 - **Primary:** nền Tím mực, chữ trắng, icon 18–20px, padding ngang 20–24px.
 - **Secondary:** nền Than nổi, chữ Sương trắng, viền Chì sáng.
 - **Ghost:** nền trong suốt, chữ Tím khói — chỉ cho hành động phụ trong card.
@@ -303,7 +303,7 @@ thức này trong cùng một hàng.
   0.45 nhưng chữ vẫn đọc được; giảm chuyển động → không scale, chỉ đổi màu.
 
 ### Chips
-- **Style:** nền Mực xanh, chữ Bạc xám, viền Chì mờ, pill, cao 32px + hitSlop 6px.
+- **Style:** nền Mực xanh, chữ Bạc xám, viền Chì mờ, pill; chip tương tác cao tối thiểu 48dp, chip tĩnh cao 32px.
 - **State:** đang chọn → nền Tím mờ, viền Tím viền, chữ Tím khói; chip số liệu không bấm được thì render
   bằng `View`, không giả làm nút.
 
@@ -315,7 +315,7 @@ thức này trong cùng một hàng.
 - **Shadow Strategy:** không bóng (xem Elevation & Depth).
 
 ### Inputs / Fields
-- **Style:** nền Mực xanh, viền 1.5px Chì mờ, bo 12px, cao 48px (multiline tối thiểu 96px), chữ 16px.
+- **Style:** nền Mực xanh, viền 1.5px Chì mờ, bo 12px, cao tối thiểu 52dp (multiline tối thiểu 96dp), chữ 16px.
 - **Focus:** viền Tím viền; lỗi: viền San hô + dòng lỗi 12px kèm icon ngay dưới ô (không dùng Alert).
 - **Disabled:** chữ Khói bạc, không đổi nền; vẫn giữ độ tương phản AA.
 
@@ -343,7 +343,7 @@ thức này trong cùng một hàng.
 - **Do** lấy mọi màu từ `src/theme/palettes.js` và mọi kích thước từ `src/theme/tokens.js`.
 - **Do** dùng `formatToken()` + font mono cho mọi con số token; quy đổi token → câu hỏi AI khi người dùng
   sắp tiêu token.
-- **Do** giữ vùng chạm ≥44px và khoảng cách ≥8px giữa hai nút kề nhau.
+- **Do** giữ vùng chạm ≥48dp trên Android (≥44pt trên iOS) và khoảng cách ≥8dp giữa hai nút kề nhau.
 - **Do** dùng `PressableScale`/`Animated` + haptic cho phản hồi nhấn, và tôn trọng `useReduceMotion()`.
 - **Do** viết nhãn tiếng Việt ngắn, động từ rõ ("Nạp token", "Đặt cược", "Dừng"), kèm đơn vị.
 - **Do** dùng `EmptyState`/`ErrorState` có hành động tiếp theo thay vì màn trắng.

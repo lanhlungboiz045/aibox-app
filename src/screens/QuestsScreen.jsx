@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { QUESTS, getQuestProgress, QUEST_TOTAL_REWARD } from '../data/quests';
 import { formatToken } from '../utils/format';
+import { AppIcon } from '../components/ui/AppIcon';
 import { colors, centeredContent, touch } from '../theme/tokens';
 
 export function QuestsScreen({ navigation }) {
@@ -27,13 +28,13 @@ export function QuestsScreen({ navigation }) {
     >
       <View style={styles.header}>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
-        <Text style={styles.title}>{'\u{1F3AF}'} Nhiệm vụ ngày</Text>
+        <Text style={styles.title}>Nhiệm vụ ngày</Text>
         <View style={{ width: 50 }} />
       </View>
 
       <View style={styles.streakCard}>
         <View style={styles.streakHead}>
-          <Text style={styles.streakIcon}>{'\u{1F525}'}</Text>
+          <AppIcon name="flame" size={22} color={colors.warning} />
           <View style={{ flex: 1 }}>
             <Text style={styles.streakTitle}>Streak {user.dailyStreak} ngày</Text>
             <Text style={styles.streakSub}>
@@ -80,7 +81,7 @@ export function QuestsScreen({ navigation }) {
           return (
             <View key={quest.id} style={[styles.questCard, claimed && styles.questCardDone]}>
               <View style={styles.questHead}>
-                <Text style={styles.questIcon}>{quest.icon}</Text>
+                <AppIcon name={quest.icon} size={18} color={colors.textDim} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.questTitle}>{quest.title}</Text>
                   <Text style={styles.questProgressText}>{progress}/{quest.target} · thưởng {formatToken(quest.reward)} {'\u{1F4B0}'}</Text>
@@ -107,7 +108,9 @@ export function QuestsScreen({ navigation }) {
       </View>
 
       <View style={styles.tip}>
-        <Text style={styles.tipTitle}>{'\u{1F4A1}'} Cách hoàn thành nhanh</Text>
+        <Text style={styles.tipTitle}>
+          <AppIcon name="lightbulb" size={14} color={colors.accentSoft} /> Cách hoàn thành nhanh
+        </Text>
         <Text style={styles.tipText}>
           · Chat AI 3 lần ở tab AI Hub{'\n'}
           · Mua shares ở 2 market khác nhau{'\n'}
@@ -126,11 +129,10 @@ export function QuestsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minWidth: 50, minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
   title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   streakCard: { marginHorizontal: 16, backgroundColor: colors.warningDim, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.warningBorder },
   streakHead: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  streakIcon: { fontSize: 30 },
   streakTitle: { color: colors.warning, fontSize: 16, fontWeight: '700' },
   streakSub: { color: colors.textDim, fontSize: 12, marginTop: 3, lineHeight: 16 },
   dailyBtn: { backgroundColor: colors.warningBg, borderRadius: 8, paddingVertical: 11, alignItems: 'center', minHeight: touch.min },
@@ -144,7 +146,6 @@ const styles = StyleSheet.create({
   questCard: { backgroundColor: colors.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.borderSoft, marginBottom: 8 },
   questCardDone: { borderColor: colors.successBorder },
   questHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  questIcon: { fontSize: 22 },
   questTitle: { color: colors.text, fontSize: 13, fontWeight: '600' },
   questProgressText: { color: colors.textDim, fontSize: 12, marginTop: 2 },
   claimBtn: { backgroundColor: colors.accentStrong, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7, minHeight: touch.min },

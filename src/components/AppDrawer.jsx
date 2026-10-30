@@ -1,11 +1,12 @@
 // components/AppDrawer.jsx — Drawer tự dựng bằng Modal (không cần thêm native dependency)
 // Chứa các mục phụ đã bỏ khỏi header: Usage/Billing, Nạp token, Cài đặt AI, Hồ sơ, Admin...
-// Bước 2: theo tokens (chữ >= 12px, hàng 44px, avatar 44px) + đầy đủ nhãn cho trình đọc màn hình.
+// Bước 2: theo tokens (chữ >= 12px, hàng 48dp, avatar 48dp) + đầy đủ nhãn cho trình đọc màn hình.
 import React, { useEffect, useRef } from 'react';
 import {
   View, Text, Modal, TouchableOpacity, StyleSheet, Animated, Pressable, useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRoute } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { formatToken } from '../utils/format';
 import { AppIcon, IconButton } from './ui';
@@ -57,6 +58,7 @@ const GROUPS = [
 export function AppDrawer({ visible, onClose, navigation }) {
   const { state } = useApp();
   const { t } = useI18n();
+  const route = useRoute();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const panelWidth = Math.min(320, Math.round(width * 0.82));
@@ -100,14 +102,16 @@ export function AppDrawer({ visible, onClose, navigation }) {
           accessibilityRole="button"
           accessibilityLabel={t('nav.closeMenu')}
         />
-        <Animated.View
+        <Animated.ScrollView
           style={[
             styles.panel,
             { width: panelWidth, paddingTop: insets.top + spacing.sm, paddingBottom: insets.bottom + spacing.md },
             { transform: [{ translateX: slide }] },
           ]}
+          contentContainerStyle={styles.menuContent}
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
+          showsVerticalScrollIndicator={false}
         >
           <View style={styles.topBar}>
             <Text style={styles.brand} maxFontSizeMultiplier={1.5}>{t('nav.menu')}</Text>
@@ -145,13 +149,14 @@ export function AppDrawer({ visible, onClose, navigation }) {
                 <TouchableOpacity
                   accessibilityRole="button"
                   key={item.route}
-                  style={styles.item}
+                  style={[styles.item, route.name === item.route && styles.itemActive]}
                   onPress={() => go(item.route)}
                   activeOpacity={0.75}
                   accessibilityLabel={t(item.label)}
+                  accessibilityState={{ selected: route.name === item.route }}
                 >
-                  <AppIcon name={item.icon} size={18} color={colors.textDim} />
-                  <Text style={styles.itemLabel} numberOfLines={1} maxFontSizeMultiplier={1.6}>
+                  <AppIcon name={item.icon} size={18} color={route.name === item.route ? colors.accentSoft : colors.textDim} />
+                  <Text style={[styles.itemLabel, route.name === item.route && styles.itemLabelActive]} numberOfLines={1} maxFontSizeMultiplier={1.6}>
                     {t(item.label)}
                   </Text>
                 </TouchableOpacity>
@@ -179,7 +184,7 @@ export function AppDrawer({ visible, onClose, navigation }) {
 
           <View style={styles.spacer} />
           <Text style={styles.footer} maxFontSizeMultiplier={1.5}>AIBox · bản demo</Text>
-        </Animated.View>
+        </Animated.ScrollView>
       </View>
     </Modal>
   );
@@ -197,6 +202,7 @@ const styles = StyleSheet.create({
     borderRightColor: colors.border,
     paddingHorizontal: spacing.md,
   },
+  menuContent: { flexGrow: 1 },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -248,7 +254,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
   },
+  itemActive: { backgroundColor: colors.surfaceAlt },
   itemLabel: { ...type.bodyStrong, color: colors.text, fontWeight: '500' },
+  itemLabelActive: { color: colors.accentSoft },
   spacer: { flex: 1 },
   footer: { ...type.small, color: colors.textFaint, paddingHorizontal: spacing.sm },
 });

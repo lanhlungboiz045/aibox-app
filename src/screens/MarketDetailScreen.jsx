@@ -9,7 +9,7 @@ import { TokenBadge } from '../components/TokenBadge';
 import { MarketAnalystModal } from '../components/MarketAnalystModal';
 import { CommentSection } from '../components/CommentSection';
 import { formatToken, formatTokenShort, formatTimeLeft, formatDate } from '../utils/format';
-import { colors, centeredContent, touch } from '../theme/tokens';
+import { colors, centeredContent, marketCategoryColors, touch } from '../theme/tokens';
 
 export function MarketDetailScreen({ route, navigation }) {
   const { state } = useApp();
@@ -23,12 +23,23 @@ export function MarketDetailScreen({ route, navigation }) {
   const [tradeSide, setTradeSide] = useState(initialSide);
 
   if (!market) {
-    return (<View style={styles.container}><Text style={styles.error}>Market không tồn tại</Text></View>);
+    return (
+      <View style={[styles.container, styles.missingMarket]}>
+        <Text style={styles.error}>Market không tồn tại hoặc đã bị gỡ.</Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Quay lại danh sách"
+          style={styles.errorBack}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backBtn}>Quay lại</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   const userPosition = state.user?.positions.find(p => p.marketId === market.id);
-  const categoryColors = { sports: colors.success, crypto: '#F7931A', tech: colors.google, entertainment: colors.danger, life: colors.warning, politics: '#9333EA' };
-  const accent = categoryColors[market.category] || colors.accent;
+  const accent = marketCategoryColors[market.category] || colors.accent;
 
   const openTrade = (side) => { setTradeSide(side); setShowTrade(true); };
 
@@ -117,10 +128,6 @@ export function MarketDetailScreen({ route, navigation }) {
         </View>
       )}
 
-      <TouchableOpacity accessibilityRole="button" style={styles.shareBtn} onPress={() => {}}>
-        <Text style={styles.shareBtnText}>{'\u{1F4E4}'} Share dự đoán</Text>
-      </TouchableOpacity>
-
       <CommentSection marketId={market.id} />
 
       <TradeSheet visible={showTrade} market={market} initialSide={tradeSide} onClose={() => setShowTrade(false)} />
@@ -132,7 +139,7 @@ export function MarketDetailScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 10 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600' },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
   questionSection: { paddingHorizontal: 16, marginBottom: 16 },
   questionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   categoryTag: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5 },
@@ -171,7 +178,7 @@ const styles = StyleSheet.create({
   tradeNo: { backgroundColor: colors.dangerDim, borderWidth: 1, borderColor: colors.dangerBorder },
   tradeBtnLabel: { fontSize: 15, fontWeight: '700', color: colors.text },
   tradeBtnPrice: { fontSize: 13, fontWeight: '600', fontFamily: 'monospace', color: colors.text },
-  shareBtn: { marginHorizontal: 16, backgroundColor: colors.surfaceAlt, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min },
-  shareBtnText: { color: colors.textDim, fontSize: 14 },
-  error: { color: colors.danger, fontSize: 16, textAlign: 'center', marginTop: 100 },
+  missingMarket: { alignItems: 'center', justifyContent: 'center', padding: 24 },
+  error: { color: colors.danger, fontSize: 16, textAlign: 'center' },
+  errorBack: { minHeight: touch.min, justifyContent: 'center', paddingHorizontal: 20, marginTop: 12 },
 });

@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import { STORE_CATEGORIES, STORE_ITEMS } from '../data/storeItems';
 import { ROLE_LABELS } from '../data/accounts';
 import { formatToken, formatTokenShort } from '../utils/format';
+import { AppIcon } from '../components/ui/AppIcon';
 import { colors, centeredContent, touch } from '../theme/tokens';
 
 export function StoreScreen({ navigation }) {
@@ -49,7 +50,7 @@ export function StoreScreen({ navigation }) {
     >
       <View style={styles.header}>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
-        <Text style={styles.title}>{'\u{1F6D2}'} Store</Text>
+        <Text style={styles.title}>Cửa hàng</Text>
         <View style={{ width: 50 }} />
       </View>
 
@@ -78,7 +79,8 @@ export function StoreScreen({ navigation }) {
             style={[styles.catChip, category === item.key && styles.catChipActive]}
             onPress={() => setCategory(item.key)}
           >
-            <Text style={[styles.catText, category === item.key && styles.catTextActive]}>{item.icon} {item.label}</Text>
+            <AppIcon name={item.icon} size={14} color={category === item.key ? colors.accentSoft : colors.textDim} />
+            <Text style={[styles.catText, category === item.key && styles.catTextActive]}>{item.label}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -92,7 +94,7 @@ export function StoreScreen({ navigation }) {
           <View key={item.id} style={[styles.itemCard, item.type === 'role' && styles.roleCard]}>
             <View style={styles.itemHead}>
               <View style={[styles.itemIconWrap, item.color ? { borderColor: item.color + '88' } : null]}>
-                <Text style={styles.itemIcon}>{item.icon}</Text>
+                <AppIcon name={item.icon} size={20} color={colors.textDim} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.itemName, item.color ? { color: item.color } : null]}>{item.name}</Text>
@@ -136,7 +138,7 @@ export function StoreScreen({ navigation }) {
       })}
 
       <Text style={styles.footnote}>
-        Store là "ống xả" token: mỗi giao dịch mua làm giảm tổng cung. Ở bản thật, item và giá phải nằm ở server để tránh sửa local.
+        Cửa hàng là "ống xả" token: mỗi giao dịch mua làm giảm tổng cung. Ở bản thật, mặt hàng và giá phải nằm ở server để tránh sửa local.
       </Text>
     </ScrollView>
   );
@@ -145,7 +147,7 @@ export function StoreScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minWidth: 50, minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
   title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   balanceCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, padding: 16, borderWidth: 1, borderColor: colors.borderSoft },
   balanceLabel: { color: colors.textDim, fontSize: 12 },
@@ -154,7 +156,7 @@ const styles = StyleSheet.create({
   roleRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   roleLabel: { color: colors.textDim, fontSize: 12 },
   roleValue: { color: colors.warning, fontSize: 12, fontWeight: '700' },
-  catRow: { paddingHorizontal: 16, gap: 6, paddingBottom: 12 },
+  catRow: { paddingHorizontal: 16, gap: 8, paddingBottom: 12 },
   catChip: { backgroundColor: colors.surface, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 12, paddingVertical: 8, marginRight: 6, minHeight: touch.min },
   catChipActive: { backgroundColor: colors.accentDim, borderColor: colors.accent },
   catText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
@@ -163,16 +165,15 @@ const styles = StyleSheet.create({
   roleCard: { borderColor: colors.warningBorder, backgroundColor: colors.warningDim },
   itemHead: { flexDirection: 'row', gap: 12 },
   itemIconWrap: { width: 44, height: 44, borderRadius: 10, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderSoft },
-  itemIcon: { fontSize: 22 },
   itemName: { color: colors.text, fontSize: 14, fontWeight: '700' },
   itemDesc: { color: colors.textDim, fontSize: 12, lineHeight: 16, marginTop: 3 },
   itemPrompt: { color: colors.textFaint, fontSize: 12, fontStyle: 'italic', marginTop: 4, lineHeight: 14 },
   itemFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border },
   price: { color: colors.accentSoft, fontSize: 13, fontWeight: '700', fontFamily: 'monospace' },
-  buyBtn: { backgroundColor: colors.accentStrong, borderRadius: 8, paddingHorizontal: 18, paddingVertical: 8, minHeight: touch.min },
+  buyBtn: { backgroundColor: colors.accentStrong, borderRadius: 8, paddingHorizontal: 18, minHeight: touch.min, justifyContent: 'center', alignItems: 'center' },
   buyBtnDisabled: { opacity: 0.35 },
   buyText: { color: colors.onAccent, fontSize: 13, fontWeight: '700' },
-  equipBtn: { backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min },
+  equipBtn: { backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingHorizontal: 14, borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min, justifyContent: 'center', alignItems: 'center' },
   equippedBtn: { borderColor: colors.successBorder, backgroundColor: colors.successDim },
   equipText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
   ownedTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: colors.surfaceAlt },

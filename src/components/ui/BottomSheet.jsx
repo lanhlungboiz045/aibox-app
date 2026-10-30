@@ -1,5 +1,5 @@
 // components/ui/BottomSheet.jsx — Bottom sheet dùng chung: bộ lọc, form, xác nhận
-// Modal + overlay, đóng bằng nút 44px / bấm nền / phím Back Android.
+// Modal + overlay, đóng bằng nút 48dp / bấm nền / phím Back Android.
 // `keyboardAware` để form trong sheet không bị bàn phím che.
 import React from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';

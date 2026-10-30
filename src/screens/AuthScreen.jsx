@@ -28,11 +28,19 @@ export function AuthScreen() {
   const handleGoogle = async () => {
     if (loading) return;
     setLoading(true);
-    const result = await signInWithGoogle();
-    setLoading(false);
-    // Người dùng bấm huỷ trên sheet Google → không báo lỗi
-    if (!result.ok && !result.cancelled) {
-      Alert.alert('Đăng nhập thất bại', result.error);
+    try {
+      const result = await signInWithGoogle();
+      // Người dùng bấm huỷ trên sheet Google → không báo lỗi
+      if (!result.ok && !result.cancelled) {
+        Alert.alert('Đăng nhập thất bại', result.error || 'Không thể đăng nhập bằng Google.');
+      }
+    } catch (error) {
+      Alert.alert(
+        'Đăng nhập thất bại',
+        error instanceof Error ? error.message : 'Đã xảy ra lỗi không xác định.',
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -68,10 +76,11 @@ export function AuthScreen() {
 
         <TouchableOpacity
           accessibilityRole="button"
+          accessibilityState={{ disabled: loading || !canSignIn }}
           style={[styles.googleBtn, (loading || !canSignIn) && styles.googleBtnDisabled]}
           onPress={handleGoogle}
           activeOpacity={0.85}
-          disabled={loading}
+          disabled={loading || !canSignIn}
         >
           {loading ? (
             <ActivityIndicator color={colors.onBright} />

@@ -42,8 +42,7 @@ export function ModelCatalogScreen({ navigation }) {
   }), [state.aiModels, search, provider, type]);
 
   const tryNow = (model) => {
-    // ModelCatalog nằm trong root stack, AIHub nằm trong tab → phải navigate lồng
-    navigation.navigate('MainTabs', { screen: 'AIHub', params: { modelId: model.id, ts: Date.now() } });
+    navigation.navigate('AIHub', { modelId: model.id, ts: Date.now() });
   };
 
   const renderItem = ({ item }) => (
@@ -183,7 +182,7 @@ export function ModelCatalogScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { paddingHorizontal: 16, paddingBottom: 8 },
-  backBtn: { alignSelf: 'flex-start', paddingVertical: 6 },
+  backBtn: { alignSelf: 'flex-start', minHeight: touch.min, justifyContent: 'center', paddingVertical: 8 },
   backText: { color: colors.accentSoft, fontSize: 13, fontWeight: '600' },
   title: { color: colors.text, fontSize: 20, fontWeight: '800', marginTop: 4 },
   sub: { color: colors.textDim, fontSize: 12, marginTop: 2 },

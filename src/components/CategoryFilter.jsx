@@ -1,5 +1,5 @@
 // components/CategoryFilter.jsx — Hàng chip lọc loại model (Bước 3)
-// Chip cao 32 + hitSlop 6 → vùng chạm 44. Có accessibilityState.selected.
+// Chip có vùng chạm tối thiểu 48dp theo Material và accessibilityState.selected.
 import React from 'react';
 import { ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { colors, radius, spacing, type } from '../theme/tokens';
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 32,
+    minHeight: 48,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,

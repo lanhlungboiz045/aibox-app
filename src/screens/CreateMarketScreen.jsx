@@ -33,6 +33,10 @@ export function CreateMarketScreen({ navigation }) {
   const [endDateText, setEndDateText] = useState(defaultEndText);
   const [yesPrice, setYesPrice] = useState('50');
   const [error, setError] = useState(null);
+  const parsedYesPrice = Number(yesPrice);
+  const noPricePreview = Number.isInteger(parsedYesPrice) && parsedYesPrice >= 5 && parsedYesPrice <= 95
+    ? 100 - parsedYesPrice
+    : '—';
 
   const canCreate = user && ['admin', 'creator'].includes(user.role);
 
@@ -60,13 +64,27 @@ export function CreateMarketScreen({ navigation }) {
 
   const submit = () => {
     setError(null);
-    const parsed = new Date(`${endDateText.trim()}T23:59:00`);
-    if (Number.isNaN(parsed.getTime())) {
+    const dateText = endDateText.trim();
+    const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateText);
+    const parsed = dateMatch
+      ? new Date(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]), 23, 59)
+      : new Date(Number.NaN);
+    if (!dateMatch
+      || Number.isNaN(parsed.getTime())
+      || parsed.getFullYear() !== Number(dateMatch[1])
+      || parsed.getMonth() + 1 !== Number(dateMatch[2])
+      || parsed.getDate() !== Number(dateMatch[3])) {
       setError('Ngày kết thúc không hợp lệ. Dùng định dạng YYYY-MM-DD.');
       return;
     }
     if (parsed.getTime() <= Date.now()) {
       setError('Ngày kết thúc phải ở tương lai.');
+      return;
+    }
+
+    const parsedPrice = Number(yesPrice);
+    if (!Number.isInteger(parsedPrice) || parsedPrice < 5 || parsedPrice > 95) {
+      setError('Giá YES phải là số nguyên từ 5% đến 95%.');
       return;
     }
 
@@ -76,7 +94,7 @@ export function CreateMarketScreen({ navigation }) {
       category,
       icon,
       endDate: parsed.toISOString(),
-      yesPrice: Number(yesPrice) || 50,
+      yesPrice: parsedPrice,
     });
 
     if (!result.ok) { setError(result.error); return; }
@@ -111,21 +129,23 @@ export function CreateMarketScreen({ navigation }) {
         <TextInput
           style={styles.input}
           value={question}
-          onChangeText={setQuestion}
+          onChangeText={value => { setQuestion(value); setError(null); }}
           placeholder="VD: MU sẽ thắng Chelsea ngày 02/11?"
           placeholderTextColor={colors.textFaint}
           maxLength={140}
+          accessibilityLabel="Câu hỏi hoặc sự kiện của market"
         />
 
         <Text style={styles.label}>Mô tả & điều kiện resolve</Text>
         <TextInput
           style={[styles.input, styles.textArea]}
           value={description}
-          onChangeText={setDescription}
+          onChangeText={value => { setDescription(value); setError(null); }}
           placeholder="Nêu rõ nguồn kết quả, mốc thời gian, điều kiện thắng..."
           placeholderTextColor={colors.textFaint}
           multiline
           maxLength={400}
+          accessibilityLabel="Mô tả và điều kiện resolve market"
         />
 
         <Text style={styles.label}>Danh mục</Text>
@@ -133,6 +153,7 @@ export function CreateMarketScreen({ navigation }) {
           {CATEGORIES.map(item => (
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel={item.label}
               accessibilityState={{ selected: category === item.key }}
               key={item.key}
               style={[styles.chip, category === item.key && styles.chipActive]}
@@ -148,6 +169,7 @@ export function CreateMarketScreen({ navigation }) {
           {ICONS.map(item => (
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel={`Chọn biểu tượng market ${ICONS.indexOf(item) + 1}`}
               accessibilityState={{ selected: icon === item }}
               key={item}
               style={[styles.iconChip, icon === item && styles.chipActive]}
@@ -163,10 +185,11 @@ export function CreateMarketScreen({ navigation }) {
           {PRESET_PRICES.map(price => (
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel={`Đặt giá YES ban đầu ${price}%`}
               accessibilityState={{ selected: Number(yesPrice) === price }}
               key={price}
               style={[styles.chip, Number(yesPrice) === price && styles.chipActive]}
-              onPress={() => setYesPrice(String(price))}
+              onPress={() => { setYesPrice(String(price)); setError(null); }}
             >
               <Text style={[styles.chipText, Number(yesPrice) === price && styles.chipTextActive]}>{price}%</Text>
             </TouchableOpacity>
@@ -174,30 +197,34 @@ export function CreateMarketScreen({ navigation }) {
           <TextInput
             style={styles.priceInput}
             value={yesPrice}
-            onChangeText={setYesPrice}
-            keyboardType="numeric"
+            onChangeText={value => { setYesPrice(value.replace(/\D/g, '')); setError(null); }}
+            keyboardType="number-pad"
             maxLength={2}
+            accessibilityLabel="Giá YES ban đầu, từ 5 đến 95 phần trăm"
           />
         </View>
-        <Text style={styles.hint}>NO price = {100 - (Number(yesPrice) || 50)}% · thanh khoản nền tảng: {formatToken(10000)} {'\u{1F4B0}'}</Text>
+        <Text style={styles.hint}>
+          NO price = {noPricePreview}{noPricePreview === '—' ? '' : '%'} · thanh khoản nền tảng: {formatToken(10000)} {'\u{1F4B0}'}
+        </Text>
 
         <Text style={styles.label}>Ngày kết thúc (YYYY-MM-DD)</Text>
         <TextInput
           style={styles.input}
           value={endDateText}
-          onChangeText={setEndDateText}
           placeholder="2026-12-31"
           placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
+          accessibilityLabel="Ngày kết thúc market theo định dạng YYYY-MM-DD"
+          onChangeText={value => { setEndDateText(value); setError(null); }}
         />
 
         {error ? <Text style={styles.error}>{'\u{26A0}'} {error}</Text> : null}
 
         <TouchableOpacity
           accessibilityRole="button"
-          style={[styles.submitBtn, (!question.trim() || !endDateText.trim()) && styles.submitBtnDisabled]}
+          accessibilityLabel="Đăng market"
+          style={styles.submitBtn}
           onPress={submit}
-          disabled={!question.trim() || !endDateText.trim()}
         >
           <Text style={styles.submitText}>Đăng market</Text>
         </TouchableOpacity>
@@ -213,33 +240,32 @@ export function CreateMarketScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minWidth: 50, minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
   title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   notice: { marginHorizontal: 16, marginBottom: 8, padding: 12, borderRadius: 10, backgroundColor: colors.warningDim, borderWidth: 1, borderColor: colors.warningBorder },
   noticeText: { color: colors.warning, fontSize: 12, lineHeight: 16 },
   form: { paddingHorizontal: 16 },
   label: { color: colors.textDim, fontSize: 12, marginTop: 14, marginBottom: 8 },
-  input: { backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 14, paddingHorizontal: 14, paddingVertical: 11 },
+  input: { backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 14, paddingHorizontal: 14, minHeight: touch.min },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
-  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 10, paddingVertical: 7, marginRight: 6, marginBottom: 6, minHeight: touch.min },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: touch.gap },
+  chip: { backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 10, minHeight: touch.min, justifyContent: 'center' },
   chipActive: { borderColor: colors.accent, backgroundColor: colors.accentDim },
   chipText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
   chipTextActive: { color: colors.accentSoft },
-  iconChip: { width: 40, height: 40, borderRadius: 8, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.borderSoft, alignItems: 'center', justifyContent: 'center', marginRight: 6, marginBottom: 6, minHeight: touch.min },
+  iconChip: { width: touch.min, height: touch.min, borderRadius: 8, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.borderSoft, alignItems: 'center', justifyContent: 'center' },
   iconText: { fontSize: 18 },
   priceRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
-  priceInput: { width: 60, backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, color: colors.accentSoft, fontSize: 15, fontWeight: '700', fontFamily: 'monospace', paddingHorizontal: 10, paddingVertical: 8, textAlign: 'center' },
+  priceInput: { width: 60, minHeight: touch.min, backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, color: colors.accentSoft, fontSize: 15, fontWeight: '700', fontFamily: 'monospace', paddingHorizontal: 10, textAlign: 'center' },
   hint: { color: colors.textFaint, fontSize: 12, marginTop: 2 },
   error: { color: colors.danger, fontSize: 12, marginTop: 12, lineHeight: 17 },
-  submitBtn: { backgroundColor: colors.accentStrong, borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 18, minHeight: touch.min },
-  submitBtnDisabled: { opacity: 0.4 },
+  submitBtn: { backgroundColor: colors.accentStrong, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginTop: 18, minHeight: touch.min },
   submitText: { color: colors.onAccent, fontSize: 15, fontWeight: '700' },
   footnote: { color: colors.textFaint, fontSize: 12, lineHeight: 15, marginTop: 12 },
   lockCard: { backgroundColor: colors.surface, borderRadius: 16, margin: 16, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
   lockIcon: { fontSize: 36, marginBottom: 10 },
   lockTitle: { color: colors.text, fontSize: 16, fontWeight: '700', marginBottom: 8 },
   lockText: { color: colors.textDim, fontSize: 13, lineHeight: 20, textAlign: 'center' },
-  lockBtn: { backgroundColor: colors.accentStrong, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12, marginTop: 16, minHeight: touch.min },
+  lockBtn: { backgroundColor: colors.accentStrong, borderRadius: 10, paddingHorizontal: 24, marginTop: 16, minHeight: touch.min, justifyContent: 'center' },
   lockBtnText: { color: colors.onAccent, fontSize: 14, fontWeight: '700' },
 });

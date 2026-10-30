@@ -30,10 +30,15 @@ export function AdminUsersScreen({ navigation }) {
   // Đọc danh sách hồ sơ từ Firestore; lỗi rules/mạng → hiện banner, không chặn UI
   const refresh = useCallback(async () => {
     setLoading(true);
-    const result = await loadUserDirectory();
-    setUsers(result.users || []);
-    setError(result.error || null);
-    setLoading(false);
+    try {
+      const result = await loadUserDirectory();
+      setUsers(result.users || []);
+      setError(result.error || null);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Không thể tải danh sách người dùng.');
+    } finally {
+      setLoading(false);
+    }
   }, [loadUserDirectory]);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -65,20 +70,34 @@ export function AdminUsersScreen({ navigation }) {
   });
 
   const applyRole = async (account, role) => {
-    const result = await setUserRole(account.id, role);
-    if (result.ok) {
-      setUsers(prev => prev.map(u => (u.id === account.id ? { ...u, role } : u)));
-    } else {
-      Alert.alert('Không cập nhật được', result.error);
+    try {
+      const result = await setUserRole(account.id, role);
+      if (result.ok) {
+        setUsers(prev => prev.map(u => (u.id === account.id ? { ...u, role } : u)));
+      } else {
+        Alert.alert('Không cập nhật được', result.error || 'Quyền người dùng chưa được lưu.');
+      }
+    } catch (mutationError) {
+      Alert.alert(
+        'Không cập nhật được',
+        mutationError instanceof Error ? mutationError.message : 'Quyền người dùng chưa được lưu.',
+      );
     }
   };
 
   const applyStatus = async (account, status) => {
-    const result = await setUserStatus(account.id, status);
-    if (result.ok) {
-      setUsers(prev => prev.map(u => (u.id === account.id ? { ...u, status } : u)));
-    } else {
-      Alert.alert('Không cập nhật được', result.error);
+    try {
+      const result = await setUserStatus(account.id, status);
+      if (result.ok) {
+        setUsers(prev => prev.map(u => (u.id === account.id ? { ...u, status } : u)));
+      } else {
+        Alert.alert('Không cập nhật được', result.error || 'Trạng thái người dùng chưa được lưu.');
+      }
+    } catch (mutationError) {
+      Alert.alert(
+        'Không cập nhật được',
+        mutationError instanceof Error ? mutationError.message : 'Trạng thái người dùng chưa được lưu.',
+      );
     }
   };
 
@@ -129,7 +148,16 @@ export function AdminUsersScreen({ navigation }) {
       <View style={styles.header}>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
         <Text style={styles.title}>Người dùng</Text>
-        <TouchableOpacity accessibilityRole="button" onPress={refresh}><Text style={styles.refreshBtn}>{'\u{21BB}'}</Text></TouchableOpacity>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Tải lại danh sách người dùng"
+          accessibilityState={{ disabled: loading }}
+          disabled={loading}
+          style={styles.refreshButton}
+          onPress={refresh}
+        >
+          <Text style={styles.refreshBtn}>{loading ? '…' : '\u{21BB}'}</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.searchWrap}>
@@ -140,6 +168,7 @@ export function AdminUsersScreen({ navigation }) {
           placeholder="Tìm username hoặc email..."
           placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
+          accessibilityLabel="Tìm theo username hoặc email"
         />
       </View>
 
@@ -167,6 +196,16 @@ export function AdminUsersScreen({ navigation }) {
           <Text style={styles.errorHint}>
             Danh sách này đọc từ Firestore — cần deploy firestore.rules và bật Firestore Database.
           </Text>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Thử tải lại danh sách người dùng"
+            accessibilityState={{ disabled: loading }}
+            disabled={loading}
+            style={styles.retryButton}
+            onPress={refresh}
+          >
+            <Text style={styles.retryText}>{loading ? 'Đang tải…' : 'Thử lại'}</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -230,13 +269,14 @@ export function AdminUsersScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minWidth: 50, minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
   title: { color: colors.text, fontSize: 18, fontWeight: '700' },
-  refreshBtn: { color: colors.accentSoft, fontSize: 18, fontWeight: '700', width: 50, textAlign: 'right' },
+  refreshButton: { width: touch.min, minHeight: touch.min, alignItems: 'flex-end', justifyContent: 'center' },
+  refreshBtn: { color: colors.accentSoft, fontSize: 18, fontWeight: '700', width: 40, textAlign: 'center' },
   searchWrap: { paddingHorizontal: 16, marginBottom: 10 },
-  search: { backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 14, paddingHorizontal: 14, paddingVertical: 10 },
-  filterRow: { paddingHorizontal: 16, gap: 6, paddingBottom: 8 },
-  filterChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft, marginRight: 6, minHeight: touch.min },
+  search: { backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 14, paddingHorizontal: 14, minHeight: touch.min },
+  filterRow: { paddingHorizontal: 16, gap: touch.gap, paddingBottom: 8 },
+  filterChip: { paddingHorizontal: 12, borderRadius: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min, justifyContent: 'center' },
   filterChipActive: { backgroundColor: colors.accentDim, borderColor: colors.accent },
   filterText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
   filterTextActive: { color: colors.accentSoft },
@@ -244,6 +284,8 @@ const styles = StyleSheet.create({
   errorBox: { backgroundColor: colors.dangerDim, borderWidth: 1, borderColor: colors.dangerBorder, borderRadius: 10, marginHorizontal: 16, marginBottom: 10, padding: 12 },
   errorText: { color: colors.danger, fontSize: 12, lineHeight: 18 },
   errorHint: { color: colors.danger, fontSize: 12, lineHeight: 15, marginTop: 6 },
+  retryButton: { alignSelf: 'flex-start', minHeight: touch.min, justifyContent: 'center', paddingHorizontal: 8, marginTop: 4 },
+  retryText: { color: colors.text, fontSize: 13, fontWeight: '700' },
   card: { backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, marginBottom: 6, padding: 12, borderWidth: 1, borderColor: colors.borderSoft },
   cardBanned: { borderColor: colors.dangerBorder, backgroundColor: colors.dangerDim },
   cardHead: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
@@ -256,9 +298,9 @@ const styles = StyleSheet.create({
   email: { color: colors.textDim, fontSize: 12, marginTop: 2 },
   meta: { color: colors.textFaint, fontSize: 12, marginTop: 3, fontFamily: 'monospace' },
   actions: { flexDirection: 'row', gap: 8, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border },
-  roleBtn: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 8, paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
+  roleBtn: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 8, minHeight: touch.min, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
   roleBtnText: { color: colors.accentSoft, fontSize: 12, fontWeight: '600' },
-  banBtn: { flex: 1, backgroundColor: colors.dangerDim, borderRadius: 8, paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: colors.dangerBorder },
+  banBtn: { flex: 1, backgroundColor: colors.dangerDim, borderRadius: 8, minHeight: touch.min, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.dangerBorder },
   unbanBtn: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
   banBtnText: { color: colors.danger, fontSize: 12, fontWeight: '600' },
   empty: { color: colors.textFaint, fontSize: 13, textAlign: 'center', padding: 24 },

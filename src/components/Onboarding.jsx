@@ -43,7 +43,8 @@ export function useOnboardingSeen() {
         if (mounted) setSeen(value === '1');
       })
       // Lỗi đọc storage → coi như đã xem, không chặn người dùng vào app
-      .catch(() => {
+      .catch((error) => {
+        console.warn('[Onboarding] Could not read completion state:', error);
         if (mounted) setSeen(true);
       });
     return () => {
@@ -53,7 +54,9 @@ export function useOnboardingSeen() {
 
   const complete = useCallback(() => {
     setSeen(true);
-    AsyncStorage.setItem(ONBOARDING_KEY, '1').catch(() => {});
+    AsyncStorage.setItem(ONBOARDING_KEY, '1').catch((error) => {
+      console.warn('[Onboarding] Could not save completion state:', error);
+    });
   }, []);
 
   return { seen, complete };
@@ -150,7 +153,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   brand: { ...type.h1, color: colors.text },
-  // Nút chữ "Bỏ qua" vẫn đủ 44px theo chiều cao (vùng chạm), nhìn vẫn nhẹ
+  // Nút chữ "Bỏ qua" đủ vùng chạm 48dp mà vẫn giữ cảm giác nhẹ.
   skip: {
     minHeight: touch.min,
     justifyContent: 'center',

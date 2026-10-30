@@ -4,7 +4,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { formatTokenShort, formatDate, formatTimeLeft, formatRelativeTime } from '../../utils/format';
-import { colors, centeredContent } from '../../theme/tokens';
+import { colors, centeredContent, touch } from '../../theme/tokens';
 
 const FILTERS = [
   { key: 'open', label: 'Đang mở' },
@@ -28,7 +28,7 @@ export function AdminMarketsScreen({ navigation }) {
 
   const confirmResolve = (market, outcome) => {
     const winners = state.accounts.reduce(
-      (sum, account) => sum + account.positions.filter(p => p.marketId === market.id && p.side === outcome).length,
+      (sum, account) => sum + (account.positions || []).filter(p => p.marketId === market.id && p.side === outcome).length,
       0
     );
     Alert.alert(
@@ -40,8 +40,15 @@ export function AdminMarketsScreen({ navigation }) {
           text: `Resolve ${outcome}`,
           style: 'destructive',
           onPress: () => {
-            const result = resolveMarket(market.id, outcome);
-            if (!result.ok) Alert.alert('Không thể resolve', result.error);
+            try {
+              const result = resolveMarket(market.id, outcome);
+              if (!result.ok) Alert.alert('Không thể resolve', result.error || 'Kết quả chưa được lưu.');
+            } catch (error) {
+              Alert.alert(
+                'Không thể resolve',
+                error instanceof Error ? error.message : 'Đã xảy ra lỗi khi chốt market.',
+              );
+            }
           },
         },
       ]
@@ -84,7 +91,7 @@ export function AdminMarketsScreen({ navigation }) {
               <View style={{ flex: 1 }}>
                 <Text style={styles.question}>{market.question}</Text>
                 <Text style={styles.meta}>
-                  {market.category.toUpperCase()} · {formatTokenShort(market.volume)} {'\u{1F4B0}'} volume · thanh khoản {formatTokenShort(market.liquidity || 0)}
+                  {(market.category || 'OTHER').toUpperCase()} · {formatTokenShort(market.volume)} {'\u{1F4B0}'} volume · thanh khoản {formatTokenShort(market.liquidity || 0)}
                 </Text>
                 <Text style={[styles.meta, overdue && { color: colors.danger }]}>
                   {market.resolved
@@ -97,10 +104,10 @@ export function AdminMarketsScreen({ navigation }) {
 
             {!market.resolved ? (
               <View style={styles.resolveRow}>
-                <TouchableOpacity accessibilityRole="button" style={[styles.resolveBtn, styles.resolveYes]} onPress={() => confirmResolve(market, 'YES')}>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Chốt ${market.question} là YES`} style={[styles.resolveBtn, styles.resolveYes]} onPress={() => confirmResolve(market, 'YES')}>
                   <Text style={styles.resolveYesText}>Resolve YES</Text>
                 </TouchableOpacity>
-                <TouchableOpacity accessibilityRole="button" style={[styles.resolveBtn, styles.resolveNo]} onPress={() => confirmResolve(market, 'NO')}>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Chốt ${market.question} là NO`} style={[styles.resolveBtn, styles.resolveNo]} onPress={() => confirmResolve(market, 'NO')}>
                   <Text style={styles.resolveNoText}>Resolve NO</Text>
                 </TouchableOpacity>
               </View>
@@ -123,10 +130,10 @@ export function AdminMarketsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minWidth: 50, minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
   title: { color: colors.text, fontSize: 18, fontWeight: '700' },
-  filterRow: { flexDirection: 'row', gap: 6, paddingHorizontal: 16, marginBottom: 12 },
-  filterChip: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft },
+  filterRow: { flexDirection: 'row', gap: touch.gap, paddingHorizontal: 16, marginBottom: 12 },
+  filterChip: { flex: 1, minHeight: touch.min, justifyContent: 'center', alignItems: 'center', borderRadius: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft },
   filterChipActive: { backgroundColor: colors.accentDim, borderColor: colors.accent },
   filterText: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
   filterTextActive: { color: colors.accentSoft },
@@ -139,7 +146,7 @@ const styles = StyleSheet.create({
   meta: { color: colors.textDim, fontSize: 12, lineHeight: 16 },
   creator: { color: colors.warning, fontSize: 12, marginTop: 2 },
   resolveRow: { flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border },
-  resolveBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center', borderWidth: 1 },
+  resolveBtn: { flex: 1, minHeight: touch.min, justifyContent: 'center', borderRadius: 8, alignItems: 'center', borderWidth: 1 },
   resolveYes: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
   resolveNo: { backgroundColor: colors.dangerDim, borderColor: colors.dangerBorder },
   resolveYesText: { color: colors.success, fontSize: 13, fontWeight: '700' },

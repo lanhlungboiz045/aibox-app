@@ -8,7 +8,7 @@
 // không đổi ra tiền. RNG chạy trên máy nên kết quả chỉ mang tính giải trí.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, Animated, Easing, Pressable, TouchableOpacity,
+  View, Text, TextInput, ScrollView, StyleSheet, Animated, Easing, Pressable, TouchableOpacity, Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp, MAX_TRANSACTIONS } from '../context/AppContext';
@@ -25,8 +25,8 @@ import { formatToken, formatRelativeTime } from '../utils/format';
 import { chatsRange } from '../utils/economy';
 import { hapticError, hapticPress, hapticTap } from '../utils/feedback';
 import {
-  MIN_STAKE, STAKE_PRESETS, SIDES, SIDE_LABELS, SIDE_RANGES,
-  clampStake, rollDice,
+  MIN_STAKE, STAKE_PRESETS, SIDES, SIDE_LABELS, SIDE_RANGES, getStakePayouts,
+  getValidStake, maxStakeForBalance, rollDice,
 } from '../utils/taiXiu';
 import { colors, centeredContent, layout, radius, spacing, touch, type } from '../theme/tokens';
 import { t } from '../i18n';
@@ -34,8 +34,7 @@ import { t } from '../i18n';
 // Số ván hiển thị ở dải lịch sử nhanh
 const RECENT_LIMIT = 12;
 
-// Mức cược ≥ 1.000 phải xác nhận trong bảng trượt: một ván lớn ≈ 1–2 câu hỏi AI,
-// đủ đau nếu chạm nhầm. Mức ≤ 500 vẫn 1 chạm cho nhanh — cùng một cử chỉ cho mọi mức.
+// Cược từ 1.000 token trở lên hoặc cược toàn bộ số dư cần xác nhận rõ ràng.
 const CONFIRM_FROM = 1000;
 
 export function TaiXiuScreen({ navigation }) {
@@ -46,10 +45,10 @@ export function TaiXiuScreen({ navigation }) {
   const reduceMotion = useReduceMotion();
   const { isOffline, refresh: refreshNetwork } = useNetworkStatus();
 
-  const [stake, setStake] = useState(500);
+  const [stakeInput, setStakeInput] = useState('500');
   const [faces, setFaces] = useState([1, 1, 1]); // mặt đang hiển thị (lúc lắc thì nhảy số)
   const [rolling, setRolling] = useState(false);
-  // Cửa đang chờ xác nhận (mức cược lớn) — null = không mở bảng
+  // Cửa đang chờ xác nhận (cược lớn hoặc tất tay) — null = không mở bảng
   const [confirmSide, setConfirmSide] = useState(null);
 
   const spin = useRef(new Animated.Value(0)).current;
@@ -57,12 +56,24 @@ export function TaiXiuScreen({ navigation }) {
   const spinTimer = useRef(null);
 
   const balance = state.user?.tokenBalance || 0;
-  const stakeAmount = clampStake(stake, balance);
-  // Số dư dưới mức tối thiểu → không có mức cược hợp lệ: đừng hứa "thắng +100"
-  const hasStake = stakeAmount >= MIN_STAKE;
+  const parsedStake = stakeInput === '' ? null : Number(stakeInput);
+  const stakeAmount = getValidStake(parsedStake, balance);
+  const maxStake = maxStakeForBalance(balance);
+  const hasStake = stakeAmount > 0;
+  const stakePayouts = getStakePayouts(stakeAmount);
+  const stakeError = stakeInput === ''
+    ? null
+    : !Number.isSafeInteger(parsedStake)
+      ? 'Nhập một số token nguyên hợp lệ.'
+      : parsedStake < MIN_STAKE
+        ? `Mức cược tối thiểu là ${formatToken(MIN_STAKE)} token.`
+        : parsedStake > balance
+          ? 'Mức cược vượt số dư token hiện tại.'
+          : parsedStake > maxStake
+            ? 'Mức cược quá lớn để xử lý an toàn.'
+            : null;
   const canBet = hasStake && !rolling;
-  // Mức ≥ 1.000 mở bảng xác nhận thay vì đặt ngay (cùng cử chỉ chạm cho mọi mức)
-  const needsConfirm = stakeAmount >= CONFIRM_FROM;
+  const needsConfirm = stakeAmount >= CONFIRM_FROM || (hasStake && stakeAmount === balance);
   // Lịch sử bị cắt ở MAX_TRANSACTIONS → thống kê chỉ đúng trong cửa sổ đó
   const capped = (state.user?.transactions || []).length >= MAX_TRANSACTIONS;
 
@@ -101,12 +112,10 @@ export function TaiXiuScreen({ navigation }) {
     // Số dư sau ván: reducer đã cộng/trừ, ở đây tính lại để toast nói con số
     // người chơi cần biết (số dư), không phải tổng xúc xắc.
     const after = balance + (result.net || 0);
-    if (result.triple) {
-      hapticError();
-      toast.warning(`Bộ ba ${diceText} — mất ${formatToken(amount)} token · số dư ${formatToken(after)}`);
-    } else if (result.win) {
+    if (result.win) {
       // Toast success đã rung mừng → không rung thêm lần nữa
-      toast.success(`Thắng +${formatToken(amount)} · số dư ${formatToken(after)}`);
+      const resultLabel = result.triple ? `Bộ ba ${diceText} · thưởng +${formatToken(result.net)}` : `Thắng +${formatToken(result.net)}`;
+      toast.success(`${resultLabel} · số dư ${formatToken(after)}`);
     } else {
       // Thua là kết quả hợp lệ, không phải lỗi hệ thống → rung nhẹ
       hapticTap();
@@ -114,18 +123,18 @@ export function TaiXiuScreen({ navigation }) {
     }
   }, [balance, placeTaiXiuBet, toast]);
 
-  // 1 chạm đặt cược: lắc ~700ms rồi công bố (bỏ animation nếu máy bật giảm chuyển động)
+  // Sau xác nhận nếu cần: lắc ~700ms rồi công bố (bỏ animation khi giảm chuyển động)
   const play = useCallback((side) => {
     if (rolling) return;
-    const amount = clampStake(stake, balance);
-    if (amount < MIN_STAKE) {
+    Keyboard.dismiss();
+    const amount = stakeAmount;
+    if (!amount) {
       hapticError();
-      toast.error(`Cần tối thiểu ${MIN_STAKE} token để cược.`);
+      toast.error(stakeError || `Cần tối thiểu ${MIN_STAKE} token để cược.`);
       return;
     }
 
     hapticPress();
-    setStake(amount);
     setRolling(true);
 
     if (reduceMotion) {
@@ -142,18 +151,19 @@ export function TaiXiuScreen({ navigation }) {
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, [balance, reduceMotion, rolling, settle, spin, stake, toast]);
+  }, [reduceMotion, rolling, settle, spin, stakeAmount, stakeError, toast]);
 
   const pickStake = (value) => {
     if (rolling) return;
+    Keyboard.dismiss();
     hapticPress();
-    setStake(value);
+    setStakeInput(String(value));
   };
 
-  // Một cử chỉ cho mọi mức: chạm để đặt. Mức ≥ 1.000 mở bảng xác nhận
-  // (đọc lại số token sẽ mất + số dư còn lại) thay vì đặt ngay.
+  // Mức cược lớn hoặc tất tay mở bảng xác nhận trước khi đặt.
   const pressBet = (side) => {
     if (!canBet) return;
+    Keyboard.dismiss();
     if (needsConfirm) {
       hapticTap();
       setConfirmSide(side);
@@ -171,10 +181,9 @@ export function TaiXiuScreen({ navigation }) {
 
   // Xúc xắc đang hiển thị: lúc lắc lấy mặt ngẫu nhiên, còn lại lấy ván gần nhất
   const shown = rolling ? faces : (latest?.dice || [1, 2, 3]);
-  // Bộ ba: tín hiệu cảnh báo (hổ phách) để khớp với banner, không dùng đỏ "thua"
   const diceTone = rolling || !latest
     ? 'normal'
-    : latest.triple ? 'warn' : (latest.amount || 0) > 0 ? 'win' : 'lose';
+    : (latest.amount || 0) > 0 ? 'win' : 'lose';
 
   const animatedStyle = {
     transform: [
@@ -202,10 +211,10 @@ export function TaiXiuScreen({ navigation }) {
       <Text style={styles.num}>{formatToken(Math.abs(latest.amount || 0))}</Text>
     );
     if (latest.triple) {
-      bannerTone = 'warning';
+      bannerTone = 'success';
       bannerNode = (
         <>
-          {`Bộ ba ${diceText} · tổng `}{totalNode}{' → nhà cái ăn cả 2 cửa · mất '}{amountNode}
+          {`Bộ ba ${diceText} · tổng `}{totalNode}{' → thưởng +'}{amountNode}
         </>
       );
     } else {
@@ -308,7 +317,7 @@ export function TaiXiuScreen({ navigation }) {
         </View>
 
         {/* ── Không đủ token tối thiểu: chỉ đường nạp, không chặn xem luật ── */}
-        {stakeAmount < MIN_STAKE ? (
+        {balance < MIN_STAKE ? (
           <ErrorState
             compact
             title="Không đủ token để cược"
@@ -377,14 +386,21 @@ export function TaiXiuScreen({ navigation }) {
             <View style={styles.ruleRow}>
               <AppIcon name="info" size={14} color={colors.textFaint} />
               <Text style={styles.ruleText} maxFontSizeMultiplier={1.6}>
-                {`Đặt đúng cửa: thắng +1 lần cược, sai: −1 lần cược. Không có cửa hoà.${hasStake ? ` Với mức cược hiện tại: thắng +${formatToken(stakeAmount)}, thua −${formatToken(stakeAmount)}.` : ''}`}
+                Cược tối thiểu {formatToken(MIN_STAKE)} token, không có trần cố định; mức cược không vượt số dư.
               </Text>
             </View>
             <View style={styles.ruleRow}>
               <AppIcon name="info" size={14} color={colors.textFaint} />
               <Text style={styles.ruleText} maxFontSizeMultiplier={1.6}>
-                Bộ ba 111–666 (tổng 3 hoặc 18) nhà cái ăn cả 2 cửa — đây là lợi thế duy nhất
-                của nhà cái: 6/216 ván (2,78%).
+                {`Đúng cửa: lãi 0,96× cược; sai cửa: mất cược. Thưởng làm tròn xuống token nguyên.${hasStake ? ` Với mức hiện tại: +${formatToken(stakePayouts.sideWin)} hoặc −${formatToken(stakeAmount)} token.` : ''}`}
+              </Text>
+            </View>
+            <View style={styles.ruleRow}>
+              <AppIcon name="info" size={14} color={colors.textFaint} />
+              <Text style={styles.ruleText} maxFontSizeMultiplier={1.6}>
+                Bộ ba 111–666 (6/216 ván, 2,78%) thắng bất kể cửa đã đặt, nhận lãi gấp 2 lần cược
+                {hasStake ? ` (+${formatToken(stakePayouts.tripleWin)} token với mức hiện tại).` : '.'}
+                {' Mức thưởng này khiến kỳ vọng toán học nghiêng về người chơi.'}
               </Text>
             </View>
             <View style={styles.ruleRow}>
@@ -421,23 +437,68 @@ export function TaiXiuScreen({ navigation }) {
           ) : (
             <>
               <Text style={styles.betBarLabel} maxFontSizeMultiplier={1.4}>
-                Chưa đủ token để cược
+                Chưa có mức cược hợp lệ
               </Text>
               <Text style={styles.betBarHint} maxFontSizeMultiplier={1.4}>
-                {`Tối thiểu ${formatToken(MIN_STAKE)}/ván`}
+                {`Số dư ${formatToken(balance)} token`}
               </Text>
             </>
           )}
         </View>
 
+        <View style={styles.customStakeRow}>
+          <View style={styles.customStakeBody}>
+            <Text style={styles.customStakeLabel} maxFontSizeMultiplier={1.4}>Mức cược tùy chỉnh</Text>
+            <View style={[styles.customStakeField, Boolean(stakeError) && styles.customStakeFieldError]}>
+              <TextInput
+                style={styles.customStakeInput}
+                value={stakeInput}
+                onChangeText={value => setStakeInput(value.replace(/\D/g, ''))}
+                placeholder="Nhập số token"
+                placeholderTextColor={colors.textFaint}
+                keyboardType="number-pad"
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+                editable={!rolling}
+                accessibilityLabel="Mức cược tùy chỉnh, token"
+                accessibilityHint={maxStake >= MIN_STAKE
+                  ? `Nhập từ ${formatToken(MIN_STAKE)} đến ${formatToken(maxStake)} token`
+                  : `Cần số dư tối thiểu ${formatToken(MIN_STAKE)} token`}
+                maxFontSizeMultiplier={1.6}
+              />
+              <Text style={styles.customStakeSuffix} maxFontSizeMultiplier={1.4}>token</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={`Đặt mức cược tối đa ${formatToken(maxStake)} token`}
+            accessibilityState={{ disabled: rolling || maxStake < MIN_STAKE }}
+            disabled={rolling || maxStake < MIN_STAKE}
+            onPress={() => { Keyboard.dismiss(); setStakeInput(String(maxStake)); }}
+            style={[styles.maxButton, (rolling || maxStake < MIN_STAKE) && styles.presetDisabled]}
+          >
+            <Text style={styles.maxButtonText} maxFontSizeMultiplier={1.4}>Tối đa</Text>
+          </TouchableOpacity>
+        </View>
+        {stakeError ? (
+          <Text style={styles.stakeError} accessibilityRole="alert" maxFontSizeMultiplier={1.4}>
+            {stakeError}
+          </Text>
+        ) : (
+          <Text style={styles.stakeHelper} maxFontSizeMultiplier={1.4}>
+            {`Tối thiểu ${formatToken(MIN_STAKE)} · số dư ${formatToken(balance)} token`}
+          </Text>
+        )}
+
         {/* Trả thưởng ngay tại điểm đặt cược, không bắt cuộn xuống đọc luật */}
         {hasStake ? (
           <Text style={styles.betBarOdds} maxFontSizeMultiplier={1.4}>
-            {'Thắng '}
-            <Text style={styles.num}>{`+${formatToken(stakeAmount)}`}</Text>
-            {' · thua '}
+            {'Đúng cửa '}
+            <Text style={styles.num}>{`+${formatToken(stakePayouts.sideWin)}`}</Text>
+            {' · bộ ba '}
+            <Text style={styles.num}>{`+${formatToken(stakePayouts.tripleWin)}`}</Text>
+            {' · sai cửa '}
             <Text style={styles.num}>{`−${formatToken(stakeAmount)}`}</Text>
-            {' · bộ ba: nhà cái ăn'}
           </Text>
         ) : null}
 
@@ -479,7 +540,7 @@ export function TaiXiuScreen({ navigation }) {
             accessibilityHint={needsConfirm ? 'Mở bảng xác nhận trước khi đặt' : undefined}
             accessibilityLabel={hasStake
               ? `Đặt ${formatToken(stakeAmount)} token cửa Tài, tổng ${SIDE_RANGES.TAI}`
-              : `Chưa đủ token để đặt cửa Tài, cần tối thiểu ${formatToken(MIN_STAKE)}`}
+              : stakeError || `Nhập ít nhất ${formatToken(MIN_STAKE)} token để đặt cửa Tài`}
             onPress={() => pressBet(SIDES.TAI)}
           />
           <BetButton
@@ -491,13 +552,13 @@ export function TaiXiuScreen({ navigation }) {
             accessibilityHint={needsConfirm ? 'Mở bảng xác nhận trước khi đặt' : undefined}
             accessibilityLabel={hasStake
               ? `Đặt ${formatToken(stakeAmount)} token cửa Xỉu, tổng ${SIDE_RANGES.XIU}`
-              : `Chưa đủ token để đặt cửa Xỉu, cần tối thiểu ${formatToken(MIN_STAKE)}`}
+              : stakeError || `Nhập ít nhất ${formatToken(MIN_STAKE)} token để đặt cửa Xỉu`}
             onPress={() => pressBet(SIDES.XIU)}
           />
         </View>
       </View>
 
-      {/* ── Bảng xác nhận cho mức cược lớn: cùng cử chỉ chạm, chỉ khác một bước ── */}
+      {/* ── Xác nhận khoản cược lớn hoặc dùng toàn bộ số dư ── */}
       <BottomSheet
         visible={Boolean(confirmSide)}
         onClose={() => setConfirmSide(null)}
@@ -525,25 +586,31 @@ export function TaiXiuScreen({ navigation }) {
       >
         <View style={styles.confirmBody}>
           <View style={styles.confirmRow}>
-            <Text style={styles.confirmKey} maxFontSizeMultiplier={1.5}>Thắng</Text>
+            <Text style={styles.confirmKey} maxFontSizeMultiplier={1.5}>Đúng cửa</Text>
             <Text style={[styles.confirmValue, { color: colors.success }]} maxFontSizeMultiplier={1.5}>
-              {`+${formatToken(stakeAmount)}`}
+              {`+${formatToken(stakePayouts.sideWin)}`}
             </Text>
           </View>
           <View style={styles.confirmRow}>
-            <Text style={styles.confirmKey} maxFontSizeMultiplier={1.5}>Thua</Text>
+            <Text style={styles.confirmKey} maxFontSizeMultiplier={1.5}>Bộ ba (2,78%, lãi x2)</Text>
+            <Text style={[styles.confirmValue, { color: colors.success }]} maxFontSizeMultiplier={1.5}>
+              {`+${formatToken(stakePayouts.tripleWin)}`}
+            </Text>
+          </View>
+          <View style={styles.confirmRow}>
+            <Text style={styles.confirmKey} maxFontSizeMultiplier={1.5}>Sai cửa</Text>
             <Text style={[styles.confirmValue, { color: colors.danger }]} maxFontSizeMultiplier={1.5}>
               {`−${formatToken(stakeAmount)}`}
             </Text>
           </View>
           <View style={styles.confirmRow}>
-            <Text style={styles.confirmKey} maxFontSizeMultiplier={1.5}>Số dư sau ván thắng</Text>
+            <Text style={styles.confirmKey} maxFontSizeMultiplier={1.5}>Số dư sau khi đúng cửa</Text>
             <Text style={styles.confirmValue} maxFontSizeMultiplier={1.5}>
-              {formatToken(balance + stakeAmount)}
+              {formatToken(balance + stakePayouts.sideWin)}
             </Text>
           </View>
           <Text style={styles.confirmNote} maxFontSizeMultiplier={1.5}>
-            Bộ ba 111–666: nhà cái ăn cả 2 cửa. Kết quả máy quay ngay sau khi bạn xác nhận.
+            Kết quả được quay ngay sau khi bạn xác nhận. Mức thưởng làm tròn xuống token nguyên.
           </Text>
         </View>
       </BottomSheet>
@@ -684,6 +751,43 @@ const styles = StyleSheet.create({
   betBarValue: { ...type.bodyStrong, color: colors.text, fontFamily: 'monospace' },
   betBarHint: { ...type.small, color: colors.textFaint },
   betBarOdds: { ...type.small, color: colors.textFaint, marginTop: -spacing.xs },
+  customStakeRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
+  customStakeBody: { flex: 1, gap: spacing.xs },
+  customStakeLabel: { ...type.smallStrong, color: colors.textDim },
+  customStakeField: {
+    minHeight: touch.min,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceAlt,
+    paddingHorizontal: spacing.md,
+  },
+  customStakeFieldError: { borderColor: colors.danger },
+  customStakeInput: {
+    flex: 1,
+    minWidth: 0,
+    color: colors.text,
+    fontSize: type.subtitle.fontSize,
+    paddingVertical: spacing.sm,
+    ...type.mono,
+  },
+  customStakeSuffix: { ...type.small, color: colors.textFaint, marginLeft: spacing.sm },
+  maxButton: {
+    minHeight: touch.min,
+    minWidth: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.accentBorder,
+    backgroundColor: colors.accentDim,
+    paddingHorizontal: spacing.md,
+  },
+  maxButtonText: { ...type.smallStrong, color: colors.accentSoft },
+  stakeError: { ...type.small, color: colors.danger },
+  stakeHelper: { ...type.small, color: colors.textFaint },
   presets: { flexDirection: 'row', gap: spacing.sm },
   preset: {
     flex: 1,

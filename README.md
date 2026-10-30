@@ -311,18 +311,19 @@ Màn `TaiXiuScreen` (vào từ drawer → nhóm **Giải trí**) là game 3 xúc
 Luật nằm ở `src/utils/taiXiu.js` (thuần JS, test được bằng Node), tiền được tính **trong reducer**
 `PLACE_TAIXIU_BET` của `AppContext` để số dư và lịch sử không bao giờ lệch nhau:
 
-- 3 xúc xắc 1–6; tổng **4–10 = XỈU**, **11–17 = TÀI**; trả **1 ăn 1** (thắng +stake, thua −stake).
-- **Bộ ba 111–666** (tổng 3 hoặc 18): nhà cái ăn cả 2 cửa — lợi thế duy nhất của nhà cái, 6/216 ván (2,78%).
-- Mức cược `MIN_STAKE = 100`, `MAX_STAKE = 5000`, bước 100, preset 100/500/1.000/5.000 (mặc định 500);
-  `clampStake()` kẹp cả theo số dư nên không thể cược quá ví.
+- 3 xúc xắc 1–6; tổng **4–10 = XỈU**, **11–17 = TÀI**. Đúng cửa lãi **0,96× cược**; sai cửa mất cược.
+- **Bộ ba 111–666** (6/216 kết quả, 2,78%) thắng bất kể cửa, lãi ròng **2× cược**.
+  Thưởng cửa thường được làm tròn xuống token nguyên. Với mức bộ ba này, kỳ vọng toán học
+  nghiêng về người chơi khoảng **3,61% tiền cược** trước ảnh hưởng làm tròn.
+- Mức cược tối thiểu 100 token, không có trần cố định; người chơi nhập số nguyên tùy ý đến tối đa số dư.
+  Các preset 100/500/1.000/5.000 vẫn có sẵn; `getValidStake()` xác thực cả ở UI lẫn reducer.
 - RNG `Math.random` chạy trên máy. Màn hình ghi rõ: token là credit nội bộ, không nạp/rút bằng tiền thật,
   không đổi ra tiền; nội dung 18+.
 
-**Hạn mức neo theo chi phí chat thật.** Một lượt chat (prompt + lịch sử + câu trả lời) tốn khoảng
+**Chi phí vẫn nhìn thấy trước khi cược.** Một lượt chat (prompt + lịch sử + câu trả lời) tốn khoảng
 **500–1.000 token**, nên `src/utils/economy.js` gom con số đó về một chỗ (`TOKENS_PER_CHAT_MIN/MAX/TYPICAL`)
-và cung cấp `chatsRange(tokens)` để quy đổi token → số câu hỏi AI. Màn Tài xỉu hiện ngay dưới preset:
-cược 500 ≈ `0,5–1` câu hỏi AI; màn Nạp token hiện mỗi gói dùng được bao nhiêu câu. Nhờ vậy hạn mức cược
-không còn lệch thang với chi phí chat (cược 1 ván lớn nhất = 5–10 câu hỏi, không nuốt cả ví).
+và cung cấp `chatsRange(tokens)` để quy đổi token → số câu hỏi AI. Màn Tài xỉu hiện mức cược quy đổi
+ra câu hỏi AI và mức cược tối đa theo số dư; màn Nạp token hiện mỗi gói dùng được bao nhiêu câu.
 
 Gói nạp cũng được nhân 10 để khớp thang token thật, **giữ nguyên giá và tỉ lệ bonus**: 10.000 token/
 29.000đ, 50.000 + 5.000/129.000đ, 100.000 + 15.000/249.000đ, 500.000 + 100.000/999.000đ. Kinh tế token
@@ -333,9 +334,9 @@ không đổi (1 API token = 1 token app), chỉ đổi đơn vị hiển thị 
 từ chính các transaction đó. Nhờ vậy dữ liệu cũ không phải migrate, `sanitizeAccount` giữ nguyên, và lịch sử
 cược xuất hiện luôn trong Portfolio (chip lọc **Game**) và trong `TransactionItem`.
 
-Trải nghiệm: cùng một cử chỉ cho mọi mức cược — chạm TÀI/XỈU là đặt. Mức **≥ 1.000** mở thêm bảng
-xác nhận (`BottomSheet`: thắng/thua/số dư sau ván thắng) vì một ván lớn ≈ 1–2 câu hỏi AI; mức ≤ 500 vào
-ván ngay. Xúc xắc lắc ~700ms rồi công bố kết quả bằng banner + toast (toast là kênh duy nhất TalkBack đọc,
+Trải nghiệm: mức cược **≥ 1.000** hoặc cược toàn bộ số dư cần xác nhận qua bảng
+(`BottomSheet`: thắng/thua/số dư sau ván thắng); các mức nhỏ hơn vào ván ngay. Xúc xắc lắc ~700ms rồi
+công bố kết quả bằng banner + toast (toast là kênh duy nhất TalkBack đọc,
 nội dung là số dư mới) + haptic. Máy bật "giảm chuyển động" thì bỏ animation, công bố ngay.
 Không đủ 100 token thì hiện `ErrorState` kèm nút **Nạp token** thay vì chặn màn; game chạy local nên offline
 vẫn cược được, chỉ hiện thêm `OfflineBar`.

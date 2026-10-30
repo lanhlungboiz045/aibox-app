@@ -22,6 +22,14 @@ export const isDark = activeScheme === 'dark';
 
 // Tên `colors` giữ nguyên để toàn bộ màn hình cũ không phải sửa import.
 export const colors = isDark ? darkColors : lightColors;
+export const marketCategoryColors = {
+  sports: colors.success,
+  crypto: colors.marketCrypto,
+  tech: colors.marketTech,
+  entertainment: colors.danger,
+  life: colors.warning,
+  politics: colors.marketPolitics,
+};
 
 // ─────────────────────── Bo góc & đổ bóng ───────────────────────
 export const radius = {
@@ -54,10 +62,10 @@ export const layout = {
   cardMax: 140,      // không card nào > 140 ngoài biểu đồ
 };
 
-// Vùng chạm tối thiểu (iOS HIG / Material = 44/48)
+// Vùng chạm tối thiểu cho Android Material.
 export const touch = {
-  min: 44,
-  iconButton: 44,
+  min: 48,
+  iconButton: 48,
   hitSlop: { top: 8, bottom: 8, left: 8, right: 8 },
   gap: 8, // khoảng cách tối thiểu giữa 2 nút kề nhau
 };

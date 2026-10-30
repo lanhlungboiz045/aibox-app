@@ -1,5 +1,5 @@
-// components/ui/IconButton.jsx — Nút chỉ có icon: luôn 44x44 + hitSlop + label bắt buộc
-// Đây là chỗ sửa lỗi "63 vùng chạm < 44px" trong audit.
+// components/ui/IconButton.jsx — Nút chỉ có icon: luôn 48x48dp + hitSlop + label bắt buộc.
+// Đây là chỗ xử lý các vùng chạm nhỏ hơn chuẩn Android trong audit.
 import React from 'react';
 import { TouchableOpacity, StyleSheet, View } from 'react-native';
 import { AppIcon } from './AppIcon';

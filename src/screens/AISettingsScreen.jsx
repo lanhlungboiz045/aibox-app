@@ -37,40 +37,59 @@ export function AISettingsScreen({ navigation }) {
   const currentPresetId = AI_PRESETS.find(p => p.baseUrl === baseUrl.trim().replace(/\/+$/, ''))?.id || null;
 
   const handleSave = async () => {
+    if (saving || testing) return;
     setSaving(true);
-    const status = await saveAIConfig({
-      baseUrl: baseUrl.trim(),
-      apiKey: apiKey.trim(),
-      model: model.trim() || 'gpt-4o-mini',
-      forceModel,
-    });
-    setSaving(false);
     setResult(null);
-    Alert.alert(
-      'Đã lưu cấu hình AI',
-      status.mode === 'live'
-        ? `Đang ở chế độ LIVE.\nModel: ${status.model}`
-          + (status.allowsEmptyKey && !status.hasKey ? '\nKhông cần API key với nhà cung cấp này.' : '')
-        : 'Chưa đủ Base URL / API key nên app vẫn dùng câu trả lời mô phỏng.'
-    );
+    try {
+      const status = await saveAIConfig({
+        baseUrl: baseUrl.trim(),
+        apiKey: apiKey.trim(),
+        model: model.trim() || 'gpt-4o-mini',
+        forceModel,
+      });
+      setResult(null);
+      Alert.alert(
+        'Đã lưu cấu hình AI',
+        status.mode === 'live'
+          ? `Đang ở chế độ LIVE.\nModel: ${status.model}`
+            + (status.allowsEmptyKey && !status.hasKey ? '\nKhông cần API key với nhà cung cấp này.' : '')
+          : 'Chưa đủ Base URL / API key nên app vẫn dùng câu trả lời mô phỏng.'
+      );
+    } catch (error) {
+      Alert.alert(
+        'Không lưu được cấu hình',
+        error instanceof Error ? error.message : 'Đã xảy ra lỗi khi lưu cấu hình AI.',
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleTest = async () => {
+    if (testing || saving) return;
     setTesting(true);
     setResult(null);
-    // Lưu nháp trước để bộ test dùng đúng cấu hình vừa nhập
-    await saveAIConfig({
-      baseUrl: baseUrl.trim(),
-      apiKey: apiKey.trim(),
-      model: model.trim() || 'gpt-4o-mini',
-      forceModel,
-    });
-    const res = await testAIConnect();
-    setTesting(false);
-    setResult(res);
+    try {
+      // Lưu nháp trước để bộ test dùng đúng cấu hình vừa nhập
+      await saveAIConfig({
+        baseUrl: baseUrl.trim(),
+        apiKey: apiKey.trim(),
+        model: model.trim() || 'gpt-4o-mini',
+        forceModel,
+      });
+      setResult(await testAIConnect());
+    } catch (error) {
+      setResult({
+        ok: false,
+        error: error instanceof Error ? error.message : 'Đã xảy ra lỗi khi kiểm tra kết nối.',
+      });
+    } finally {
+      setTesting(false);
+    }
   };
 
   const handleReset = () => {
+    if (saving || testing) return;
     Alert.alert(
       'Xoá cấu hình trong app',
       'Cấu hình sẽ quay về giá trị trong .env (hoặc chế độ mock nếu .env trống).',
@@ -80,12 +99,19 @@ export function AISettingsScreen({ navigation }) {
           text: 'Xoá',
           style: 'destructive',
           onPress: async () => {
-            const status = await resetAIConfig();
-            setBaseUrl(status.baseUrl || '');
-            setApiKey('');
-            setModel(status.model || '');
-            setForceModel(status.forceModel !== false);
-            setResult(null);
+            try {
+              const status = await resetAIConfig();
+              setBaseUrl(status.baseUrl || '');
+              setApiKey('');
+              setModel(status.model || '');
+              setForceModel(status.forceModel !== false);
+              setResult(null);
+            } catch (error) {
+              Alert.alert(
+                'Không xoá được cấu hình',
+                error instanceof Error ? error.message : 'Đã xảy ra lỗi khi đặt lại cấu hình AI.',
+              );
+            }
           },
         },
       ]
@@ -159,6 +185,7 @@ export function AISettingsScreen({ navigation }) {
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
+          accessibilityLabel="Base URL của nhà cung cấp AI"
         />
         <Text style={styles.help}>Phải là endpoint chuẩn OpenAI, thường kết thúc bằng /v1</Text>
 
@@ -173,8 +200,15 @@ export function AISettingsScreen({ navigation }) {
             autoCapitalize="none"
             autoCorrect={false}
             secureTextEntry={!showKey}
+            accessibilityLabel="API key"
           />
-          <TouchableOpacity accessibilityRole="button" style={styles.eyeBtn} onPress={() => setShowKey(v => !v)}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={showKey ? 'Ẩn API key' : 'Hiện API key'}
+            accessibilityState={{ selected: showKey }}
+            style={styles.eyeBtn}
+            onPress={() => setShowKey(v => !v)}
+          >
             <Text style={styles.eyeText}>{showKey ? 'Ẩn' : 'Hiện'}</Text>
           </TouchableOpacity>
         </View>
@@ -191,6 +225,7 @@ export function AISettingsScreen({ navigation }) {
           placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
           autoCorrect={false}
+          accessibilityLabel="Model AI mặc định"
         />
 
         <View style={styles.switchRow}>
@@ -202,6 +237,8 @@ export function AISettingsScreen({ navigation }) {
             </Text>
           </View>
           <Switch
+            accessibilityLabel="Ép dùng model mặc định"
+            accessibilityHint="Bật để mọi model trong ứng dụng dùng cấu hình model mặc định"
             value={forceModel}
             onValueChange={setForceModel}
             trackColor={{ false: colors.surfaceAlt, true: colors.accentBorder }}
@@ -231,6 +268,8 @@ export function AISettingsScreen({ navigation }) {
       <View style={styles.actions}>
         <TouchableOpacity
           accessibilityRole="button"
+          accessibilityLabel="Kiểm tra kết nối AI"
+          accessibilityState={{ busy: testing, disabled: testing || saving }}
           style={[styles.testBtn, testing && styles.btnDisabled]}
           onPress={handleTest}
           disabled={testing || saving}
@@ -239,6 +278,8 @@ export function AISettingsScreen({ navigation }) {
         </TouchableOpacity>
         <TouchableOpacity
           accessibilityRole="button"
+          accessibilityLabel="Lưu cấu hình AI"
+          accessibilityState={{ busy: saving, disabled: saving || testing }}
           style={[styles.saveBtn, saving && styles.btnDisabled]}
           onPress={handleSave}
           disabled={saving || testing}
@@ -247,7 +288,14 @@ export function AISettingsScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity accessibilityRole="button" style={styles.resetBtn} onPress={handleReset}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Xoá cấu hình AI đã lưu và quay về .env"
+        accessibilityState={{ disabled: saving || testing }}
+        disabled={saving || testing}
+        style={styles.resetBtn}
+        onPress={handleReset}
+      >
         <Text style={styles.resetBtnText}>Xoá cấu hình trong app (quay về .env)</Text>
       </TouchableOpacity>
 
@@ -278,7 +326,7 @@ export function AISettingsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 10 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600' },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
   headerTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
   statusCard: { marginHorizontal: 16, borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 16 },
   statusLive: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
@@ -297,9 +345,9 @@ const styles = StyleSheet.create({
   presetHint: { color: colors.textFaint, fontSize: 12, marginHorizontal: 16, marginTop: 8, lineHeight: 15 },
   form: { marginHorizontal: 16, marginTop: 12 },
   label: { color: colors.textDim, fontSize: 12, fontWeight: '600', marginTop: 14, marginBottom: 6 },
-  input: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 13, paddingHorizontal: 12, paddingVertical: 11 },
+  input: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 13, paddingHorizontal: 12, paddingVertical: 11, minHeight: touch.min },
   keyRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  eyeBtn: { backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 12, paddingVertical: 11, minHeight: touch.min },
+  eyeBtn: { backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 12, minHeight: touch.min, justifyContent: 'center' },
   eyeText: { color: colors.accentSoft, fontSize: 12, fontWeight: '600' },
   help: { color: colors.textFaint, fontSize: 12, marginTop: 6, lineHeight: 15 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16 },
@@ -310,9 +358,9 @@ const styles = StyleSheet.create({
   resultTitle: { fontSize: 13, fontWeight: '700', marginBottom: 6 },
   resultText: { color: colors.textDim, fontSize: 12, lineHeight: 17 },
   actions: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginTop: 18 },
-  testBtn: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, paddingVertical: 13, alignItems: 'center' },
+  testBtn: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min, justifyContent: 'center', alignItems: 'center' },
   testBtnText: { color: colors.accentSoft, fontSize: 13, fontWeight: '700' },
-  saveBtn: { flex: 1, backgroundColor: colors.accentStrong, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  saveBtn: { flex: 1, backgroundColor: colors.accentStrong, borderRadius: 10, minHeight: touch.min, justifyContent: 'center', alignItems: 'center' },
   saveBtnText: { color: colors.onAccent, fontSize: 13, fontWeight: '700' },
   btnDisabled: { opacity: 0.6 },
   resetBtn: { alignItems: 'center', marginTop: 14, paddingVertical: 10, minHeight: touch.min },

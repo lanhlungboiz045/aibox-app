@@ -1,9 +1,9 @@
 // components/ui/Chip.jsx — Chip nhỏ cho hàng số liệu (cuộn ngang) và chip lọc
-// Vùng chạm: cao 32 + hitSlop 6 = 44. Chip lọc có accessibilityState.selected.
+// Chip tương tác đạt tối thiểu 48dp theo Material.
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AppIcon } from './AppIcon';
-import { colors, radius, spacing, type } from '../../theme/tokens';
+import { colors, radius, spacing, touch, type } from '../../theme/tokens';
 
 export function Chip({
   icon, label, value, onPress, active = false, tone, onRemove, style,
@@ -30,7 +30,7 @@ export function Chip({
     </>
   );
 
-  const chipStyle = [styles.chip, active && styles.chipActive, style];
+  const chipStyle = [styles.chip, onPress && styles.interactive, active && styles.chipActive, style];
 
   if (!onPress) return <View style={chipStyle}>{content}</View>;
 
@@ -62,6 +62,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
+  interactive: { minHeight: touch.min },
   chipActive: { borderColor: colors.accentBorder, backgroundColor: colors.accentDim },
   value: { ...type.smallStrong, fontWeight: '700' },
   label: { ...type.small },

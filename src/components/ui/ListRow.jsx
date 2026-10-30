@@ -25,9 +25,9 @@ export function ListRow({
         </View>
       ) : null}
       <View style={styles.body}>
-        <Text style={styles.title} numberOfLines={1} maxFontSizeMultiplier={1.6}>{title}</Text>
+        <Text style={styles.title}>{title}</Text>
         {subtitle ? (
-          <Text style={styles.subtitle} numberOfLines={1} maxFontSizeMultiplier={1.6}>{subtitle}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
         ) : null}
       </View>
       {right ? <View style={styles.right}>{right}</View> : null}

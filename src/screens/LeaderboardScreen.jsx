@@ -35,8 +35,6 @@ export function LeaderboardScreen({ navigation }) {
 
   const top3 = rows.slice(0, 3);
   const rest = rows.slice(3);
-  const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
-
   const openTrader = (trader) => navigation.navigate('TraderProfile', { trader });
 
   return (
@@ -48,7 +46,7 @@ export function LeaderboardScreen({ navigation }) {
         <View style={styles.headerRow}>
           <IconButton icon="menu" label={t('nav.openMenu')} onPress={openDrawer} />
           <View style={styles.header}>
-            <Text style={styles.title}>{'\u{1F3C6}'} Xếp hạng</Text>
+            <Text style={styles.title}>Xếp hạng</Text>
             <Text style={styles.subtitle}>Chạm vào trader để xem profile & copy trade</Text>
           </View>
         </View>
@@ -62,7 +60,7 @@ export function LeaderboardScreen({ navigation }) {
               onPress={() => openTrader(user)}
               activeOpacity={0.85}
             >
-              <Text style={styles.medal}>{medals[i]}</Text>
+              <Text style={[styles.podiumRank, i === 0 && styles.podiumRankFirst]}>{i + 1}</Text>
               <Text style={styles.podiumAvatar}>{user.avatar}</Text>
               <Text style={styles.podiumName} numberOfLines={1}>{user.username}</Text>
               <Text style={styles.podiumTokens}>{formatToken(user.tokenBalance)}</Text>
@@ -109,7 +107,8 @@ const styles = StyleSheet.create({
   podiumFirst: { borderColor: 'rgba(255, 215, 0, 0.3)', backgroundColor: 'rgba(255, 215, 0, 0.08)', transform: [{ scale: 1.05 }] },
   podiumSecond: { borderColor: 'rgba(192, 192, 192, 0.2)' },
   podiumThird: { borderColor: 'rgba(205, 127, 50, 0.2)' },
-  medal: { fontSize: 24, marginBottom: 4 },
+  podiumRank: { color: colors.textDim, fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  podiumRankFirst: { color: colors.warning },
   podiumAvatar: { fontSize: 32, marginBottom: 6 },
   podiumName: { color: colors.text, fontSize: 13, fontWeight: '600', marginBottom: 4 },
   podiumTokens: { color: colors.accentSoft, fontSize: 15, fontWeight: '700', fontFamily: 'monospace' },

@@ -1,6 +1,6 @@
 // screens/PortfolioScreen.jsx
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { TokenBadge } from '../components/TokenBadge';
@@ -96,13 +96,24 @@ export function PortfolioScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{'\u{1F4DD}'} Lịch sử giao dịch</Text>
-          <View style={styles.txFilterRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.txFilterScroll}
+            contentContainerStyle={styles.txFilterRow}
+          >
             {txFilters.map(f => (
-              <View key={f.key} style={[styles.txFilterChip, txFilter === f.key && styles.txFilterChipActive]}>
-                <Text style={[styles.txFilterText, txFilter === f.key && styles.txFilterTextActive]} onPress={() => setTxFilter(f.key)}>{f.label}</Text>
-              </View>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: txFilter === f.key }}
+                key={f.key}
+                style={[styles.txFilterChip, txFilter === f.key && styles.txFilterChipActive]}
+                onPress={() => setTxFilter(f.key)}
+              >
+                <Text style={[styles.txFilterText, txFilter === f.key && styles.txFilterTextActive]}>{f.label}</Text>
+              </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
           {filteredTxs.length === 0 ? (
             <Text style={styles.emptyTextSmall}>Chưa có giao dịch nào</Text>
           ) : (
@@ -145,8 +156,9 @@ const styles = StyleSheet.create({
   posStat: { flex: 1 },
   posStatLabel: { color: colors.textFaint, fontSize: 12 },
   posStatValue: { color: colors.text, fontSize: 13, fontWeight: '600', fontFamily: 'monospace', marginTop: 2 },
-  txFilterRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 6, marginBottom: 8 },
-  txFilterChip: { backgroundColor: colors.surfaceAlt, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, borderWidth: 1, borderColor: colors.borderSoft },
+  txFilterScroll: { flexGrow: 0, marginBottom: 8 },
+  txFilterRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8 },
+  txFilterChip: { backgroundColor: colors.surfaceAlt, paddingHorizontal: 10, minHeight: 48, justifyContent: 'center', borderRadius: 6, borderWidth: 1, borderColor: colors.borderSoft },
   txFilterChipActive: { backgroundColor: colors.accentDim, borderColor: colors.accent },
   txFilterText: { color: colors.textDim, fontSize: 12 },
   txFilterTextActive: { color: colors.accentSoft, fontWeight: '600' },

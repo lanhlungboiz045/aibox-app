@@ -1,6 +1,6 @@
 // screens/MarketsScreen.jsx
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TextInput, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { TokenBadge } from '../components/TokenBadge';
@@ -36,31 +36,48 @@ export function MarketsScreen({ navigation }) {
 
   return (
     <View style={styles.root}>
-      <ScrollView
+      <FlatList
         style={styles.container}
+        data={filtered}
+        keyExtractor={market => market.id}
+        renderItem={({ item: market }) => (
+          <MarketCard
+            market={market}
+            onPress={() => navigation.navigate('MarketDetail', { marketId: market.id })}
+            onYes={() => navigation.navigate('MarketDetail', { marketId: market.id, initialSide: 'YES' })}
+            onNo={() => navigation.navigate('MarketDetail', { marketId: market.id, initialSide: 'NO' })}
+          />
+        )}
+        ListHeaderComponent={(
+          <>
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                <IconButton icon="menu" label={t('nav.openMenu')} onPress={openDrawer} />
+                <Text style={styles.title}>Markets</Text>
+              </View>
+              <TokenBadge size="medium" />
+            </View>
+            <View style={styles.searchWrap}>
+              <TextInput
+                style={styles.search}
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Tìm sự kiện..."
+                placeholderTextColor={colors.textFaint}
+                accessibilityLabel="Tìm sự kiện"
+              />
+            </View>
+            <CategoryFilter categories={categories} selected={category} onSelect={setCategory} />
+          </>
+        )}
+        ListEmptyComponent={<Text style={styles.empty}>Không tìm thấy market nào</Text>}
         contentContainerStyle={[centeredContent, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 20 }]}
-      >
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <IconButton icon="menu" label={t('nav.openMenu')} onPress={openDrawer} />
-            <Text style={styles.title}>Markets</Text>
-          </View>
-          <TokenBadge size="medium" />
-        </View>
-        <View style={styles.searchWrap}>
-          <TextInput style={styles.search} value={search} onChangeText={setSearch} placeholder="Tìm sự kiện..." placeholderTextColor={colors.textFaint} />
-        </View>
-        <CategoryFilter categories={categories} selected={category} onSelect={setCategory} />
-        <View style={{ marginTop: 8 }}>
-          {filtered.map(market => (
-            <MarketCard key={market.id} market={market}
-              onPress={() => navigation.navigate('MarketDetail', { marketId: market.id })}
-              onYes={() => navigation.navigate('MarketDetail', { marketId: market.id, initialSide: 'YES' })}
-              onNo={() => navigation.navigate('MarketDetail', { marketId: market.id, initialSide: 'NO' })} />
-          ))}
-        </View>
-        {filtered.length === 0 && <Text style={styles.empty}>Không tìm thấy market nào</Text>}
-      </ScrollView>
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+      />
       <AppDrawer {...drawerProps} />
     </View>
   );

@@ -2,7 +2,7 @@
 // Header cố định 56px + 4 shortcut + banner 1 dòng + 3 ô Models/Logs/Quota + card Chi tiêu 7 ngày.
 // Markets đã bỏ khỏi Home (vẫn còn tab riêng).
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatToken, formatTokenShort, formatRelativeTime } from '../utils/format';
@@ -31,7 +31,6 @@ export function HomeScreen({ navigation }) {
     state, canClaimDaily, nextDailyReward, unreadNotifications, questState,
   } = useApp();
   const insets = useSafeAreaInsets();
-  const [refreshing, setRefreshing] = useState(false);
   const [showDaily, setShowDaily] = useState(false);
   const { open: openDrawer, drawerProps } = useAppDrawer();
 
@@ -95,11 +94,6 @@ export function HomeScreen({ navigation }) {
     return null;
   })();
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 800);
-  };
-
   return (
     <View style={styles.container}>
       {/* Header cố định: không cuộn theo nội dung */}
@@ -162,7 +156,6 @@ export function HomeScreen({ navigation }) {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
         showsVerticalScrollIndicator={false}
       >
         {/* 4 ô shortcut vuông, chạm là vào thẳng màn tương ứng */}

@@ -31,7 +31,7 @@ export function AdminAIModelsScreen({ navigation }) {
     >
       <View style={styles.header}>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel="Quay lại" onPress={() => navigation.goBack()}><Text style={styles.backBtn}>{'\u{276C}'} Back</Text></TouchableOpacity>
-        <Text style={styles.title}>AI Models</Text>
+        <Text style={styles.title}>Mô hình AI</Text>
         <View style={{ width: 50 }} />
       </View>
 
@@ -69,6 +69,8 @@ export function AdminAIModelsScreen({ navigation }) {
             </View>
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel={`${model.isAvailable ? 'Tắt' : 'Mở'} model ${model.name}`}
+              accessibilityState={{ selected: model.isAvailable }}
               style={[styles.toggle, model.isAvailable ? styles.toggleOn : styles.toggleOff]}
               onPress={() => toggleModelAvailability(model.id)}
             >
@@ -90,7 +92,7 @@ export function AdminAIModelsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', width: 50 },
+  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minWidth: 50, minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
   title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   summaryRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 10 },
   summaryCard: { flex: 1, backgroundColor: colors.surface, borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.borderSoft },
@@ -104,7 +106,7 @@ const styles = StyleSheet.create({
   name: { color: colors.text, fontSize: 13, fontWeight: '600' },
   provider: { color: colors.textFaint, fontSize: 12 },
   meta: { color: colors.textDim, fontSize: 12, marginTop: 3, fontFamily: 'monospace' },
-  toggle: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, borderWidth: 1, minHeight: touch.min },
+  toggle: { minWidth: touch.min, paddingHorizontal: 10, minHeight: touch.min, justifyContent: 'center', alignItems: 'center', borderRadius: 6, borderWidth: 1 },
   toggleOn: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
   toggleOff: { backgroundColor: colors.surfaceAlt, borderColor: colors.borderSoft },
   toggleText: { fontSize: 12, fontWeight: '700' },

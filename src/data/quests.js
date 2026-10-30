@@ -3,10 +3,10 @@ import { toDayKey } from '../utils/format';
 
 // metric khớp với counters trong quest state của từng user
 export const QUESTS = [
-  { id: 'q_ai', title: 'Chat với AI 3 lần', metric: 'aiCalls', target: 3, reward: 500, icon: '\u{1F916}' },
-  { id: 'q_trade', title: 'Tham gia 2 thị trường', metric: 'trades', target: 2, reward: 1000, icon: '\u{1F4C8}' },
-  { id: 'q_comment', title: 'Bình luận 1 kèo', metric: 'comments', target: 1, reward: 300, icon: '\u{1F4AC}' },
-  { id: 'q_transfer', title: 'Chuyển token cho bạn', metric: 'transfers', target: 1, reward: 200, icon: '\u{1F4B8}' },
+  { id: 'q_ai', title: 'Chat với AI 3 lần', metric: 'aiCalls', target: 3, reward: 500, icon: 'message-square' },
+  { id: 'q_trade', title: 'Tham gia 2 thị trường', metric: 'trades', target: 2, reward: 1000, icon: 'trending-up' },
+  { id: 'q_comment', title: 'Bình luận 1 kèo', metric: 'comments', target: 1, reward: 300, icon: 'message-circle' },
+  { id: 'q_transfer', title: 'Chuyển token cho bạn', metric: 'transfers', target: 1, reward: 200, icon: 'send' },
 ];
 
 export const QUEST_TOTAL_REWARD = QUESTS.reduce((sum, quest) => sum + quest.reward, 0);

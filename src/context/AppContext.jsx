@@ -18,7 +18,7 @@ import { getDailyReward } from '../utils/rewards';
 import { buildMarketAnalysis, buildMarketPrompt, ANALYST_SYSTEM_PROMPT } from '../utils/analyst';
 import { MIN_AI_CALL_BALANCE, costFromUsage, chargeTokens } from '../utils/aiCost';
 import {
-  MIN_STAKE, SIDES, SIDE_LABELS, clampStake, rollDice, settleTaiXiu,
+  MIN_STAKE, SIDES, SIDE_LABELS, getValidStake, rollDice, settleTaiXiu,
 } from '../utils/taiXiu';
 import {
   subscribeAuth,
@@ -235,9 +235,10 @@ function bumpQuestCounters(state, userId, metric, amount = 1) {
 
 // Tính toán mua shares cho 1 account bất kỳ (dùng chung cho user và copy trade)
 function buyForAccount(state, account, market, side, shares) {
+  if (!Number.isSafeInteger(shares) || shares <= 0 || (side !== 'YES' && side !== 'NO')) return null;
   const price = side === 'YES' ? market.yesPrice : market.noPrice;
   const cost = shares * price;
-  if (cost <= 0 || account.tokenBalance < cost) return null;
+  if (!Number.isFinite(cost) || cost <= 0 || account.tokenBalance < cost) return null;
 
   const existingPos = account.positions.find(p => p.marketId === market.id && p.side === side);
   let positions;
@@ -438,18 +439,20 @@ function reducer(state, action) {
       const { marketId, side, shares } = action.payload;
       const market = state.markets.find(m => m.id === marketId);
       const position = user?.positions.find(p => p.marketId === marketId && p.side === side);
-      if (!user || !market || !position || market.resolved) return state;
+      if (!user || !market || !position || market.resolved
+        || !Number.isSafeInteger(shares) || shares <= 0
+        || shares > position.shares
+        || (side !== 'YES' && side !== 'NO')) return state;
 
-      const sellShares = Math.min(shares, position.shares);
       const price = side === 'YES' ? market.yesPrice : market.noPrice;
-      const revenue = sellShares * price;
+      const revenue = shares * price;
 
       let positions;
-      if (position.shares - sellShares <= 0) {
+      if (position.shares - shares <= 0) {
         positions = user.positions.filter(p => p !== position);
       } else {
         positions = user.positions.map(p =>
-          p === position ? { ...p, shares: p.shares - sellShares, invested: p.invested - (p.invested / p.shares) * sellShares } : p
+          p === position ? { ...p, shares: p.shares - shares, invested: p.invested - (p.invested / p.shares) * shares } : p
         );
       }
 
@@ -459,13 +462,13 @@ function reducer(state, action) {
         positions,
         transactions: addTransaction(user, {
           type: 'SELL',
-          description: `Bán ${sellShares} shares ${side}: ${market.question}`,
+          description: `Bán ${shares} shares ${side}: ${market.question}`,
           amount: +revenue,
           marketId,
         }),
       };
 
-      return applyMarketPrice(withAccount(state, updated), marketId, side, -sellShares, revenue);
+      return applyMarketPrice(withAccount(state, updated), marketId, side, -shares, revenue);
     }
 
     // Admin quyết định kết quả — trả thưởng cho TẤT CẢ account giữ vị thế
@@ -622,9 +625,9 @@ function reducer(state, action) {
     case 'TRANSFER': {
       const user = getCurrentUser(state);
       const { recipient, amount, note } = action.payload;
-      if (!user || amount <= 0 || amount > user.tokenBalance) return state;
-
+      if (!user || !Number.isSafeInteger(amount) || amount <= 0 || amount > user.tokenBalance) return state;
       const target = state.accounts.find(a => a.username.toLowerCase() === String(recipient).trim().toLowerCase());
+      if (!target || target.id === user.id || !Number.isSafeInteger(target.tokenBalance + amount)) return state;
 
       let accounts = state.accounts.map(a => {
         if (a.id !== user.id) return a;
@@ -641,26 +644,24 @@ function reducer(state, action) {
 
       let next = { ...state, accounts };
 
-      if (target && target.id !== user.id) {
-        accounts = accounts.map(a => {
-          if (a.id !== target.id) return a;
-          return {
-            ...a,
-            tokenBalance: a.tokenBalance + amount,
-            transactions: addTransaction(a, {
-              type: 'TRANSFER_IN',
-              description: `Nhận ${amount} token từ ${user.username}${note ? ': ' + note : ''}`,
-              amount: +amount,
-            }),
-          };
-        });
-        next = pushNotification({ ...state, accounts }, {
-          userId: target.id,
-          type: 'TRANSFER_IN',
-          title: `Nhận ${amount} token`,
-          body: `${user.username} vừa chuyển cho bạn${note ? `: ${note}` : '.'}`,
-        });
-      }
+      accounts = accounts.map(a => {
+        if (a.id !== target.id) return a;
+        return {
+          ...a,
+          tokenBalance: a.tokenBalance + amount,
+          transactions: addTransaction(a, {
+            type: 'TRANSFER_IN',
+            description: `Nhận ${amount} token từ ${user.username}${note ? ': ' + note : ''}`,
+            amount: +amount,
+          }),
+        };
+      });
+      next = pushNotification({ ...state, accounts }, {
+        userId: target.id,
+        type: 'TRANSFER_IN',
+        title: `Nhận ${amount} token`,
+        body: `${user.username} vừa chuyển cho bạn${note ? `: ${note}` : '.'}`,
+      });
 
       return bumpQuestCounters(next, user.id, 'transfers');
     }
@@ -674,8 +675,8 @@ function reducer(state, action) {
       const { side, stake, dice } = action.payload || {};
       if (!user || !SIDES[side]) return state;
 
-      // Chặn cược vượt số dư / dưới mức tối thiểu, làm tròn bội số 10
-      const amount = clampStake(stake, user.tokenBalance);
+      // Chặn cược không hợp lệ, vượt số dư, hoặc gây mất chính xác số nguyên.
+      const amount = getValidStake(stake, user.tokenBalance);
       if (!amount) return state;
 
       // Chỉ nhận mảng 3 mặt 1..6 do provider quay; dữ liệu lạ thì quay lại cho an toàn
@@ -684,8 +685,8 @@ function reducer(state, action) {
         : rollDice();
       const settled = settleTaiXiu(rolled, side, amount);
       const resultText = settled.triple
-        ? 'bộ ba, nhà cái ăn'
-        : settled.win ? `thắng +${amount}` : `thua -${amount}`;
+        ? `bộ ba, thắng +${settled.net}`
+        : settled.win ? `thắng +${settled.net}` : `thua -${amount}`;
 
       const updated = {
         ...user,
@@ -1517,7 +1518,9 @@ export function AppProvider({ children }) {
     const current = stateRef.current;
     const user = getCurrentUser(current);
     if (!user) return { ok: false, error: 'Bạn cần đăng nhập.' };
-    if (amount <= 0 || amount > user.tokenBalance) return { ok: false, error: 'Số token không hợp lệ.' };
+    if (!Number.isSafeInteger(amount) || amount <= 0 || amount > user.tokenBalance) {
+      return { ok: false, error: 'Số token phải là số nguyên dương trong phạm vi số dư.' };
+    }
     if (!recipient || recipient.trim().toLowerCase() === user.username.toLowerCase()) {
       return { ok: false, error: 'Không thể chuyển cho chính mình.' };
     }
@@ -1525,6 +1528,9 @@ export function AppProvider({ children }) {
       a => a.username.toLowerCase() === String(recipient).trim().toLowerCase()
     );
     if (!target) return { ok: false, error: `Không tìm thấy người dùng "${recipient}".` };
+    if (!Number.isSafeInteger(target.tokenBalance + amount)) {
+      return { ok: false, error: 'Số dư người nhận vượt giới hạn an toàn.' };
+    }
     dispatch({ type: 'TRANSFER', payload: { recipient, amount, note } });
     return { ok: true };
   }, []);
@@ -1536,8 +1542,13 @@ export function AppProvider({ children }) {
     if (!user) return { ok: false, error: 'Bạn cần đăng nhập.' };
     if (!SIDES[side]) return { ok: false, error: 'Cửa cược không hợp lệ.' };
 
-    const amount = clampStake(stake, user.tokenBalance);
-    if (!amount) return { ok: false, error: `Cần tối thiểu ${MIN_STAKE} token để cược.` };
+    const amount = getValidStake(stake, user.tokenBalance);
+    if (!amount) {
+      return {
+        ok: false,
+        error: `Mức cược phải từ ${MIN_STAKE} token đến số dư hiện tại và là số nguyên hợp lệ.`,
+      };
+    }
 
     const dice = rollDice();
     const settled = settleTaiXiu(dice, side, amount);
@@ -1603,8 +1614,15 @@ export function AppProvider({ children }) {
     }
     if (!String(draft.question || '').trim()) return { ok: false, error: 'Câu hỏi không được để trống.' };
     if (!draft.endDate) return { ok: false, error: 'Chưa chọn ngày kết thúc.' };
+    const yesPrice = Number(draft.yesPrice);
+    if (!Number.isInteger(yesPrice) || yesPrice < 5 || yesPrice > 95) {
+      return { ok: false, error: 'Giá YES phải là số nguyên từ 5% đến 95%.' };
+    }
     const marketId = `m_${generateId()}`;
-    dispatch({ type: 'CREATE_MARKET', payload: { ...draft, marketId } });
+    dispatch({
+      type: 'CREATE_MARKET',
+      payload: { ...draft, question: String(draft.question).trim(), yesPrice, marketId },
+    });
     return { ok: true, marketId };
   }, []);
 

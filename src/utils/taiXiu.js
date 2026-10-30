@@ -3,29 +3,34 @@
 // Luật công khai, không có gì ẩn:
 // - 3 xúc xắc 1..6 → tổng 3..18.
 // - Tổng 4..10 = XỈU, tổng 11..17 = TÀI.
-// - Cược đúng được trả 1 ăn 1: thắng +stake, thua −stake (không có hoà).
-// - Bộ ba (111, 222, … 666) → tổng 3 hoặc 18: nhà cái ăn cả 2 cửa.
-//   Đây là khoản lợi DUY NHẤT của nhà cái: 6/216 = 2,78% số ván.
+// - Đúng cửa: lãi 0,96× cược; sai cửa: mất cược.
+// - Bộ ba (111, 222, … 666) trả lãi 2× cược, bất kể cửa đã chọn.
+//   Có 6/216 bộ ba (2,78%); kết hợp mức trả thường tạo lợi thế kỳ vọng cho người chơi.
 // - RNG chạy trên máy (Math.random) → chỉ để giải trí, không phải kết quả
 //   casino/xổ số thật và không thể đổi token ra tiền.
 //
 // Tách riêng khỏi UI để test được bằng Node (không import react-native).
 
-// Hạn mức cược neo theo chi phí chat thật (~500–1.000 token/lượt):
-// - cược tối thiểu 100 ≈ 0,1–0,2 câu hỏi AI (một ván "nhỏ" để thử luật);
-// - cược tối đa 5.000 ≈ 5–10 câu hỏi AI (không để một ván nuốt cả ví);
-// - presets 100 / 500 / 1.000 / 5.000 = 0,1 / 0,5 / 1 / 5 câu hỏi AI.
-// Xem src/utils/economy.js để biết cách quy đổi.
+// Mức cược tối thiểu 100 token; không có trần cố định, nhưng không vượt số dư.
 export const MIN_STAKE = 100;
-export const MAX_STAKE = 5000;
-export const STAKE_STEP = 100;
 export const STAKE_PRESETS = [100, 500, 1000, 5000];
+const MAX_SAFE_STAKE = Math.floor(Number.MAX_SAFE_INTEGER / 2);
 
 export const SIDES = { TAI: 'TAI', XIU: 'XIU' };
 
 export const SIDE_LABELS = { TAI: 'Tài', XIU: 'Xỉu' };
 // Khoảng tổng điểm của từng cửa — dùng để hiện trên nút cược
 export const SIDE_RANGES = { TAI: '11–17', XIU: '4–10' };
+
+export function getStakePayouts(stake) {
+  const amount = Number.isSafeInteger(stake) && stake >= 0 && stake <= MAX_SAFE_STAKE ? stake : 0;
+  const quarterUnits = Math.floor(amount / 25);
+  const remainder = amount % 25;
+  return {
+    sideWin: quarterUnits * 24 + Math.floor((remainder * 24) / 25),
+    tripleWin: amount * 2,
+  };
+}
 
 // 3 mặt ngẫu nhiên 1..6
 export function rollDice(rng = Math.random) {
@@ -45,22 +50,35 @@ export function evaluateTaiXiu(dice, side) {
   const total = totalOf(dice);
   const triple = isTriple(dice);
   const outcome = triple ? 'TRIPLE' : total >= 11 ? SIDES.TAI : SIDES.XIU;
-  return { total, triple, outcome, win: !triple && outcome === side };
+  return { total, triple, outcome, win: triple || outcome === side };
 }
 
 // Kết quả + tiền thắng/thua ròng (net > 0 là thắng)
 export function settleTaiXiu(dice, side, stake) {
   const result = evaluateTaiXiu(dice, side);
-  const amount = Math.max(0, Math.floor(Number(stake) || 0));
-  return { ...result, stake: amount, net: result.win ? amount : -amount };
+  const parsedStake = Number(stake);
+  const amount = Number.isSafeInteger(parsedStake) && parsedStake >= 0 && parsedStake <= MAX_SAFE_STAKE
+    ? parsedStake
+    : 0;
+  const payouts = getStakePayouts(amount);
+  const net = result.triple
+    ? payouts.tripleWin
+    : result.win ? payouts.sideWin : -amount;
+  return { ...result, ...payouts, stake: amount, net };
 }
 
-// Kẹp mức cược: bội số STAKE_STEP, trong [MIN_STAKE, MAX_STAKE] và ≤ số dư.
-// Trả 0 khi số dư không đủ mức tối thiểu.
-export function clampStake(value, balance) {
-  const available = Math.max(0, Math.floor(Number(balance) || 0));
-  const limit = Math.min(MAX_STAKE, available);
-  if (limit < MIN_STAKE) return 0;
-  const stepped = Math.round((Number(value) || 0) / STAKE_STEP) * STAKE_STEP;
-  return Math.min(Math.max(stepped, MIN_STAKE), limit);
+// Giữ số dư sau khoản thưởng bộ ba trong miền số nguyên an toàn.
+export function maxStakeForBalance(balance) {
+  const available = Number(balance);
+  if (!Number.isSafeInteger(available) || available < MIN_STAKE) return 0;
+  const triplePayoutLimit = Math.floor((Number.MAX_SAFE_INTEGER - available) / 2);
+  const maximum = Math.min(available, triplePayoutLimit);
+  return maximum >= MIN_STAKE ? maximum : 0;
+}
+
+export function getValidStake(value, balance) {
+  const amount = Number(value);
+  const maximum = maxStakeForBalance(balance);
+  if (!Number.isSafeInteger(amount) || amount < MIN_STAKE || amount > maximum) return 0;
+  return amount;
 }
