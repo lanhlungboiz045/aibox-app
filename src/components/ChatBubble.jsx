@@ -2,7 +2,7 @@
 // Bong bóng người dùng nền tím đậm + chữ trắng (5.7:1), bong bóng AI nền surface.
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { formatRelativeTime } from '../utils/format';
+import { formatRelativeTime, formatToken } from '../utils/format';
 import { colors, radius, spacing, type } from '../theme/tokens';
 
 export function ChatBubble({ message }) {
@@ -24,7 +24,7 @@ export function ChatBubble({ message }) {
       <View style={styles.metaRow}>
         {message.tokenCost > 0 ? (
           <Text style={styles.cost} maxFontSizeMultiplier={1.5}>
-            {`-${message.tokenCost} token`}
+            {`-${formatToken(message.tokenCost)} token`}
           </Text>
         ) : null}
         <Text style={styles.time} maxFontSizeMultiplier={1.5}>
@@ -50,6 +50,6 @@ const styles = StyleSheet.create({
   textUser: { color: colors.onAccent },
   textAI: { color: colors.text },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs, paddingHorizontal: spacing.xs },
-  cost: { ...type.smallStrong, color: colors.warning, ...type.numeric },
+  cost: { ...type.smallStrong, color: colors.warning, ...type.mono },
   time: { ...type.small, color: colors.textFaint },
 });

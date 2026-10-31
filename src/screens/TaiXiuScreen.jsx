@@ -33,7 +33,7 @@ import { t } from '../i18n';
 // Cược từ 1.000 token trở lên hoặc cược toàn bộ số dư cần xác nhận rõ ràng.
 const CONFIRM_FROM = 1000;
 
-export function TaiXiuScreen() {
+export function TaiXiuScreen({ navigation }) {
   const { state, placeTaiXiuBet } = useApp();
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();

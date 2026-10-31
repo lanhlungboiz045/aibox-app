@@ -9,7 +9,7 @@
 // - Gửi lỗi → bỏ tin nhắn vừa gửi, trả lại nội dung vào ô nhập, hiện lỗi + "Thử lại".
 // Bước 4: dải cảnh báo offline, chặn gửi khi live + offline, cache RAM lịch sử chat,
 // khung xương bong bóng chat thay spinner, FlatList tối ưu, FadeIn cho danh sách model.
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, FlatList,
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
@@ -26,9 +26,9 @@ import {
 } from '../components/ui';
 import { formatToken, generateId } from '../utils/format';
 import { MIN_AI_CALL_BALANCE } from '../utils/aiCost';
-import { resolveModel } from '../services/ai';
-import { resolveModelLabel } from '../services/aiLogStore';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { useReduceMotion } from '../hooks/useReduceMotion';
+import { AI_LOG_STATUS } from '../services/aiLogStore';
 import { useAppDrawer } from '../hooks/useAppDrawer';
 import { AppDrawer } from '../components/AppDrawer';
 import { hapticError } from '../utils/feedback';
@@ -51,16 +51,20 @@ const SUGGESTIONS = [
 
 // Bong bóng "AI đang trả lời..." với dấu chấm nhấp nháy
 function TypingRow() {
+  const reduceMotion = useReduceMotion();
   const [dots, setDots] = useState('.');
   useEffect(() => {
+    // Giảm chuyển động: giữ dấu ba chấm tĩnh, không nhấp nháy
+    if (reduceMotion) return undefined;
     const timer = setInterval(() => setDots(d => (d.length >= 3 ? '.' : `${d}.`)), 400);
     return () => clearInterval(timer);
-  }, []);
+  }, [reduceMotion]);
+  const suffix = reduceMotion ? '…' : dots;
   return (
     <View style={styles.typingRow} accessibilityLiveRegion="polite" accessibilityLabel="AI đang trả lời">
       <View style={styles.typingBubble}>
         <ActivityIndicator size="small" color={colors.accentSoft} />
-        <Text style={styles.typingText} maxFontSizeMultiplier={1.6}>AI đang trả lời{dots}</Text>
+        <Text style={styles.typingText} maxFontSizeMultiplier={1.6}>AI đang trả lời{suffix}</Text>
       </View>
     </View>
   );
@@ -124,20 +128,29 @@ export function AIHubScreen() {
   const { isOffline, refresh: refreshNetwork } = useNetworkStatus();
   const live = aiConfig?.mode === 'live';
 
-  // Model THỰC SỰ được gọi — một nguồn tên duy nhất cho cả header và meta bar.
-  // - Mock: chính model người dùng chọn.
-  // - Live: model API vừa trả về, hoặc model sẽ được resolve từ cấu hình.
-  // Nhờ vậy header không bao giờ hiện "GPT-4o" trong khi thực tế gọi Gemini.
-  const activeModelId = selectedModel
-    ? (live
-      ? (lastMeta?.model || resolveModel(selectedModel.id, aiConfig))
-      : selectedModel.id)
-    : null;
-  const activeModelName = selectedModel
-    ? (live
-      ? resolveModelLabel(activeModelId, state.aiModels)
-      : selectedModel.name)
-    : '';
+  // Chi phí trung bình mỗi lượt gọi thành công, tính từ log thật của chính user.
+  // Card model dùng số này thay cho rating/popularity bịa; chưa có dữ liệu thì
+  // card ghi "Theo usage" (token trừ theo usage nhà cung cấp trả về).
+  const avgCostByModel = useMemo(() => {
+    const totals = {};
+    (state.aiLogs || []).forEach(log => {
+      if (!log || log.status !== AI_LOG_STATUS.SUCCESS || !log.modelId) return;
+      const entry = totals[log.modelId] || { cost: 0, count: 0 };
+      entry.cost += Math.max(0, Number(log.cost) || 0);
+      entry.count += 1;
+      totals[log.modelId] = entry;
+    });
+    const result = {};
+    Object.keys(totals).forEach(id => {
+      const { cost, count } = totals[id];
+      result[id] = count > 0 ? Math.round(cost / count) : 0;
+    });
+    return result;
+  }, [state.aiLogs]);
+
+  // Tên model NGƯỜI DÙNG CHỌN — hiển thị ở header, toast và trạng thái rỗng.
+  // (Mọi lựa chọn đều gọi qua cùng một cổng API, nhưng UI giữ đúng tên đã chọn.)
+  const selectedModelName = selectedModel?.name || '';
 
   useEffect(() => () => {
     mountedRef.current = false;
@@ -410,12 +423,12 @@ export function AIHubScreen() {
   const clearCurrentHistory = () => {
     if (!selectedModel) return;
     if (!messages.length) {
-      toast.info(`Chưa có tin nhắn nào với ${activeModelName}`);
+      toast.info(`Chưa có tin nhắn nào với ${selectedModelName}`);
       return;
     }
     Alert.alert(
       'Xoá lịch sử chat?',
-      `Xoá ${messages.length} tin nhắn với ${activeModelName}? Token đã trừ không được hoàn lại.`,
+      `Xoá ${messages.length} tin nhắn với ${selectedModelName}? Token đã trừ không được hoàn lại.`,
       [
         { text: 'Huỷ', style: 'cancel' },
         {
@@ -482,14 +495,14 @@ export function AIHubScreen() {
 
   // ───────────────────────── Chat view ─────────────────────────
   if (selectedModel) {
-    // Model đã hiển thị duy nhất ở header → meta bar chỉ còn trạng thái/độ trễ/token.
-    const metaText = lastMeta
+    // Thanh meta tách làm 2 phần: trạng thái/độ trễ (phụ) và tiền (mono, nổi).
+    const metaLabel = lastMeta
       ? [
         lastMeta.mode === 'live' ? 'Trực tiếp' : 'Trả lời mô phỏng',
         lastMeta.latencyMs ? `${lastMeta.latencyMs}ms` : null,
-        lastMeta.cost ? `-${formatToken(lastMeta.cost)} token` : null,
       ].filter(Boolean).join(' · ')
       : null;
+    const metaCost = lastMeta?.cost ? `-${formatToken(lastMeta.cost)} token` : null;
 
     return (
       <KeyboardAvoidingView
@@ -498,7 +511,7 @@ export function AIHubScreen() {
       >
         <AppHeader
           navigation={navigation}
-          title={activeModelName}
+          title={selectedModelName}
           subtitle={sending ? 'Đang trả lời…' : live ? 'Trực tiếp · đang gọi mô hình thật' : 'Đang dùng câu trả lời mô phỏng'}
           onBack={closeModel}
         />
@@ -567,7 +580,7 @@ export function AIHubScreen() {
                 <EmptyState
                   icon="message-circle"
                   title="Bắt đầu trò chuyện"
-                  message={`Hỏi ${activeModelName} bất cứ điều gì. Lịch sử được lưu tự động theo tài khoản.`}
+                  message={`Hỏi ${selectedModelName} bất cứ điều gì. Lịch sử được lưu tự động theo tài khoản.`}
                 />
                 <Text style={styles.suggestLabel} maxFontSizeMultiplier={1.6}>{t('aihub.suggest')}</Text>
                 <View style={styles.suggestWrap}>
@@ -601,12 +614,17 @@ export function AIHubScreen() {
           }
         />
 
-        {/* Thông tin lần gọi gần nhất (model thật, độ trễ, token usage) */}
-        {metaText && !sending ? (
+        {/* Thông tin lần gọi gần nhất: trạng thái/độ trễ bên trái, tiền bên phải */}
+        {metaLabel && !sending ? (
           <View style={styles.metaBar}>
             <Text style={styles.metaText} numberOfLines={1} maxFontSizeMultiplier={1.5}>
-              {metaText}
+              {metaLabel}
             </Text>
+            {metaCost ? (
+              <Text style={styles.metaCost} numberOfLines={1} maxFontSizeMultiplier={1.5}>
+                {metaCost}
+              </Text>
+            ) : null}
           </View>
         ) : null}
 
@@ -724,6 +742,7 @@ export function AIHubScreen() {
               <AIModelCard
                 model={model}
                 historyCount={historyCounts[model.id] || 0}
+                avgCost={avgCostByModel[model.id] || 0}
                 onPress={() => openModel(model)}
               />
             </FadeIn>
@@ -754,6 +773,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.bg,
+  },
+  // Hai icon hành động (xoá lịch sử, cài đặt AI) nằm cùng một hàng bên phải.
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.xs,
   },
   headerRow: {
     minHeight: layout.headerHeight,
@@ -827,17 +855,20 @@ const styles = StyleSheet.create({
   chatEmpty: { paddingHorizontal: spacing.lg, gap: spacing.md },
   suggestLabel: {
     ...type.smallStrong,
-    color: colors.textFaint,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    color: colors.textDim,
   },
   suggestWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   metaBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
     paddingHorizontal: layout.gutter,
     paddingVertical: spacing.xs,
     backgroundColor: colors.bg,
   },
-  metaText: { ...type.small, color: colors.textFaint, ...type.numeric },
+  metaText: { ...type.small, color: colors.textFaint, flexShrink: 1 },
+  metaCost: { ...type.smallStrong, ...type.mono, color: colors.warning },
   imageNote: {
     flexDirection: 'row',
     alignItems: 'center',

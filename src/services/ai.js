@@ -118,6 +118,22 @@ export function buildChatMessages({ history = [], prompt = '', systemPrompt, lim
   return messages;
 }
 
+// Nhắc model biết tên hiển thị của nó trong app.
+// Nhiều mô hình không tự biết tên định danh của mình và sẽ trả lời chung chung
+// ("tôi là mô hình ngôn ngữ lớn...") nếu system prompt không nói rõ.
+// `name` là tên người dùng thấy trên header, không nhất thiết là id model thật.
+function withModelIdentity(messages, name) {
+  const list = Array.isArray(messages) ? messages.slice() : [];
+  const note = `Bạn đang chạy trên mô hình "${name}". Nếu người dùng hỏi bạn là mô hình nào, `
+    + 'hãy trả lời đúng tên mô hình này, không trả lời chung chung.';
+  if (list[0] && list[0].role === 'system') {
+    list[0] = { ...list[0], content: `${list[0].content}\n\n${note}` };
+  } else {
+    list.unshift({ role: 'system', content: note });
+  }
+  return list;
+}
+
 function hostOf(url) {
   const raw = String(url || '');
   // URL của React Native không có getter .host → fallback regex
@@ -299,6 +315,8 @@ async function requestOnce({ baseUrl, apiKey, model, messages, temperature, maxT
 export async function chatComplete({
   appModelId,
   messages,
+  // Tên model người dùng chọn (hiển thị trên UI) — dùng cho phần tự giới thiệu
+  displayModelName,
   temperature = 0.7,
   // Model "thinking" tiêu tốn token cho suy luận trước khi trả lời → để rộng tay
   maxTokens = 1500,
@@ -329,7 +347,7 @@ export async function chatComplete({
       baseUrl: cfg.baseUrl,
       apiKey: cfg.apiKey,
       model,
-      messages,
+      messages: withModelIdentity(messages, displayModelName || model),
       temperature,
       maxTokens,
       timeoutMs,

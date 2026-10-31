@@ -7,18 +7,22 @@ import { AIProviderLogo } from './AIProviderLogo';
 import { AppIcon } from './ui/AppIcon';
 import { TokenIcon } from './ui/TokenIcon';
 import { PressableScale } from './ui/PressableScale';
-import { formatTokenShort } from '../utils/format';
+import { formatToken } from '../utils/format';
 import { capabilityLabel } from '../utils/modelLabels';
 import { colors, layout, radius, spacing, type, touch } from '../theme/tokens';
 
-export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
+export function AIModelCard({ model, onPress, compact, historyCount = 0, avgCost = 0 }) {
   const capabilities = Array.isArray(model.capabilities) ? model.capabilities : [];
   const accent = model.accentColor || colors.accent;
+
+  // Giá thật: trung bình token/lượt từ log của user; chưa có log thì nói đúng
+  // là trừ theo usage thay vì in một con số ước lượng không có căn cứ.
+  const costLabel = avgCost > 0 ? `≈ ${formatToken(avgCost)} token` : 'Theo usage';
 
   const label = [
     model.name,
     model.providerName,
-    `${model.rating} sao`,
+    avgCost > 0 ? `khoảng ${formatToken(avgCost)} token mỗi lượt` : 'tính token theo usage thật',
     historyCount > 0 ? `${historyCount} tin nhắn đã lưu` : null,
   ].filter(Boolean).join(', ');
 
@@ -44,7 +48,17 @@ export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
           </View>
           <View style={styles.costWrap}>
             <TokenIcon size={12} color={colors.accentSoft} />
-            <Text style={styles.cost} maxFontSizeMultiplier={1.5}>Theo mức dùng</Text>
+            {avgCost > 0 ? (
+              <Text style={styles.cost} numberOfLines={1} maxFontSizeMultiplier={1.5}>
+                {'≈ '}
+                <Text style={styles.costNum}>{formatToken(avgCost)}</Text>
+                {' token'}
+              </Text>
+            ) : (
+              <Text style={styles.cost} numberOfLines={1} maxFontSizeMultiplier={1.5}>
+                {costLabel}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -67,11 +81,6 @@ export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
                 <Text style={styles.history} maxFontSizeMultiplier={1.5}>{historyCount}</Text>
               </View>
             ) : null}
-            <AppIcon name="star" size={12} color={colors.warning} />
-            <Text style={styles.rating} maxFontSizeMultiplier={1.5}>{model.rating}</Text>
-            <Text style={styles.popularity} numberOfLines={1} maxFontSizeMultiplier={1.5}>
-              {formatTokenShort(model.popularity || 0)} dùng
-            </Text>
           </View>
         </View>
       </View>
@@ -108,7 +117,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radius.xs,
   },
-  cost: { ...type.smallStrong, color: colors.accentSoft },
+  cost: { ...type.smallStrong, color: colors.accentSoft, flexShrink: 1 },
+  costNum: { ...type.mono },
   description: { ...type.body, color: colors.textDim, lineHeight: 19 },
   bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   capWrap: { flexDirection: 'row', gap: spacing.xs, flexShrink: 1 },
@@ -124,6 +134,4 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   historyPill: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   history: { ...type.smallStrong, color: colors.accentSoft },
-  rating: { ...type.smallStrong, color: colors.warning },
-  popularity: { ...type.small, color: colors.textFaint },
 });
