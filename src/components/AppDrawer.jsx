@@ -40,6 +40,7 @@ const GROUPS = [
       { label: 'nav.usage', icon: 'bar-chart-2', route: 'UsageDashboard' },
       { label: 'nav.logs', icon: 'activity', route: 'Logs' },
       { label: 'nav.apiKeys', icon: 'key', route: 'APIKeys' },
+      { label: 'nav.plans', icon: 'package', route: 'Plans' },
       { label: 'nav.topup', icon: 'plus-circle', route: 'CreditsTopup' },
       { label: 'nav.quests', icon: 'target', route: 'Quests' },
       { label: 'nav.aiSettings', icon: 'settings', route: 'AISettings' },
@@ -107,12 +108,14 @@ export function AppDrawer({ visible, onClose, navigation }) {
           accessibilityLabel={t('nav.closeMenu')}
         />
         <Animated.ScrollView
-          style={[
-            styles.panel,
-            { width: panelWidth, paddingTop: insets.top + spacing.sm, paddingBottom: insets.bottom + spacing.md },
-            { transform: [{ translateX: slide }] },
+          style={[styles.panel, { width: panelWidth }, { transform: [{ translateX: slide }] }]}
+          contentContainerStyle={[
+            styles.menuContent,
+            {
+              paddingTop: insets.top + spacing.sm,
+              paddingBottom: insets.bottom + spacing.md,
+            },
           ]}
-          contentContainerStyle={styles.menuContent}
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
           showsVerticalScrollIndicator={false}
@@ -262,5 +265,7 @@ const styles = StyleSheet.create({
   itemLabel: { ...type.bodyStrong, color: colors.text, fontWeight: '500' },
   itemLabelActive: { color: colors.accentSoft },
   spacer: { flex: 1 },
-  footer: { ...type.small, color: colors.textFaint, paddingHorizontal: spacing.sm },
+  footer: {
+    ...type.small, color: colors.textFaint, paddingHorizontal: spacing.sm, marginTop: spacing.lg,
+  },
 });

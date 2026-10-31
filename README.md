@@ -313,9 +313,10 @@ Luật nằm ở `src/utils/taiXiu.js` (thuần JS, test được bằng Node), 
 và cung cấp `chatsRange(tokens)` để quy đổi token → số câu hỏi AI. Màn Tài xỉu hiện mức cược quy đổi
 ra câu hỏi AI và mức cược tối đa theo số dư; màn Nạp token hiện mỗi gói dùng được bao nhiêu câu.
 
-Gói nạp cũng được nhân 10 để khớp thang token thật, **giữ nguyên giá và tỉ lệ bonus**: 10.000 token/
-29.000đ, 50.000 + 5.000/129.000đ, 100.000 + 15.000/249.000đ, 500.000 + 100.000/999.000đ. Kinh tế token
-không đổi (1 API token = 1 token app), chỉ đổi đơn vị hiển thị cho dễ hình dung.
+Gói nạp dùng chung thang giá với màn **Các gói**: 1 token = 1đ giá trị, nạp lẻ **0,9đ/token** →
+10.000 token/9.000đ, 50.000/45.000đ, 100.000/90.000đ, 500.000/450.000đ. Gói quota theo tháng giảm sâu
+hơn theo bậc (0,78đ/token ở gói 90K xuống 0,468đ/token ở gói 2 Triệu), nên hai màn không lệch giá.
+Kinh tế token không đổi (1 API token = 1 token app), chỉ đổi đơn vị hiển thị cho dễ hình dung.
 
 **Không thêm field vào account.** Mỗi ván ghi 1 transaction `type: 'TAIXIU'` với `amount` = tiền ròng, kèm
 `side`/`dice`/`total`/`triple`; thống kê và danh sách ván được suy ra từ toàn bộ transaction Tài Xỉu còn lưu.

@@ -13,7 +13,7 @@ import { AI_MODELS, MOCK_AI_RESPONSES } from '../data/mockData';
 import { DEMO_ACCOUNTS } from '../data/demoAccounts';
 import { createAccount, createWallet, ROLE_LABELS, pickAvatar } from '../data/accounts';
 import { QUESTS, createEmptyCounters, ensureQuestState, getQuestProgress } from '../data/quests';
-import { generateId, toDayKey, daysBetween } from '../utils/format';
+import { generateId, toDayKey, daysBetween, formatToken } from '../utils/format';
 import { getDailyReward } from '../utils/rewards';
 import { MIN_AI_CALL_BALANCE, costFromUsage, chargeTokens } from '../utils/aiCost';
 import {
@@ -415,7 +415,7 @@ function reducer(state, action) {
         totalEarned: (user.totalEarned || 0) + amount,
         transactions: addTransaction(user, {
           type: 'TOPUP',
-          description: `Nạp ${amount} token (${label || 'gói nạp'})`,
+          description: `Nạp ${formatToken(amount)} token (${label || 'gói nạp'})`,
           amount: +amount,
         }),
       };
@@ -984,7 +984,12 @@ export function AppProvider({ children }) {
     }
 
     const messages = buildChatMessages({ history, prompt: text });
-    const result = await chatComplete({ appModelId: modelId, messages, signal });
+    const result = await chatComplete({
+      appModelId: modelId,
+      messages,
+      signal,
+      displayModelName: model.name,
+    });
 
     // Model THỰC SỰ được gọi (API trả về, hoặc model đã resolve khi lỗi/huỷ)
     const actualModel = result.model || modelId;

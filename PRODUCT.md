@@ -40,10 +40,13 @@ gọi API.
 ## Capabilities and Constraints
 
 - **Có:** Home tổng quan, AI Hub (chat theo model, streaming/stop, lịch sử 40 tin/model), lịch sử giao dịch,
-  API Keys, Logs, Usage Dashboard, Model Catalog, Credits/Topup, Quests, Transfer, Notifications, Profile,
-  admin CMS, Onboarding 3 slide và game Tài Xỉu 3 xúc xắc.
+  API Keys, Logs, Usage Dashboard, Model Catalog, Credits/Topup, Các gói (5 gói quota theo tháng),
+  Quests, Transfer, Notifications, Profile,
+  AISettings (cài đặt AI), DemoAbout (giới thiệu bản demo), admin CMS, Onboarding 3 slide và game Tài Xỉu
+  3 xúc xắc.
 - **Token:** trừ khi AI trả lời thành công; lỗi/timeout/huỷ không trừ; tối thiểu 10 token để gọi AI.
-  Nạp token là **thanh toán mô phỏng** (BANK demo), không nối cổng thật.
+  Nạp token là **thanh toán mô phỏng** (BANK demo), không nối cổng thật. Giá: nạp lẻ 0,9đ/token;
+  gói quota theo tháng 0,78đ/token (90K) → 0,468đ/token (2 Triệu).
 - **Game Tài xỉu:** token là credit nội bộ, **không nạp/rút/đổi ra tiền thật**, nội dung 18+; luật công
   khai; không thêm field mới vào account — lịch sử/thống kê suy ra từ `transactions` type `'TAIXIU'`.
   Nội dung trong game (luật, nhãn cửa, toast) chỉ có tiếng Việt — quyết định có chủ đích cho bản đồ án.
@@ -63,8 +66,9 @@ gọi API.
 
 ## Evidence on Hand
 
-- Mã nguồn thật trong repo: `src/screens`, `src/components/ui` (UI kit 9 component), `src/theme`
-  (palettes + tokens), `src/utils` (aiCost, economy, taiXiu), `src/services` (auth, ai, users, chatHistory).
+- Mã nguồn thật trong repo: `src/screens`, `src/components/ui` (UI kit 24 component), `src/theme`
+  (palettes + tokens), `src/utils` (aiCost, economy, taiXiu, spend, rewards, feedback, format, modelLabels,
+  clipboard), `src/services` (auth, ai, users, chatHistory, apiKeys, aiLogStore).
 - `README.md` ghi lại 6 bước tối ưu, bảng tương phản, luồng 3 chạm và luật game.
 - **Không có:** ảnh chụp màn hình trong repo, testimonial, khách hàng thật, số liệu tăng trưởng, logo
   chính thức ngoài tên chữ. Tương lai không được tạo ra những thứ này.

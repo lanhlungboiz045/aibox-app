@@ -10,6 +10,7 @@ import { TaiXiuScreen } from '../screens/TaiXiuScreen';
 import { ModelCatalogScreen } from '../screens/ModelCatalogScreen';
 import { UsageDashboardScreen } from '../screens/UsageDashboardScreen';
 import { CreditsTopupScreen } from '../screens/CreditsTopupScreen';
+import { PlansScreen } from '../screens/PlansScreen';
 import { AISettingsScreen } from '../screens/AISettingsScreen';
 import { APIKeysScreen } from '../screens/APIKeysScreen';
 import { LogsScreen } from '../screens/LogsScreen';
@@ -49,6 +50,7 @@ export function AppNavigator() {
       <Stack.Screen name="ModelCatalog" component={ModelCatalogScreen} />
       <Stack.Screen name="UsageDashboard" component={UsageDashboardScreen} />
       <Stack.Screen name="CreditsTopup" component={CreditsTopupScreen} />
+      <Stack.Screen name="Plans" component={PlansScreen} />
       <Stack.Screen name="AISettings" component={AISettingsRoute} />
       <Stack.Screen name="APIKeys" component={APIKeysScreen} />
       <Stack.Screen name="Logs" component={LogsScreen} />

@@ -13,6 +13,9 @@ const VARIANTS = {
   disabled: { bg: colors.surfaceAlt, fg: colors.disabledText, border: colors.borderSoft, haptic: hapticTap },
   ghost: { bg: 'transparent', fg: colors.accentSoft, border: 'transparent', haptic: hapticTap },
   danger: { bg: colors.dangerBg, fg: colors.onAccent, border: colors.dangerBg, haptic: hapticTap },
+  // Đảo màu: nền sáng, chữ tối (dark) / nền tối, chữ sáng (light). Dùng cho CTA
+  // đặt trên card nhiều màu, vẫn đạt tương phản ở cả 2 theme.
+  contrast: { bg: colors.text, fg: colors.bg, border: colors.text, haptic: hapticPress },
 };
 
 const SIZES = {
@@ -24,6 +27,7 @@ const SIZES = {
 export function Button({
   label, children, onPress, variant = 'primary', size = 'md',
   icon, iconRight, loading = false, disabled = false, fullWidth = false,
+  pill = false,
   haptic = true, style, textStyle, accessibilityLabel, accessibilityHint, testID,
 }) {
   const v = VARIANTS[variant] || VARIANTS.primary;
@@ -90,6 +94,7 @@ export function Button({
             backgroundColor: v.bg,
             borderColor: v.border,
           },
+          pill && styles.pill,
           isDisabled && styles.disabled,
         ]}
       >
@@ -109,6 +114,8 @@ const styles = StyleSheet.create({
     height: touch.min,
   },
   content: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
+  // Bo tròn hoàn toàn cho CTA dạng pill (bảng giá gói)
+  pill: { borderRadius: radius.pill },
   // Disabled: giảm tương phản nhưng vẫn đọc được + chặn press
   disabled: { opacity: 0.45 },
 });

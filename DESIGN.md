@@ -123,6 +123,13 @@ components:
     height: "48px"
     padding: "0 20px"
     typography: "{typography.body-strong}"
+  button-contrast:
+    backgroundColor: "{colors.suong-trang}"
+    textColor: "{colors.than-dem}"
+    rounded: "{rounded.pill}"
+    height: "48px"
+    padding: "0 20px"
+    typography: "{typography.body-strong}"
   input-default:
     backgroundColor: "{colors.muc-xanh}"
     textColor: "{colors.suong-trang}"
