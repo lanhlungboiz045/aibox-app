@@ -5,6 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "androidNavigationBar": {
+      "backgroundColor": "#0F1115",
+      "barStyle": "light-content"
+    },
     "newArchEnabled": true,
     "scheme": "aibox",
     "splash": {
@@ -23,6 +27,7 @@
     },
     "plugins": [
       "expo-asset",
+      "expo-navigation-bar",
       "@react-native-google-signin/google-signin"
     ]
   }

@@ -1,6 +1,6 @@
 // App.jsx — Entry point cho AIBox app (JavaScript)
-import React from 'react';
-import { View, Text, StyleSheet, StatusBar } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, StatusBar, Platform } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { AppProvider, useApp } from './src/context/AppContext';
@@ -65,7 +65,27 @@ function Root() {
   );
 }
 
+// Android: tô thanh điều hướng hệ thống bằng màu nền app thay vì mặc định trắng.
+// Chạy 1 lần lúc mở app; đổi theme sáng/tối thì icon tự đổi theo.
+function useAndroidNavigationBar() {
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    // require trong try/catch: dev client cũ chưa cài module sẽ bỏ qua an toàn
+    // (chỉ cần rebuild native một lần để bản mới có expo-navigation-bar).
+    let NavigationBar;
+    try {
+      NavigationBar = require('expo-navigation-bar');
+      NavigationBar.setBackgroundColorAsync(colors.bg).catch(() => {});
+      NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark').catch(() => {});
+    } catch {
+      // Bỏ qua — màu thanh điều hướng vẫn do styles.xml/app.json quyết định.
+    }
+  }, []);
+}
+
 export default function App() {
+  useAndroidNavigationBar();
+
   return (
     // initialMetrics: có sẵn insets ngay frame đầu, tránh content bị nhảy/che dưới notch
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
