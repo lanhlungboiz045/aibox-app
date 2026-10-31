@@ -6,6 +6,7 @@ import { useApp } from '../../context/AppContext';
 import { AppIcon } from '../../components/ui/AppIcon';
 import { AppHeader, TokenIcon } from '../../components/ui';
 import { formatToken } from '../../utils/format';
+import { logCost } from '../../services/aiLogStore';
 import { colors, centeredContent, touch } from '../../theme/tokens';
 
 export function AdminHomeScreen({ navigation }) {
@@ -16,11 +17,10 @@ export function AdminHomeScreen({ navigation }) {
   const realAccounts = accounts;
   const totalSupply = accounts.reduce((sum, a) => sum + a.tokenBalance, 0);
   const banned = realAccounts.filter(a => a.status === 'banned');
-  const aiSpend = accounts.reduce((sum, a) => sum + (a.totalSpentOnAI || 0), 0);
-  const aiCalls = accounts.reduce(
-    (sum, account) => sum + account.transactions.filter(tx => tx.type === 'AI_CALL').length,
-    0,
-  );
+  // Số liệu AI lấy từ store log duy nhất — cùng nguồn với Home/Usage/Profile
+  // của người dùng nên admin và user luôn thấy cùng một con số.
+  const aiSpend = state.aiLogs.reduce((sum, log) => sum + logCost(log), 0);
+  const aiCalls = state.aiLogs.length;
 
   const unban = async (account) => {
     try {
@@ -45,7 +45,7 @@ export function AdminHomeScreen({ navigation }) {
   ];
 
   const links = [
-    { label: 'Giá AI Models', sub: `${state.aiModels.length} model · chỉnh giá & bảo trì`, icon: 'cpu', screen: 'AdminAIModels' },
+    { label: 'Giá mô hình AI', sub: `${state.aiModels.length} mô hình · chỉnh giá & bảo trì`, icon: 'cpu', screen: 'AdminAIModels' },
     { label: 'Người dùng & phân quyền', sub: `${realAccounts.length} tài khoản · ${banned.length} bị khoá`, icon: 'users', screen: 'AdminUsers' },
     { label: 'Rủi ro & dòng tiền', sub: 'Phát hiện giao dịch chuyển token bất thường', icon: 'alert-triangle', screen: 'AdminRisk' },
   ];

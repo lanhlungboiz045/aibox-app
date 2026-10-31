@@ -157,11 +157,11 @@ function describeHttpError(status, data, raw) {
   ).slice(0, 300);
 
   const map = {
-    400: 'Yêu cầu không hợp lệ (HTTP 400) — có thể sai tên model hoặc tham số.',
-    401: 'API key không hợp lệ hoặc đã bị thu hồi (HTTP 401). Kiểm tra lại key.',
-    402: 'Tài khoản nhà cung cấp đã hết credit (HTTP 402).',
-    403: 'Key không có quyền gọi model này (HTTP 403).',
-    404: 'Không tìm thấy endpoint hoặc model (HTTP 404). Base URL thường phải kết thúc bằng /v1.',
+    400: 'Yêu cầu không hợp lệ (HTTP 400) — có thể sai tên mô hình hoặc tham số.',
+    401: 'Khóa API không hợp lệ hoặc đã bị thu hồi (HTTP 401). Kiểm tra lại khóa.',
+    402: 'Tài khoản nhà cung cấp đã hết số dư (HTTP 402).',
+    403: 'Khóa không có quyền gọi mô hình này (HTTP 403).',
+    404: 'Không tìm thấy địa chỉ hoặc mô hình (HTTP 404). Địa chỉ API thường phải kết thúc bằng /v1.',
     413: 'Prompt quá dài (HTTP 413). Hãy rút ngắn câu hỏi.',
     422: 'Tham số gửi lên không hợp lệ (HTTP 422).',
     429: 'Bị giới hạn tốc độ hoặc hết quota (HTTP 429). Chờ vài giây rồi thử lại.',
@@ -250,8 +250,8 @@ async function requestOnce({ baseUrl, apiKey, model, messages, temperature, maxT
         finishReason: finish,
         code: finish === 'length' ? 'EMPTY_LENGTH' : 'EMPTY_CONTENT',
         error: finish === 'length'
-          ? 'AI trả về nội dung rỗng vì model dùng hết token cho phần suy luận (thinking). Tăng max token trong prompt hoặc đổi sang model nhẹ hơn (vd gemini-3.1-flash-lite).'
-          : 'AI trả về nội dung rỗng. Thử lại hoặc đổi model.',
+          ? 'AI trả về nội dung rỗng vì mô hình đã dùng hết token cho phần suy luận. Tăng giới hạn token hoặc chọn mô hình nhẹ hơn (ví dụ Gemini 3.1 Flash Lite).'
+          : 'AI trả về nội dung rỗng. Thử lại hoặc chọn mô hình khác.',
       };
     }
 
@@ -279,7 +279,7 @@ async function requestOnce({ baseUrl, apiKey, model, messages, temperature, maxT
         latencyMs,
         model,
         timeout: true,
-        error: `Hết thời gian chờ (${Math.round(timeoutMs / 1000)}s). Mạng chậm hoặc model đang quá tải.`,
+        error: `Hết thời gian chờ (${Math.round(timeoutMs / 1000)}s). Mạng chậm hoặc mô hình đang quá tải.`,
       };
     }
     return {
@@ -287,7 +287,7 @@ async function requestOnce({ baseUrl, apiKey, model, messages, temperature, maxT
       latencyMs,
       model,
       network: true,
-      error: `Không kết nối được tới ${hostOf(baseUrl)}.\nKiểm tra Wi-Fi/mạng, hoặc Base URL (điện thoại không truy cập được localhost của máy tính — dùng IP LAN).\n${err && err.message ? err.message : err}`,
+      error: `Không kết nối được tới ${hostOf(baseUrl)}.\nKiểm tra Wi-Fi/mạng và địa chỉ API. Nếu dùng máy chủ trong mạng nội bộ, điện thoại phải cùng Wi-Fi với máy tính.`,
     };
   } finally {
     clearTimeout(timer);
@@ -312,7 +312,7 @@ export async function chatComplete({
     return {
       ok: false,
       mode: 'mock',
-      error: 'Chưa cấu hình AI. Vào Profile → Cấu hình AI để chọn nhà cung cấp (ví dụ preset Pollinations miễn phí, không cần key).',
+      error: 'Chưa cấu hình AI. Vào Hồ sơ → Cấu hình AI để chọn nhà cung cấp (ví dụ Pollinations miễn phí, không cần khóa).',
     };
   }
   if (!Array.isArray(messages) || messages.length === 0) {

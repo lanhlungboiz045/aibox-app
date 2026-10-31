@@ -7,31 +7,27 @@ import { centeredContent, colors, spacing, type } from '../theme/tokens';
 const NOTES = [
   {
     title: 'Tài khoản và dữ liệu',
-    body: 'Hồ sơ được đồng bộ với Firebase khi cấu hình khả dụng. Ví token, lịch sử giao dịch, nhiệm vụ và một số tuỳ chọn được lưu trên thiết bị theo tài khoản. Quyền ở giao diện không thay thế kiểm tra quyền ở Firestore Rules hoặc backend.',
+    body: 'Hồ sơ và số dư được lưu theo tài khoản của bạn. Lịch sử trò chuyện, khóa API và giao dịch được giữ trên thiết bị này.',
   },
   {
     title: 'Thông báo và nhiệm vụ',
-    body: 'Thông báo trong ứng dụng và tiến độ nhiệm vụ hiện được xử lý ở thiết bị. Bản demo chưa gửi push notification và chưa xác thực tiến độ ở máy chủ.',
+    body: 'Thông báo trong ứng dụng và tiến độ nhiệm vụ được cập nhật khi bạn sử dụng. Ứng dụng chưa gửi thông báo đẩy ra ngoài.',
   },
   {
     title: 'AI',
-    body: 'Khi chưa cấu hình nhà cung cấp AI, ứng dụng dùng câu trả lời mô phỏng. API key cá nhân được lưu trên thiết bị; các biến EXPO_PUBLIC_* nằm trong ứng dụng phía client. Đây chỉ là cách cấu hình cho bản demo. Khi phát hành thật, hãy lưu khóa ở backend/proxy và để ứng dụng gọi máy chủ đó.',
+    body: 'Khi chưa kết nối nhà cung cấp AI, ứng dụng trả lời ở chế độ mô phỏng. Khóa API của bạn chỉ lưu trên thiết bị và luôn được che trong danh sách.',
   },
   {
     title: 'Nạp token và Tài Xỉu',
-    body: 'Thanh toán nạp token là mô phỏng, không phát sinh giao dịch thật. Token chỉ là credit nội bộ, không có giá trị tiền tệ và không thể đổi thành tiền.',
+    body: 'Thanh toán nạp token là mô phỏng, không phát sinh giao dịch thật. Token là điểm nội bộ, không có giá trị tiền tệ và không thể đổi thành tiền.',
   },
   {
     title: 'Quản trị và thống kê',
-    body: 'Cảnh báo rủi ro và dữ liệu ví trong màn quản trị là phân tích trên dữ liệu có sẵn ở thiết bị. Nếu nhà cung cấp AI không trả về usage, chi phí có thể được ước lượng.',
+    body: 'Số liệu trong màn quản trị được tổng hợp từ dữ liệu trên thiết bị. Chi phí AI có thể được ước lượng nếu nhà cung cấp không trả về số token.',
   },
   {
-    title: 'Thông báo',
-    body: 'Danh sách thông báo hiện được tạo trong ứng dụng. Bản demo chưa gửi push notification qua Firebase Cloud Messaging.',
-  },
-  {
-    title: 'Trước khi phát hành',
-    body: 'Cần chuyển các thao tác nhạy cảm như số dư, giao dịch, phân quyền, tiến độ nhiệm vụ và phân tích rủi ro sang dịch vụ backend đáng tin cậy; tích hợp cổng thanh toán và push notification thực. Các cấu hình EXPO_PUBLIC_* không được dùng để giữ bí mật.',
+    title: 'Quyền riêng tư',
+    body: 'Bạn có thể thu hồi khóa API, xoá lịch sử trò chuyện và đặt lại ví bất cứ lúc nào trong phần tài khoản.',
   },
 ];
 
@@ -40,10 +36,10 @@ export function DemoAboutScreen({ navigation }) {
 
   return (
     <View style={styles.root}>
-      <AppHeader navigation={navigation} title="Về bản demo" />
+      <AppHeader navigation={navigation} title="Về AIBox" />
       <ScrollView contentContainerStyle={[centeredContent, styles.content, { paddingBottom: insets.bottom + spacing.xxl }]}>
         <Text style={styles.intro}>
-          AIBox là ứng dụng thử nghiệm AI Hub, ví token nội bộ và trò chơi Tài Xỉu. Những giới hạn của bản demo được ghi rõ bên dưới.
+          AIBox gồm AI Hub, ví token nội bộ và trò chơi Tài Xỉu. Dưới đây là những điều cần biết khi sử dụng.
         </Text>
         {NOTES.map(note => (
           <View key={note.title} style={styles.section}>

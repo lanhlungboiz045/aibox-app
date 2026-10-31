@@ -4,6 +4,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { formatToken } from '../../utils/format';
+import { logCost } from '../../services/aiLogStore';
 import { AppIcon } from '../../components/ui/AppIcon';
 import { AppHeader } from '../../components/ui';
 import { AIProviderLogo } from '../../components/AIProviderLogo';
@@ -13,15 +14,16 @@ export function AdminAIModelsScreen({ navigation }) {
   const { state, toggleModelAvailability } = useApp();
   const insets = useSafeAreaInsets();
 
-  // Đếm lượt gọi + token thu được theo từng model (dữ liệu từ transactions)
+  // Đếm lượt gọi + token thu được theo từng model, đọc từ store log duy nhất
+  // (cùng nguồn với Home/Logs/Usage/Profile). Gom theo model người dùng chọn
+  // trong app (log.modelId) để khớp danh mục model bên dưới.
   const usage = {};
-  state.accounts.forEach(account => {
-    (account.transactions || []).forEach(tx => {
-      if (tx.type !== 'AI_CALL' || !tx.modelId) return;
-      if (!usage[tx.modelId]) usage[tx.modelId] = { calls: 0, spent: 0 };
-      usage[tx.modelId].calls += 1;
-      usage[tx.modelId].spent += Math.abs(tx.amount || 0);
-    });
+  state.aiLogs.forEach(log => {
+    const id = log.modelId;
+    if (!id) return;
+    if (!usage[id]) usage[id] = { calls: 0, spent: 0 };
+    usage[id].calls += 1;
+    usage[id].spent += logCost(log);
   });
 
   const totalCalls = Object.values(usage).reduce((sum, item) => sum + item.calls, 0);
@@ -47,7 +49,7 @@ export function AdminAIModelsScreen({ navigation }) {
       </View>
 
       <Text style={styles.hint}>
-        Token được trừ theo đúng usage API trả về. Bật/tắt "đang mở" để tạm ngưng bán model đó.
+        Token được trừ theo đúng số token nhà cung cấp báo về. Bật/tắt "đang mở" để tạm ngưng bán mô hình đó.
       </Text>
 
       {state.aiModels.map(model => {
@@ -69,7 +71,7 @@ export function AdminAIModelsScreen({ navigation }) {
             </View>
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityLabel={`${model.isAvailable ? 'Tắt' : 'Mở'} model ${model.name}`}
+              accessibilityLabel={`${model.isAvailable ? 'Tắt' : 'Mở'} mô hình ${model.name}`}
               accessibilityState={{ selected: model.isAvailable }}
               style={[styles.toggle, model.isAvailable ? styles.toggleOn : styles.toggleOff]}
               onPress={() => toggleModelAvailability(model.id)}

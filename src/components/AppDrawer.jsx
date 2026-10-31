@@ -38,6 +38,8 @@ const GROUPS = [
     label: 'nav.tools',
     items: [
       { label: 'nav.usage', icon: 'bar-chart-2', route: 'UsageDashboard' },
+      { label: 'nav.logs', icon: 'activity', route: 'Logs' },
+      { label: 'nav.apiKeys', icon: 'key', route: 'APIKeys' },
       { label: 'nav.topup', icon: 'plus-circle', route: 'CreditsTopup' },
       { label: 'nav.quests', icon: 'target', route: 'Quests' },
       { label: 'nav.aiSettings', icon: 'settings', route: 'AISettings' },
@@ -185,7 +187,7 @@ export function AppDrawer({ visible, onClose, navigation }) {
           )}
 
           <View style={styles.spacer} />
-          <Text style={styles.footer} maxFontSizeMultiplier={1.5}>AIBox · bản demo</Text>
+          <Text style={styles.footer} maxFontSizeMultiplier={1.5}>AIBox · Ví token nội bộ</Text>
         </Animated.ScrollView>
       </View>
     </Modal>

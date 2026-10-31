@@ -1,10 +1,13 @@
-// screens/TransactionsScreen.jsx — Wallet transaction history
-import React, { useState } from 'react';
+// screens/TransactionsScreen.jsx — Lịch sử giao dịch ví
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { TransactionItem } from '../components/TransactionItem';
-import { formatToken } from '../utils/format';
+import { formatToken, formatRelativeTime } from '../utils/format';
+import {
+  logsForUser, summarizeAILogs, logModelName, logStatusLabel, logCost,
+} from '../services/aiLogStore';
 import { AppDrawer } from '../components/AppDrawer';
 import { AppHeader, TokenIcon } from '../components/ui';
 import { AppIcon } from '../components/ui/AppIcon';
@@ -21,17 +24,49 @@ export function TransactionsScreen({ navigation }) {
     { key: 'all', label: 'Tất cả' }, { key: 'ai', label: 'AI' },
     { key: 'transfer', label: 'Chuyển token' }, { key: 'game', label: 'Tài Xỉu' },
   ];
-  const aiCalls = state.user.transactions.filter(tx => tx.type === 'AI_CALL').length;
+  // Lượt gọi & chi phí AI đọc từ store log duy nhất (khớp Home/Logs/Usage/Profile).
+  const aiLogs = useMemo(
+    () => logsForUser(state.aiLogs, state.user?.id),
+    [state.aiLogs, state.user?.id]
+  );
+  const aiSummary = useMemo(() => summarizeAILogs(aiLogs), [aiLogs]);
+  const aiCalls = aiSummary.requests;
   const gamesPlayed = state.user.transactions.filter(tx => tx.type === 'TAIXIU').length;
   const transfers = state.user.transactions.filter(tx => tx.type === 'TRANSFER_OUT').length;
 
+  // Bộ lọc AI đọc thẳng từ store log (không đọc transaction) để danh sách,
+  // số lượt và chi phí trên màn này luôn khớp nhau.
   const filteredTxs = state.user.transactions.filter(tx => {
     if (txFilter === 'all') return true;
-    if (txFilter === 'ai') return tx.type === 'AI_CALL';
     if (txFilter === 'transfer') return ['TRANSFER_OUT', 'TRANSFER_IN'].includes(tx.type);
     if (txFilter === 'game') return tx.type === 'TAIXIU';
     return true;
   });
+
+  const renderAiLogs = () => (
+    <View style={styles.txList}>
+      {aiLogs.slice(0, 50).map(log => {
+        const success = log.status === 'success';
+        const cost = logCost(log);
+        return (
+          <View key={log.id} style={styles.aiLogRow}>
+            <AppIcon
+              name={success ? 'zap' : log.status === 'canceled' ? 'square' : 'alert-triangle'}
+              size={16}
+              color={success ? colors.accentSoft : log.status === 'canceled' ? colors.textDim : colors.danger}
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.aiLogTitle} numberOfLines={1}>{logModelName(log, state.aiModels)}</Text>
+              <Text style={styles.aiLogMeta}>{formatRelativeTime(log.timestamp)} · {logStatusLabel(log.status)}</Text>
+            </View>
+            <Text style={[styles.aiLogCost, !success && { color: colors.textFaint }]}>
+              {success ? `-${formatToken(cost)}` : '0'}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
 
   return (
     <View style={styles.root}>
@@ -51,7 +86,7 @@ export function TransactionsScreen({ navigation }) {
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Đã dùng cho AI</Text>
             <View style={styles.statValueRow}>
-              <Text style={[styles.statValue, { color: colors.danger }]}>{formatToken(state.user.totalSpentOnAI)}</Text>
+              <Text style={[styles.statValue, { color: colors.danger }]}>{formatToken(aiSummary.cost)}</Text>
               <TokenIcon size={14} color={colors.danger} />
             </View>
           </View>
@@ -77,7 +112,11 @@ export function TransactionsScreen({ navigation }) {
               </TouchableOpacity>
             ))}
           </ScrollView>
-          {filteredTxs.length === 0 ? (
+          {txFilter === 'ai' ? (
+            aiLogs.length === 0 ? (
+              <Text style={styles.emptyTextSmall}>Chưa có lượt gọi AI nào</Text>
+            ) : renderAiLogs()
+          ) : filteredTxs.length === 0 ? (
             <Text style={styles.emptyTextSmall}>Chưa có giao dịch nào</Text>
           ) : (
             <View style={styles.txList}>
@@ -109,5 +148,18 @@ const styles = StyleSheet.create({
   txFilterText: { color: colors.textDim, fontSize: 12 },
   txFilterTextActive: { color: colors.accentSoft, fontWeight: '600' },
   txList: { backgroundColor: colors.surface, borderRadius: 12, marginHorizontal: 16, overflow: 'hidden' },
+  aiLogRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+    minHeight: 56,
+  },
+  aiLogTitle: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  aiLogMeta: { color: colors.textFaint, fontSize: 12, marginTop: 2 },
+  aiLogCost: { color: colors.danger, fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] },
   emptyTextSmall: { color: colors.textFaint, fontSize: 13, textAlign: 'center', padding: 16 },
 });

@@ -10,6 +10,7 @@ import { useApp } from '../context/AppContext';
 import { AppHeader, AppIcon, Button } from '../components/ui';
 import { AIProviderLogo } from '../components/AIProviderLogo';
 import { formatToken } from '../utils/format';
+import { capabilityLabel, modelTypeLabel } from '../utils/modelLabels';
 import { centeredContent, colors, touch } from '../theme/tokens';
 
 const TYPE_FILTERS = [
@@ -73,7 +74,7 @@ export function ModelCatalogScreen({ navigation }) {
       <View style={styles.capRow}>
         {item.capabilities.map(c => (
           <View key={c} style={styles.capChip}>
-            <Text style={styles.capText}>{c}</Text>
+            <Text style={styles.capText}>{capabilityLabel(c)}</Text>
           </View>
         ))}
       </View>
@@ -92,7 +93,7 @@ export function ModelCatalogScreen({ navigation }) {
       <View style={styles.searchBox}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Tìm model hoặc nhà cung cấp..."
+          placeholder="Tìm mô hình hoặc nhà cung cấp..."
           placeholderTextColor={colors.textFaint}
           value={search}
           onChangeText={setSearch}
@@ -132,7 +133,7 @@ export function ModelCatalogScreen({ navigation }) {
         keyExtractor={m => m.id}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.empty}>Không có model phù hợp.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>Không có mô hình phù hợp.</Text>}
       />
 
       <Modal visible={!!detail} transparent animationType="fade" onRequestClose={() => setDetail(null)}>
@@ -144,7 +145,7 @@ export function ModelCatalogScreen({ navigation }) {
                   <AIProviderLogo provider={detail.provider} size={32} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.modalName}>{detail.name}</Text>
-                    <Text style={styles.modalProvider}>{detail.providerName} · {detail.type}</Text>
+                    <Text style={styles.modalProvider}>{detail.providerName} · {modelTypeLabel(detail.type)}</Text>
                   </View>
                   <TouchableOpacity accessibilityRole="button" onPress={() => setDetail(null)}>
                     <AppIcon name="x" size={18} color={colors.textDim} />
@@ -152,11 +153,11 @@ export function ModelCatalogScreen({ navigation }) {
                 </View>
                 <Text style={styles.modalDesc}>{detail.description}</Text>
                 <View style={styles.modalMeta}>
-                  <Text style={styles.modalMetaText}>Giá: trừ theo token API báo về (usage)</Text>
+                  <Text style={styles.modalMetaText}>Giá: trừ theo token nhà cung cấp báo về</Text>
                   <Text style={styles.modalMetaText}>Ngữ cảnh: {formatToken(detail.inputLimit)} token</Text>
                   <Text style={styles.modalMetaText}>Đánh giá: {detail.rating} / 5</Text>
                   <Text style={styles.modalMetaText}>Lượt dùng: {detail.popularity.toLocaleString('vi-VN')}</Text>
-                  <Text style={styles.modalMetaText}>Capabilities: {detail.capabilities.join(', ')}</Text>
+                  <Text style={styles.modalMetaText}>Khả năng: {detail.capabilities.map(capabilityLabel).join(', ')}</Text>
                 </View>
                 <TouchableOpacity accessibilityRole="button" style={styles.tryBtn} onPress={() => { setDetail(null); tryNow(detail); }}>
                   <Text style={styles.tryBtnText}>Thử ngay</Text>

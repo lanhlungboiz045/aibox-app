@@ -19,11 +19,11 @@ const env = process.env;
 export const AI_PRESETS = [
   {
     id: 'pollinations',
-    name: 'Pollinations (free)',
+    name: 'Pollinations (miễn phí)',
     icon: 'sun',
     baseUrl: 'https://text.pollinations.ai/openai',
     model: 'openai',
-    hint: 'Miễn phí, không cần key · có thể bị giới hạn tốc độ (test nhanh rất tiện)',
+    hint: 'Miễn phí, không cần khóa · có thể bị giới hạn tốc độ (thử nhanh rất tiện)',
     keyless: true,
   },
   {
@@ -32,7 +32,7 @@ export const AI_PRESETS = [
     icon: 'cpu',
     baseUrl: 'https://api.openai.com/v1',
     model: 'gpt-4o-mini',
-    hint: 'Key dạng sk-... · platform.openai.com/api-keys',
+    hint: 'Khóa dạng sk-... · platform.openai.com/api-keys',
   },
   {
     id: 'openrouter',
@@ -40,7 +40,7 @@ export const AI_PRESETS = [
     icon: 'globe',
     baseUrl: 'https://openrouter.ai/api/v1',
     model: 'openai/gpt-4o-mini',
-    hint: '1 key dùng nhiều model · openrouter.ai/keys',
+    hint: '1 khóa dùng nhiều mô hình · openrouter.ai/keys',
   },
   {
     id: 'deepseek',
@@ -56,7 +56,7 @@ export const AI_PRESETS = [
     icon: 'zap',
     baseUrl: 'https://api.groq.com/openai/v1',
     model: 'llama-3.3-70b-versatile',
-    hint: 'Nhanh, có free tier · console.groq.com',
+    hint: 'Nhanh, có gói miễn phí · console.groq.com',
   },
   {
     id: 'gemini',
@@ -64,7 +64,7 @@ export const AI_PRESETS = [
     icon: 'star',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
     model: 'gemini-3.1-flash-lite',
-    hint: 'Free tier · aistudio.google.com/apikey · flash-lite trả lời nhanh, không tốn token "thinking"',
+    hint: 'Gói miễn phí · aistudio.google.com/apikey · bản flash-lite trả lời nhanh, không tốn token suy luận',
   },
   {
     id: 'aibox',
@@ -72,7 +72,7 @@ export const AI_PRESETS = [
     icon: 'box',
     baseUrl: 'https://api.ai-box.vn/v1',
     model: 'gpt-4o-mini',
-    hint: 'Cổng AI home.ai-box.vn (nếu tài khoản có key)',
+    hint: 'Cổng AI home.ai-box.vn (nếu tài khoản có khóa)',
   },
   {
     id: 'ollama',
@@ -80,7 +80,7 @@ export const AI_PRESETS = [
     icon: 'monitor',
     baseUrl: 'http://192.168.1.10:11434/v1',
     model: 'llama3.1',
-    hint: 'Chạy trên máy tính trong cùng Wi-Fi · không cần key',
+    hint: 'Chạy trên máy tính trong cùng Wi-Fi · không cần khóa',
     keyless: true,
   },
 ];

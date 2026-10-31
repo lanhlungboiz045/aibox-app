@@ -1,4 +1,4 @@
-// screens/NotificationsScreen.jsx — Trung tâm thông báo (mock push in-app)
+// screens/NotificationsScreen.jsx — Trung tâm thông báo trong ứng dụng
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

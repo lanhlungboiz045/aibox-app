@@ -26,6 +26,8 @@ import {
 } from '../components/ui';
 import { formatToken, generateId } from '../utils/format';
 import { MIN_AI_CALL_BALANCE } from '../utils/aiCost';
+import { resolveModel } from '../services/ai';
+import { resolveModelLabel } from '../services/aiLogStore';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { useAppDrawer } from '../hooks/useAppDrawer';
 import { AppDrawer } from '../components/AppDrawer';
@@ -121,6 +123,21 @@ export function AIHubScreen() {
   const uid = state.user?.id || null;
   const { isOffline, refresh: refreshNetwork } = useNetworkStatus();
   const live = aiConfig?.mode === 'live';
+
+  // Model THỰC SỰ được gọi — một nguồn tên duy nhất cho cả header và meta bar.
+  // - Mock: chính model người dùng chọn.
+  // - Live: model API vừa trả về, hoặc model sẽ được resolve từ cấu hình.
+  // Nhờ vậy header không bao giờ hiện "GPT-4o" trong khi thực tế gọi Gemini.
+  const activeModelId = selectedModel
+    ? (live
+      ? (lastMeta?.model || resolveModel(selectedModel.id, aiConfig))
+      : selectedModel.id)
+    : null;
+  const activeModelName = selectedModel
+    ? (live
+      ? resolveModelLabel(activeModelId, state.aiModels)
+      : selectedModel.name)
+    : '';
 
   useEffect(() => () => {
     mountedRef.current = false;
@@ -246,9 +263,9 @@ export function AIHubScreen() {
 
   const typeFilters = [
     { key: 'all', label: 'Tất cả', icon: 'grid' },
-    { key: 'text', label: 'Text', icon: 'message-square' },
-    { key: 'image', label: 'Ảnh', icon: 'image' },
-    { key: 'code', label: 'Code', icon: 'code' },
+    { key: 'text', label: 'Văn bản', icon: 'message-square' },
+    { key: 'image', label: 'Hình ảnh', icon: 'image' },
+    { key: 'code', label: 'Mã nguồn', icon: 'code' },
   ];
 
   const keyword = search.trim().toLowerCase();
@@ -393,12 +410,12 @@ export function AIHubScreen() {
   const clearCurrentHistory = () => {
     if (!selectedModel) return;
     if (!messages.length) {
-      toast.info(`Chưa có tin nhắn nào với ${selectedModel.name}`);
+      toast.info(`Chưa có tin nhắn nào với ${activeModelName}`);
       return;
     }
     Alert.alert(
       'Xoá lịch sử chat?',
-      `Xoá ${messages.length} tin nhắn với ${selectedModel.name}? Token đã trừ không được hoàn lại.`,
+      `Xoá ${messages.length} tin nhắn với ${activeModelName}? Token đã trừ không được hoàn lại.`,
       [
         { text: 'Huỷ', style: 'cancel' },
         {
@@ -434,7 +451,7 @@ export function AIHubScreen() {
     const modelCount = Object.keys(historyCounts).length;
     Alert.alert(
       'Xoá toàn bộ lịch sử chat?',
-      `${totalHistory} tin nhắn của ${modelCount} model sẽ bị xoá vĩnh viễn. Token đã trừ không được hoàn lại.`,
+      `${totalHistory} tin nhắn của ${modelCount} mô hình sẽ bị xoá vĩnh viễn. Token đã trừ không được hoàn lại.`,
       [
         { text: 'Huỷ', style: 'cancel' },
         {
@@ -465,9 +482,10 @@ export function AIHubScreen() {
 
   // ───────────────────────── Chat view ─────────────────────────
   if (selectedModel) {
+    // Model đã hiển thị duy nhất ở header → meta bar chỉ còn trạng thái/độ trễ/token.
     const metaText = lastMeta
       ? [
-        lastMeta.mode === 'live' ? `LIVE · ${lastMeta.model}` : 'Trả lời mô phỏng',
+        lastMeta.mode === 'live' ? 'Trực tiếp' : 'Trả lời mô phỏng',
         lastMeta.latencyMs ? `${lastMeta.latencyMs}ms` : null,
         lastMeta.cost ? `-${formatToken(lastMeta.cost)} token` : null,
       ].filter(Boolean).join(' · ')
@@ -480,14 +498,14 @@ export function AIHubScreen() {
       >
         <AppHeader
           navigation={navigation}
-          title={selectedModel.name}
-          subtitle={sending ? 'Đang trả lời…' : live ? `Đang kết nối · ${aiConfig.model}` : 'Đang dùng câu trả lời mô phỏng'}
+          title={activeModelName}
+          subtitle={sending ? 'Đang trả lời…' : live ? 'Trực tiếp · đang gọi mô hình thật' : 'Đang dùng câu trả lời mô phỏng'}
           onBack={closeModel}
         />
         <View style={styles.headerActions}>
             <IconButton
               icon="trash-2"
-              label="Xoá lịch sử chat"
+              label="Xoá lịch sử trò chuyện"
               size={18}
               disabled={sending || messages.length === 0}
               onPress={clearCurrentHistory}
@@ -510,7 +528,7 @@ export function AIHubScreen() {
           <OfflineBar
             text={live
               ? 'Mất mạng — không gửi được tin nhắn mới. Tin nhắn đã lưu vẫn xem được.'
-              : 'Mất mạng — vẫn chat được ở chế độ mô phỏng.'}
+              : 'Mất mạng — vẫn trò chuyện được ở chế độ mô phỏng.'}
             onRetry={refreshNetwork}
             style={styles.offlineBar}
           />
@@ -539,7 +557,7 @@ export function AIHubScreen() {
               <View style={styles.historyErrorWrap}>
                 <ErrorState
                   compact
-                  title="Không đọc được lịch sử chat"
+                  title="Không đọc được lịch sử trò chuyện"
                   message={historyError}
                   onRetry={() => { setHistoryError(null); setHistoryReloadKey(k => k + 1); }}
                 />
@@ -549,7 +567,7 @@ export function AIHubScreen() {
                 <EmptyState
                   icon="message-circle"
                   title="Bắt đầu trò chuyện"
-                  message={`Hỏi ${selectedModel.name} bất cứ điều gì. Lịch sử được lưu tự động theo tài khoản.`}
+                  message={`Hỏi ${activeModelName} bất cứ điều gì. Lịch sử được lưu tự động theo tài khoản.`}
                 />
                 <Text style={styles.suggestLabel} maxFontSizeMultiplier={1.6}>{t('aihub.suggest')}</Text>
                 <View style={styles.suggestWrap}>
@@ -596,7 +614,7 @@ export function AIHubScreen() {
           <View style={styles.imageNote}>
             <AppIcon name="image" size={14} color={colors.textFaint} />
             <Text style={styles.imageNoteText} maxFontSizeMultiplier={1.6}>
-              Model ảnh chưa hỗ trợ trong khung chat văn bản.
+              Mô hình ảnh chưa hỗ trợ trong khung chat văn bản.
             </Text>
           </View>
         ) : null}
@@ -649,13 +667,13 @@ export function AIHubScreen() {
       <AppHeader
         navigation={navigation}
         title={t('screen.aihub')}
-        subtitle={totalHistory > 0 ? `${totalHistory} tin nhắn đã lưu` : 'Chọn model để bắt đầu'}
+        subtitle={totalHistory > 0 ? `${totalHistory} tin nhắn đã lưu` : 'Chọn mô hình để bắt đầu'}
         isRoot
         onMenu={openDrawer}
       />
       <View style={styles.headerActions}>
           {totalHistory > 0 ? (
-            <IconButton icon="trash-2" label="Xoá toàn bộ lịch sử chat" size={18} onPress={clearAllHistory} />
+            <IconButton icon="trash-2" label="Xoá toàn bộ lịch sử trò chuyện" size={18} onPress={clearAllHistory} />
           ) : null}
           <IconButton icon="settings" label="Cài đặt AI" size={18} onPress={openSettings} />
       </View>
@@ -687,10 +705,10 @@ export function AIHubScreen() {
             style={styles.search}
             value={search}
             onChangeText={setSearch}
-            placeholder="Tìm model hoặc provider…"
+            placeholder="Tìm mô hình hoặc nhà cung cấp…"
             placeholderTextColor={colors.textFaint}
             returnKeyType="search"
-            accessibilityLabel="Tìm model"
+            accessibilityLabel="Tìm mô hình"
             maxFontSizeMultiplier={1.8}
           />
           {search ? (
@@ -715,8 +733,8 @@ export function AIHubScreen() {
         {filteredModels.length === 0 ? (
           <EmptyState
             icon="search"
-            title="Không tìm thấy model nào"
-            message={keyword ? `Không có model khớp "${search.trim()}".` : 'Bộ lọc này chưa có model nào.'}
+            title="Không tìm thấy mô hình nào"
+            message={keyword ? `Không có mô hình khớp "${search.trim()}".` : 'Bộ lọc này chưa có mô hình nào.'}
             actionLabel="Xoá bộ lọc"
             onAction={() => { setSearch(''); setFilterType('all'); }}
           />

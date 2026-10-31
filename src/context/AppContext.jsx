@@ -17,6 +17,15 @@ import { generateId, toDayKey, daysBetween } from '../utils/format';
 import { getDailyReward } from '../utils/rewards';
 import { MIN_AI_CALL_BALANCE, costFromUsage, chargeTokens } from '../utils/aiCost';
 import {
+  MAX_AI_LOGS,
+  AI_LOG_STATUS,
+  createAILog,
+  migrateLogsFromTransactions,
+  resolveModelLabel,
+  sanitizeAILog,
+  sanitizeAILogs,
+} from '../services/aiLogStore';
+import {
   MIN_STAKE, SIDES, SIDE_LABELS, getValidStake, rollDice, settleTaiXiu,
 } from '../utils/taiXiu';
 import {
@@ -47,7 +56,10 @@ import {
 } from '../services/ai';
 
 const STORAGE_KEY = '@aibox_state';
-const STORAGE_VERSION = 5;
+// v6: thêm store log gọi AI (aiLogs) — nguồn số liệu duy nhất cho mọi màn.
+const STORAGE_VERSION = 6;
+// Version cũ vẫn đọc được; riêng < 6 sẽ migrate log từ transaction AI_CALL.
+const LEGACY_STORAGE_VERSIONS = [4, 5];
 // uid cố định cho chế độ demo (chỉ dev) — không trùng uid Firebase nào
 const DEMO_UID = 'demo-expo-go';
 const PERSIST_DEBOUNCE_MS = 400;
@@ -128,6 +140,8 @@ function createInitialState() {
     // Không tạo tài khoản Firebase, chỉ tạo ví local để test UI.
     demoMode: false,
     aiModels: AI_MODELS,
+    // Store duy nhất cho log gọi AI (xem services/aiLogStore.js)
+    aiLogs: [],
     notifications: [],
     quests: {},
     isLoading: true,
@@ -140,9 +154,16 @@ async function loadPersistedState() {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && (parsed.v === STORAGE_VERSION || parsed.v === 4)) {
+      if (parsed && (parsed.v === STORAGE_VERSION || LEGACY_STORAGE_VERSIONS.includes(parsed.v))) {
+        const accounts = sanitizeAccounts(parsed.accounts);
+        // v6 trở lên: đọc đúng store log. Bản cũ chưa có aiLogs → dựng lại từ
+        // transaction AI_CALL để Home/Logs/Usage không bị mất lịch sử.
+        const aiLogs = Array.isArray(parsed.aiLogs)
+          ? sanitizeAILogs(parsed.aiLogs)
+          : migrateLogsFromTransactions(accounts);
         return {
-          accounts: sanitizeAccounts(parsed.accounts),
+          accounts,
+          aiLogs,
           notifications: sanitizeNotifications(parsed.notifications),
           quests: sanitizeQuests(parsed.quests),
         };
@@ -215,6 +236,7 @@ function reducer(state, action) {
       return {
         ...state,
         accounts: payload.accounts || state.accounts,
+        aiLogs: payload.aiLogs || [],
         notifications: payload.notifications || [],
         quests: payload.quests || {},
         isLoading: false,
@@ -372,6 +394,14 @@ function reducer(state, action) {
       };
 
       return bumpQuestCounters(withAccount(state, updated), user.id, 'aiCalls');
+    }
+
+    // Mỗi lượt chat → 1 bản ghi vào store log duy nhất (kể cả lỗi / bị dừng).
+    // Home, Logs, Usage, Lịch sử và Profile đều đọc từ đây.
+    case 'AI_LOG': {
+      const log = sanitizeAILog(action.payload);
+      if (!log) return state;
+      return { ...state, aiLogs: [log, ...state.aiLogs].slice(0, MAX_AI_LOGS) };
     }
 
     // ---------- TOP-UP (nạp credit/token) ----------
@@ -593,7 +623,12 @@ function reducer(state, action) {
         photoURL: user.photoURL,
         joinedDate: user.joinedDate,
       };
-      return withAccount(state, fresh);
+      // Reset ví = xoá luôn lịch sử log AI của user này để số liệu không lệch
+      // với số dư / giao dịch mới.
+      return {
+        ...withAccount(state, fresh),
+        aiLogs: state.aiLogs.filter(log => log.userId !== user.id),
+      };
     }
 
     default:
@@ -648,6 +683,7 @@ export function AppProvider({ children }) {
     const payload = JSON.stringify({
       v: STORAGE_VERSION,
       accounts: current.accounts,
+      aiLogs: current.aiLogs,
       notifications: current.notifications,
       quests: current.quests,
     });
@@ -661,7 +697,7 @@ export function AppProvider({ children }) {
     if (state.isLoading) return undefined;
     persistTimer.current = setTimeout(persist, PERSIST_DEBOUNCE_MS);
     return () => clearTimeout(persistTimer.current);
-  }, [state.accounts, state.notifications, state.quests, state.isLoading, persist]);
+  }, [state.accounts, state.aiLogs, state.notifications, state.quests, state.isLoading, persist]);
 
   // Flush khi app xuống background hoặc provider bị unmount → không mất thay đổi cuối
   useEffect(() => {
@@ -899,8 +935,8 @@ export function AppProvider({ children }) {
     const text = String(prompt || '').trim();
 
     if (!user) return { ok: false, error: 'Bạn cần đăng nhập.' };
-    if (!model) return { ok: false, error: 'Model không tồn tại.' };
-    if (!model.isAvailable) return { ok: false, error: 'Model đang tạm bảo trì.' };
+    if (!model) return { ok: false, error: 'Mô hình không tồn tại.' };
+    if (!model.isAvailable) return { ok: false, error: 'Mô hình đang tạm bảo trì.' };
     if (!text) return { ok: false, error: 'Nội dung trống.' };
     if (user.tokenBalance < MIN_AI_CALL_BALANCE) {
       return {
@@ -909,18 +945,40 @@ export function AppProvider({ children }) {
       };
     }
 
+    // Mọi lượt chat (kể cả lỗi / bị dừng) ghi 1 bản ghi vào store log duy nhất.
+    const logBase = {
+      userId: user.id,
+      modelId: model.id,
+      requestedModelName: model.name,
+      provider: model.provider,
+      prompt: text.slice(0, 160),
+    };
+    const pushLog = (fields) => {
+      dispatch({ type: 'AI_LOG', payload: createAILog({ ...logBase, ...fields }) });
+    };
+
     // Chưa cấu hình key → dùng mock để app vẫn demo được
     if (!isLiveMode()) {
       const raw = MOCK_AI_RESPONSES[Math.floor(Math.random() * MOCK_AI_RESPONSES.length)]
-        || 'Đây là câu trả lời mô phỏng (chưa cấu hình API key).';
+        || 'Đây là câu trả lời mô phỏng (chưa cấu hình khóa API).';
       const cost = costFromUsage({ prompt: text, reply: raw });
+      // Chi phí ghi vào log = token THỰC bị trừ (ví không đủ thì trừ tối đa số dư)
+      const charged = chargeTokens(user.tokenBalance, cost);
       dispatch({ type: 'AI_CALL', payload: { modelId, prompt: text, cost } });
+      pushLog({
+        mode: 'mock',
+        model: model.id,
+        modelName: model.name,
+        status: AI_LOG_STATUS.SUCCESS,
+        tokens: cost,
+        cost: charged,
+      });
       return {
         ok: true,
         mode: 'mock',
         text: raw.replace('X', cost.toString()),
         model: model.id,
-        cost,
+        cost: charged,
         usage: { total_tokens: cost, estimated: true },
       };
     }
@@ -928,23 +986,56 @@ export function AppProvider({ children }) {
     const messages = buildChatMessages({ history, prompt: text });
     const result = await chatComplete({ appModelId: modelId, messages, signal });
 
+    // Model THỰC SỰ được gọi (API trả về, hoặc model đã resolve khi lỗi/huỷ)
+    const actualModel = result.model || modelId;
+    const actualModelName = resolveModelLabel(actualModel, current.aiModels);
+
     // Người dùng bấm "Dừng" → không trừ token, trả nguyên cờ canceled cho màn hình
     if (result.canceled) {
+      pushLog({
+        model: actualModel,
+        modelName: actualModelName,
+        status: AI_LOG_STATUS.CANCELED,
+        latencyMs: result.latencyMs,
+        error: result.error,
+      });
       return { ok: false, canceled: true, mode: result.mode || 'live', error: result.error };
     }
-    if (!result.ok) return { ok: false, mode: result.mode || 'live', error: result.error };
+    if (!result.ok) {
+      pushLog({
+        model: actualModel,
+        modelName: actualModelName,
+        status: AI_LOG_STATUS.ERROR,
+        latencyMs: result.latencyMs,
+        error: result.error,
+      });
+      return { ok: false, mode: result.mode || 'live', error: result.error };
+    }
 
     // Trừ token theo usage thật của API (fallback ước lượng nếu gateway không trả)
     const cost = costFromUsage({ usage: result.usage, messages, reply: result.text });
+    const charged = chargeTokens(user.tokenBalance, cost);
+    const usage = result.usage || null;
+    const usageTotal = Math.round(Number(usage && usage.total_tokens) || 0);
 
     dispatch({ type: 'AI_CALL', payload: { modelId, prompt: text, cost } });
+    pushLog({
+      model: actualModel,
+      modelName: actualModelName,
+      status: AI_LOG_STATUS.SUCCESS,
+      tokens: usageTotal > 0 ? usageTotal : cost,
+      promptTokens: Math.round(Number(usage && usage.prompt_tokens) || 0),
+      completionTokens: Math.round(Number(usage && usage.completion_tokens) || 0),
+      cost: charged,
+      latencyMs: result.latencyMs,
+    });
     return {
       ok: true,
       mode: 'live',
       text: result.text,
       model: result.model,
       usage: result.usage,
-      cost,
+      cost: charged,
       latencyMs: result.latencyMs,
     };
   }, []);

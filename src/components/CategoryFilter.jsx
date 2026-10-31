@@ -12,7 +12,7 @@ export function CategoryFilter({ categories, selected, onSelect }) {
       showsHorizontalScrollIndicator={false}
       style={styles.container}
       contentContainerStyle={styles.content}
-      accessibilityLabel="Lọc theo loại model"
+      accessibilityLabel="Lọc theo loại mô hình"
     >
       {categories.map(cat => {
         const isActive = selected === cat.key;

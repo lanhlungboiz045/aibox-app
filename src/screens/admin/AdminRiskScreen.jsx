@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { ROLE_LABELS } from '../../data/accounts';
 import { formatToken, formatRelativeTime } from '../../utils/format';
+import { logCost } from '../../services/aiLogStore';
 import { AppHeader } from '../../components/ui';
 import { colors, centeredContent, touch } from '../../theme/tokens';
 
@@ -93,7 +94,8 @@ export function AdminRiskScreen({ navigation }) {
 
   const totalSupply = state.accounts.reduce((sum, a) => sum + a.tokenBalance, 0);
   const totalTransferred = rows.reduce((sum, row) => sum + row.sentTotal, 0);
-  const totalAi = state.accounts.reduce((sum, a) => sum + (a.totalSpentOnAI || 0), 0);
+  // Đọc từ store log AI duy nhất để khớp số liệu người dùng thấy.
+  const totalAi = state.aiLogs.reduce((sum, log) => sum + logCost(log), 0);
   const money = [
     { label: 'Token lưu hành', value: formatToken(totalSupply), color: colors.accentSoft },
     { label: 'Tổng chuyển', value: formatToken(totalTransferred), color: colors.warning },
@@ -125,7 +127,7 @@ export function AdminRiskScreen({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Cảnh báo ({flagged.length})</Text>
         {flagged.length === 0 ? (
-          <Text style={styles.empty}>Chưa phát hiện bất thường. Hãy thử Transfer vài lần rồi quay lại.</Text>
+          <Text style={styles.empty}>Chưa phát hiện bất thường. Hãy thử chuyển token vài lần rồi quay lại.</Text>
         ) : (
           flagged.map(row => (
             <View
@@ -135,7 +137,7 @@ export function AdminRiskScreen({ navigation }) {
               <View style={styles.alertHead}>
                 <Text style={styles.alertName}>{row.account.avatar} {row.account.username}</Text>
                 <Text style={[styles.riskBadge, { color: row.risk === 'high' ? colors.danger : row.risk === 'medium' ? colors.warning : colors.textDim }]}>
-                  {row.risk === 'high' ? 'HIGH' : row.risk === 'medium' ? 'MEDIUM' : 'LOW'} · {row.score}
+                  {row.risk === 'high' ? 'Cao' : row.risk === 'medium' ? 'Trung bình' : 'Thấp'} · {row.score}
                 </Text>
               </View>
               <Text style={styles.alertMeta}>
@@ -157,7 +159,7 @@ export function AdminRiskScreen({ navigation }) {
               <Text style={[styles.cell, styles.cellName, styles.headText]}>Tài khoản</Text>
               <Text style={[styles.cell, styles.headText]}>Gửi</Text>
               <Text style={[styles.cell, styles.headText]}>Nhận</Text>
-              <Text style={[styles.cell, styles.headText]}>24h</Text>
+              <Text style={[styles.cell, styles.headText]}>24 giờ</Text>
             </View>
             {active.map(row => (
               <View key={row.account.id} style={styles.tableRow}>

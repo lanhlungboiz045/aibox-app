@@ -10,6 +10,7 @@ export { Chip } from './Chip';
 export { ListRow } from './ListRow';
 export { BottomSheet, Sheet } from './BottomSheet';
 export { Sparkline } from './Sparkline';
+export { BarChart } from './BarChart';
 
 // Bộ UI kit Bước 2
 export { Button } from './Button';

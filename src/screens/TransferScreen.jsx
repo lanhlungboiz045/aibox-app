@@ -60,7 +60,7 @@ export function TransferScreen({ navigation }) {
           style={styles.input}
           value={recipient}
           onChangeText={setRecipient}
-          placeholder="Nhập username..."
+          placeholder="Nhập tên đăng nhập..."
           placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
           accessibilityLabel="Tên người nhận"

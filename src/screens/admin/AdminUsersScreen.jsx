@@ -9,12 +9,13 @@ import { AppHeader } from '../../components/ui';
 import { useApp } from '../../context/AppContext';
 import { ROLE_LABELS, ROLE_COLORS, PROVIDER_LABELS } from '../../data/accounts';
 import { formatToken } from '../../utils/format';
+import { logsForUser } from '../../services/aiLogStore';
 import { colors, centeredContent, touch } from '../../theme/tokens';
 
 const ROLE_FILTERS = [
   { key: 'all', label: 'Tất cả' },
-  { key: 'user', label: 'User' },
-  { key: 'admin', label: 'Admin' },
+  { key: 'user', label: 'Người dùng' },
+  { key: 'admin', label: 'Quản trị' },
   { key: 'banned', label: 'Bị khoá' },
 ];
 
@@ -165,7 +166,7 @@ export function AdminUsersScreen({ navigation }) {
           style={styles.search}
           value={search}
           onChangeText={setSearch}
-          placeholder="Tìm username hoặc email..."
+          placeholder="Tìm tên đăng nhập hoặc email..."
           placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
           accessibilityLabel="Tìm theo username hoặc email"
@@ -187,7 +188,7 @@ export function AdminUsersScreen({ navigation }) {
       </ScrollView>
 
       <Text style={styles.count}>
-        {loading ? 'Đang tải từ Firestore…' : `${visible.length}/${rows.length} tài khoản`}
+        {loading ? 'Đang tải danh sách tài khoản…' : `${visible.length}/${rows.length} tài khoản`}
       </Text>
 
       {error && (
@@ -209,7 +210,7 @@ export function AdminUsersScreen({ navigation }) {
       {visible.map(account => {
         const banned = account.status === 'banned';
         const isMe = account.id === me.id;
-        const aiCalls = account.transactions.filter(tx => tx.type === 'AI_CALL').length;
+        const aiCalls = logsForUser(state.aiLogs, account.id).length;
 
         return (
           <View key={account.id} style={[styles.card, banned && styles.cardBanned]}>
@@ -222,7 +223,7 @@ export function AdminUsersScreen({ navigation }) {
                   <Text style={[styles.roleTag, { color: ROLE_COLORS[account.role], borderColor: ROLE_COLORS[account.role] + '55' }]}>
                     {ROLE_LABELS[account.role]}
                   </Text>
-                  {banned && <Text style={styles.bannedTag}>BANNED</Text>}
+                  {banned && <Text style={styles.bannedTag}>ĐÃ KHOÁ</Text>}
                 </View>
                 <Text style={styles.email} numberOfLines={1}>{account.email}</Text>
                 <Text style={styles.meta}>

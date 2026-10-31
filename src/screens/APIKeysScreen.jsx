@@ -1,9 +1,9 @@
-// screens/APIKeysScreen.jsx — Quản lý API key (Bước 3)
+// screens/APIKeysScreen.jsx — Quản lý khóa API
 //
-// Luồng chính (3 chạm): Home → API Keys → "+" → "Tạo key".
-// - Key hiện đầy đủ đúng 1 lần lúc tạo; trong danh sách luôn che.
-// - Copy 1 chạm (icon) + toast + rung.
-// - Xoá có "Hoàn tác" 5 giây (snackbar), không dùng Alert.
+// Luồng chính (3 chạm): Home → Khóa API → "+" → "Tạo khóa".
+// - Khóa có dạng sk-aibox-...; danh sách mặc định che, bấm con mắt để hiện.
+// - Sao chép 1 chạm (nút) + toast + rung.
+// - Thu hồi có "Hoàn tác" 5 giây (snackbar), không dùng Alert.
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,7 +17,7 @@ import { hapticError, hapticSuccess } from '../utils/feedback';
 import {
   createApiKey, loadApiKeys, peekApiKeys, removeApiKey, restoreApiKey, setApiKeyActive, MAX_API_KEYS,
 } from '../services/apiKeys';
-import { centeredContent, colors, layout, motion, radius, spacing, type } from '../theme/tokens';
+import { centeredContent, colors, motion, radius, spacing, type } from '../theme/tokens';
 import { t } from '../i18n';
 
 export function APIKeysScreen({ navigation }) {
@@ -33,7 +33,10 @@ export function APIKeysScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  // Sheet: 'form' = nhập tên, 'reveal' = hiện key vừa tạo
+  // id khóa đang hiện đầy đủ (mặc định che hết)
+  const [revealed, setRevealed] = useState({});
+
+  // Sheet: 'form' = nhập tên, 'reveal' = hiện khóa vừa tạo
   const [sheetOpen, setSheetOpen] = useState(false);
   const [created, setCreated] = useState(null);
   const [name, setName] = useState('');
@@ -48,7 +51,7 @@ export function APIKeysScreen({ navigation }) {
       setKeys(list);
       setError(null);
     } catch (e) {
-      setError(e?.message || 'Không đọc được API key trên thiết bị.');
+      setError(e?.message || 'Không đọc được khóa API trên thiết bị.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -79,7 +82,7 @@ export function APIKeysScreen({ navigation }) {
     if (saving) return;
     const clean = name.trim();
     if (!clean) {
-      setNameError('Đặt tên cho key để dễ nhớ (ví dụ: "Bot Telegram").');
+      setNameError('Đặt tên cho khóa để dễ nhớ (ví dụ: "Bot Telegram").');
       hapticError();
       return;
     }
@@ -95,17 +98,21 @@ export function APIKeysScreen({ navigation }) {
       setNameError(null);
       hapticSuccess();
     } catch (e) {
-      setNameError(e?.message || 'Không tạo được key. Thử lại.');
+      setNameError(e?.message || 'Không tạo được khóa. Thử lại.');
       hapticError();
     } finally {
       setSaving(false);
     }
   };
 
-  const handleCopy = async (value, label = 'Đã sao chép key') => {
+  const handleCopy = async (value, label = 'Đã sao chép khóa') => {
     const ok = await copyText(value);
     if (ok) toast.success(label);
-    else toast.error('Không sao chép được. Hãy giữ để chọn và copy thủ công.');
+    else toast.error('Không sao chép được. Hãy giữ để chọn và sao chép thủ công.');
+  };
+
+  const toggleReveal = (id) => {
+    setRevealed(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleToggle = async (item, next) => {
@@ -116,16 +123,17 @@ export function APIKeysScreen({ navigation }) {
       setKeys(list);
     } catch {
       setKeys(prev => prev.map(k => (k.id === item.id ? { ...k, active: item.active } : k)));
-      toast.error('Không lưu được trạng thái key.');
+      toast.error('Không lưu được trạng thái khóa.');
     }
   };
 
-  const handleDelete = async (item) => {
+  const handleRevoke = async (item) => {
     try {
       const { removed, list } = await removeApiKey(uid, item.id);
       setKeys(list);
       if (!removed) return;
-      toast.show(`Đã xoá "${removed.name}"`, {
+      setRevealed(prev => ({ ...prev, [item.id]: false }));
+      toast.show(`Đã thu hồi "${removed.name}"`, {
         tone: 'warning',
         duration: motion.undo,
         action: {
@@ -134,15 +142,15 @@ export function APIKeysScreen({ navigation }) {
             try {
               const restored = await restoreApiKey(uid, removed);
               setKeys(restored);
-              toast.success('Đã khôi phục key');
+              toast.success('Đã khôi phục khóa');
             } catch {
-              toast.error('Không khôi phục được key.');
+              toast.error('Không khôi phục được khóa.');
             }
           },
         },
       });
     } catch {
-      toast.error('Không xoá được key.');
+      toast.error('Không thu hồi được khóa.');
     }
   };
 
@@ -158,7 +166,7 @@ export function APIKeysScreen({ navigation }) {
       <View style={styles.headerActions}>
         <IconButton
           icon="plus"
-          label="Tạo API key"
+          label="Tạo khóa API"
           variant="surface"
           color={colors.accentSoft}
           onPress={openCreate}
@@ -176,78 +184,107 @@ export function APIKeysScreen({ navigation }) {
           <SkeletonList count={3} />
         ) : error ? (
           <ErrorState
-            title="Không đọc được API key"
+            title="Không đọc được khóa API"
             message={error}
             onRetry={() => { setLoading(true); reload(); }}
           />
         ) : keys.length === 0 ? (
           <EmptyState
             icon="key"
-            title="Chưa có API key nào"
-            message="Key dùng để gọi AIBox từ code của bạn. Mỗi key có thể bật/tắt và đặt hạn mức riêng."
-            actionLabel="Tạo key đầu tiên"
+            title="Chưa có khóa API nào"
+            message="Khóa API dùng để gọi AIBox từ ứng dụng hoặc máy chủ của bạn. Mỗi khóa có thể bật/tắt và đặt hạn mức riêng."
+            actionLabel="Tạo khóa đầu tiên"
             onAction={openCreate}
           />
         ) : (
-          keys.map((item, index) => (
-            <FadeIn key={item.id} delay={Math.min(index * 30, 150)}>
-              <View style={[styles.card, !item.active && styles.cardOff]}>
-                <View style={styles.cardTop}>
-                  <View style={[styles.dot, { backgroundColor: item.active ? colors.success : colors.textFaint }]} />
-                  <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.6}>{item.name}</Text>
-                  <Switch
-                    value={item.active}
-                    onValueChange={next => handleToggle(item, next)}
-                    accessibilityLabel={`${item.active ? 'Tắt' : 'Bật'} key ${item.name}`}
-                  />
-                </View>
+          <>
+            {keys.map((item, index) => {
+              const isRevealed = Boolean(revealed[item.id]);
+              return (
+                <FadeIn key={item.id} delay={Math.min(index * 30, 150)}>
+                  <View style={[styles.card, !item.active && styles.cardOff]}>
+                    <View style={styles.cardTop}>
+                      <View style={[styles.dot, { backgroundColor: item.active ? colors.success : colors.textFaint }]} />
+                      <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.6}>{item.name}</Text>
+                      <Switch
+                        value={item.active}
+                        onValueChange={next => handleToggle(item, next)}
+                        accessibilityLabel={`${item.active ? 'Tắt' : 'Bật'} khóa ${item.name}`}
+                      />
+                    </View>
 
-                <View style={styles.keyRow}>
-                  <Text style={styles.keyMask} numberOfLines={1} maxFontSizeMultiplier={1.5}>{item.mask}</Text>
-                  <IconButton
-                    icon="copy"
-                    label={`Sao chép key ${item.name}`}
-                    size={18}
-                    variant="surface"
-                    onPress={() => handleCopy(item.key)}
-                  />
-                  <IconButton
-                    icon="trash-2"
-                    label={`Xoá key ${item.name}`}
-                    size={18}
-                    color={colors.danger}
-                    onPress={() => handleDelete(item)}
-                  />
-                </View>
+                    <View style={styles.keyRow}>
+                      <Text
+                        style={[styles.keyMask, isRevealed && styles.keyFull]}
+                        numberOfLines={isRevealed ? undefined : 1}
+                        selectable={isRevealed}
+                        maxFontSizeMultiplier={1.5}
+                      >
+                        {isRevealed ? item.key : item.mask}
+                      </Text>
+                      <IconButton
+                        icon={isRevealed ? 'eye-off' : 'eye'}
+                        label={isRevealed ? `Ẩn khóa ${item.name}` : `Hiện khóa ${item.name}`}
+                        size={18}
+                        variant="surface"
+                        onPress={() => toggleReveal(item.id)}
+                      />
+                    </View>
 
-                <View style={styles.metaRow}>
-                  <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
-                    Tạo {formatDate(item.createdAt)}
-                  </Text>
-                  <Text style={styles.metaDot}>·</Text>
-                  <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
-                    {item.monthlyLimit ? `Hạn mức ${formatToken(item.monthlyLimit)}/tháng` : 'Không giới hạn'}
-                  </Text>
-                </View>
-              </View>
-            </FadeIn>
-          ))
+                    <View style={styles.actionsRow}>
+                      <Button
+                        label="Sao chép"
+                        icon="copy"
+                        size="sm"
+                        variant="secondary"
+                        style={styles.flexBtn}
+                        onPress={() => handleCopy(item.key, `Đã sao chép khóa ${item.name}`)}
+                      />
+                      <Button
+                        label="Thu hồi"
+                        icon="trash-2"
+                        size="sm"
+                        variant="secondary"
+                        style={styles.flexBtn}
+                        onPress={() => handleRevoke(item)}
+                      />
+                    </View>
+
+                    <View style={styles.metaRow}>
+                      <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
+                        Tạo {formatDate(item.createdAt)}
+                      </Text>
+                      <Text style={styles.metaDot}>·</Text>
+                      <Text style={styles.meta} numberOfLines={1} maxFontSizeMultiplier={1.5}>
+                        {item.monthlyLimit ? `Hạn mức ${formatToken(item.monthlyLimit)}/tháng` : 'Không giới hạn'}
+                      </Text>
+                    </View>
+                  </View>
+                </FadeIn>
+              );
+            })}
+
+            <View style={styles.note}>
+              <Text style={styles.noteText} maxFontSizeMultiplier={1.6}>
+                Khóa chỉ lưu trên thiết bị này. Nếu nghi ngờ khóa bị lộ, hãy thu hồi và tạo khóa mới.
+              </Text>
+            </View>
+          </>
         )}
-
       </ScrollView>
 
       <BottomSheet
         visible={sheetOpen}
         onClose={closeSheet}
         keyboardAware
-        title={created ? 'Key đã sẵn sàng' : 'Tạo API key'}
-        subtitle={created ? 'Sao chép và lưu lại ngay — danh sách sẽ che key.' : 'Đặt tên để sau này dễ nhận biết.'}
+        title={created ? 'Khóa đã sẵn sàng' : 'Tạo khóa API'}
+        subtitle={created ? 'Sao chép và lưu lại ngay — danh sách sẽ che khóa.' : 'Đặt tên để sau này dễ nhận biết.'}
         footer={
           created ? (
             <Button label="Xong" onPress={closeSheet} fullWidth />
           ) : (
             <Button
-              label="Tạo key"
+              label="Tạo khóa"
               icon="plus"
               onPress={handleCreate}
               loading={saving}
@@ -263,23 +300,23 @@ export function APIKeysScreen({ navigation }) {
               <Text style={styles.revealKey} selectable maxFontSizeMultiplier={1.5}>{created.key}</Text>
             </View>
             <Button
-              label="Sao chép key"
+              label="Sao chép khóa"
               icon="copy"
               variant="secondary"
               fullWidth
               onPress={() => handleCopy(created.key)}
             />
             <Text style={styles.revealHint} maxFontSizeMultiplier={1.6}>
-              Key này chỉ hiện đầy đủ một lần. Bạn vẫn có thể sao chép lại từ danh sách nếu cần.
+              Hãy lưu khóa ở nơi an toàn. Bạn vẫn có thể hiện lại khóa trong danh sách khi cần.
             </Text>
           </View>
         ) : (
           <View style={styles.form}>
             <Input
-              label="Tên key"
+              label="Tên khóa"
               placeholder="Ví dụ: Bot Telegram"
               value={name}
-              onChangeText={t => { setName(t); if (nameError) setNameError(null); }}
+              onChangeText={value => { setName(value); if (nameError) setNameError(null); }}
               maxLength={40}
               error={nameError}
               helper="Gợi ý theo nơi dùng để dễ thu hồi khi cần."
@@ -315,7 +352,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
   },
-  // Key đang tắt: giảm độ nổi nhưng chữ vẫn đạt AA (chỉ giảm độ mờ viền/nền)
+  // Khóa đang tắt: giảm độ nổi nhưng chữ vẫn đạt AA (chỉ giảm độ mờ viền/nền)
   cardOff: { backgroundColor: colors.surfaceAlt, opacity: 0.75 },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 32 },
   dot: { width: 8, height: 8, borderRadius: 4 },
@@ -333,6 +370,9 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   keyMask: { ...type.body, color: colors.textDim, flex: 1, fontFamily: 'monospace' },
+  keyFull: { color: colors.accentSoft },
+  actionsRow: { flexDirection: 'row', gap: spacing.sm },
+  flexBtn: { flex: 1 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
   meta: { ...type.small, color: colors.textFaint },
   metaDot: { ...type.small, color: colors.textFaint },

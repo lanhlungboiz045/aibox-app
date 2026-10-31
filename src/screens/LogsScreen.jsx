@@ -1,4 +1,4 @@
-// screens/LogsScreen.jsx — Lịch sử yêu cầu AI
+// screens/LogsScreen.jsx — Lịch sử lượt gọi AI
 //
 // Luồng: Home → yêu cầu gần đây → lọc → xem chi tiết một lượt gọi.
 // Bộ lọc áp dụng ngay (không cần bấm "Áp dụng"), trạng thái rỗng riêng cho
@@ -8,6 +8,9 @@ import { View, Text, FlatList, ScrollView, StyleSheet, Platform } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { formatDate, formatToken, formatRelativeTime } from '../utils/format';
+import {
+  logsForUser, logCost, logTokens, logModelName, logStatusLabel,
+} from '../services/aiLogStore';
 import { copyText } from '../utils/clipboard';
 import {
   AppHeader, BottomSheet, Button, Chip, EmptyState, FadeIn, IconButton, ListRow, Row, AppIcon, TokenIcon, useToast,
@@ -21,7 +24,14 @@ const RANGES = [
   { key: 'all', label: 'Tất cả', days: null },
 ];
 
-const DEFAULT_FILTER = { modelId: 'all', range: 'all' };
+const STATUS_FILTERS = [
+  { key: 'all', label: 'Tất cả', icon: 'activity' },
+  { key: 'success', label: 'Thành công', icon: 'check-circle' },
+  { key: 'error', label: 'Lỗi', icon: 'alert-triangle' },
+  { key: 'canceled', label: 'Đã dừng', icon: 'square' },
+];
+
+const DEFAULT_FILTER = { modelId: 'all', status: 'all', range: 'all' };
 
 export function LogsScreen({ navigation }) {
   const { state } = useApp();
@@ -33,50 +43,69 @@ export function LogsScreen({ navigation }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [detail, setDetail] = useState(null);
 
+  // Store log AI duy nhất — cùng nguồn với Home / Usage / Lịch sử / Profile.
   const allLogs = useMemo(
-    () => (user?.transactions || [])
-      .filter(t => t.type === 'AI_CALL')
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),
-    [user?.transactions]
+    () => logsForUser(state.aiLogs, user?.id),
+    [state.aiLogs, user?.id]
   );
-
-  // Các model đã dùng, nhiều request nhất lên trước
-  const models = useMemo(() => {
-    const map = new Map();
-    allLogs.forEach(t => {
-      const id = t.modelId || 'unknown';
-      const found = map.get(id);
-      const name = (state.aiModels.find(m => m.id === id) || {}).name || 'Model khác';
-      map.set(id, { id, name, count: (found?.count || 0) + 1 });
-    });
-    return Array.from(map.values()).sort((a, b) => b.count - a.count);
-  }, [allLogs, state.aiModels]);
 
   const range = RANGES.find(r => r.key === filter.range) || RANGES[2];
   const since = range.days ? Date.now() - range.days * 86400000 : null;
 
-  const logs = useMemo(
-    () => allLogs.filter(t => {
-      if (filter.modelId !== 'all' && (t.modelId || 'unknown') !== filter.modelId) return false;
-      if (since && new Date(t.timestamp).getTime() < since) return false;
-      return true;
-    }),
-    [allLogs, filter.modelId, since]
+  // Lọc theo khoảng thời gian trước — chip model/trạng thái đếm trên cùng tập này
+  // nên số trên chip luôn khớp danh sách bên dưới.
+  const rangeLogs = useMemo(
+    () => (since ? allLogs.filter(log => new Date(log.timestamp).getTime() >= since) : allLogs),
+    [allLogs, since]
   );
 
-  const totalTokens = logs.reduce((sum, item) => sum + Math.abs(item.amount || 0), 0);
-  const avgTokens = logs.length ? Math.round(totalTokens / logs.length) : 0;
-  const filterActive = filter.modelId !== 'all' || filter.range !== 'all';
+  // Nhóm theo model THỰC SỰ đã gọi (không phải model người dùng chọn).
+  const models = useMemo(() => {
+    const map = new Map();
+    rangeLogs.forEach(log => {
+      const id = log.model || log.modelId || 'unknown';
+      const found = map.get(id);
+      map.set(id, {
+        id,
+        name: logModelName(log, state.aiModels),
+        count: (found?.count || 0) + 1,
+      });
+    });
+    return Array.from(map.values()).sort((a, b) => b.count - a.count);
+  }, [rangeLogs, state.aiModels]);
 
-  const modelName = (id) => (state.aiModels.find(m => m.id === id) || {}).name || 'Model khác';
+  // Đếm theo trạng thái để chip lọc và sheet luôn khớp danh sách bên dưới.
+  const statusCounts = useMemo(() => {
+    const counts = { all: rangeLogs.length, success: 0, error: 0, canceled: 0 };
+    rangeLogs.forEach(log => {
+      if (counts[log.status] !== undefined) counts[log.status] += 1;
+    });
+    return counts;
+  }, [rangeLogs]);
+
+  const logs = useMemo(
+    () => rangeLogs.filter(log => {
+      if (filter.modelId !== 'all' && (log.model || log.modelId || 'unknown') !== filter.modelId) return false;
+      if (filter.status !== 'all' && log.status !== filter.status) return false;
+      return true;
+    }),
+    [rangeLogs, filter.modelId, filter.status]
+  );
+
+  const totalTokens = logs.reduce((sum, log) => sum + logCost(log), 0);
+  const avgTokens = logs.length ? Math.round(totalTokens / logs.length) : 0;
+  const filterActive = filter.modelId !== 'all' || filter.status !== 'all' || filter.range !== 'all';
 
   const handleCopyDetail = async () => {
     if (!detail) return;
     const text = [
-      `Model: ${modelName(detail.modelId)}`,
-      `Token: ${formatToken(Math.abs(detail.amount || 0))}`,
+      `Mô hình thực tế: ${logModelName(detail, state.aiModels)}`,
+      `Mô hình đã chọn: ${detail.requestedModelName || detail.modelId || '—'}`,
+      `Trạng thái: ${logStatusLabel(detail.status)}`,
+      `Token đã dùng: ${formatToken(logTokens(detail))}`,
+      `Token đã trừ: ${formatToken(logCost(detail))}`,
       `Thời gian: ${formatDate(detail.timestamp)} ${new Date(detail.timestamp).toLocaleTimeString('vi-VN')}`,
-      `Nội dung: ${detail.description || ''}`,
+      `Nội dung: ${detail.prompt || '—'}`,
     ].join('\n');
     const ok = await copyText(text);
     if (ok) toast.success('Đã sao chép chi tiết lượt gọi');
@@ -88,7 +117,7 @@ export function LogsScreen({ navigation }) {
       <AppHeader
         navigation={navigation}
         title={t('screen.logs')}
-        subtitle={`${allLogs.length} lượt gọi · ${formatToken(allLogs.reduce((s, item) => s + Math.abs(item.amount || 0), 0))} token`}
+        subtitle={`${allLogs.length} lượt gọi · ${formatToken(allLogs.reduce((s, log) => s + logCost(log), 0))} token`}
       />
       <View style={styles.headerActions}>
         <View>
@@ -111,7 +140,7 @@ export function LogsScreen({ navigation }) {
           contentContainerStyle={styles.chipRow}
         >
           <Chip
-            label="Tất cả"
+            label="Tất cả mô hình"
             active={filter.modelId === 'all'}
             onPress={() => setFilter({ ...filter, modelId: 'all' })}
           />
@@ -121,6 +150,26 @@ export function LogsScreen({ navigation }) {
               label={`${m.name} · ${m.count}`}
               active={filter.modelId === m.id}
               onPress={() => setFilter({ ...filter, modelId: m.id })}
+            />
+          ))}
+        </ScrollView>
+      ) : null}
+
+      {/* Lọc nhanh theo trạng thái — áp dụng ngay, không cần mở sheet */}
+      {allLogs.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.chipScroll}
+          contentContainerStyle={styles.chipRow}
+        >
+          {STATUS_FILTERS.map(item => (
+            <Chip
+              key={item.key}
+              icon={item.icon}
+              label={`${item.label} · ${statusCounts[item.key] || 0}`}
+              active={filter.status === item.key}
+              onPress={() => setFilter(prev => ({ ...prev, status: item.key }))}
             />
           ))}
         </ScrollView>
@@ -156,15 +205,15 @@ export function LogsScreen({ navigation }) {
             <EmptyState
               icon="activity"
               title={t('home.noRequests')}
-              message="Gọi AI trong tab Chat để xem lịch sử sử dụng và token đã trừ tại đây."
-              actionLabel="Mở Chat"
+              message="Gọi AI trong AI Hub để xem lịch sử sử dụng và token đã trừ tại đây."
+              actionLabel="Mở AI Hub"
               onAction={() => navigation.navigate('AIHub')}
             />
           ) : (
             <EmptyState
               icon="filter"
               title={t('logs.noMatch')}
-              message="Thử khoảng thời gian rộng hơn hoặc chọn model khác."
+              message="Thử khoảng thời gian rộng hơn, hoặc chọn mô hình / trạng thái khác."
               actionLabel={t('logs.clearFilter')}
               onAction={() => setFilter(DEFAULT_FILTER)}
             />
@@ -177,17 +226,22 @@ export function LogsScreen({ navigation }) {
         maxToRenderPerBatch={10}
         windowSize={9}
         removeClippedSubviews={Platform.OS === 'android'}
-        renderItem={({ item }) => (
-          <ListRow
-            icon="zap"
-            title={modelName(item.modelId)}
-            subtitle={`${formatRelativeTime(item.timestamp)} · ${formatToken(Math.abs(item.amount || 0))} token`}
-            right={<Text style={styles.amount}>{`-${formatToken(Math.abs(item.amount || 0))}`}</Text>}
-            onPress={() => setDetail(item)}
-            chevron
-            accessibilityHint="Mở chi tiết lượt gọi AI"
-          />
-        )}
+        renderItem={({ item }) => {
+          const success = item.status === 'success';
+          const cost = logCost(item);
+          return (
+            <ListRow
+              icon={success ? 'zap' : item.status === 'canceled' ? 'square' : 'alert-triangle'}
+              iconColor={success ? colors.accentSoft : item.status === 'canceled' ? colors.textDim : colors.danger}
+              title={logModelName(item, state.aiModels)}
+              subtitle={`${formatRelativeTime(item.timestamp)} · ${logStatusLabel(item.status)} · ${formatToken(cost)} token`}
+              right={<Text style={[styles.amount, !success && styles.amountMuted]}>{success ? `-${formatToken(cost)}` : '0'}</Text>}
+              onPress={() => setDetail(item)}
+              chevron
+              accessibilityHint="Mở chi tiết lượt gọi AI"
+            />
+          );
+        }}
       />
 
       {/* Bộ lọc */}
@@ -224,9 +278,22 @@ export function LogsScreen({ navigation }) {
         </View>
 
         <View style={styles.sheetSection}>
-          <Text style={styles.sheetLabel} maxFontSizeMultiplier={1.6}>Model</Text>
+          <Text style={styles.sheetLabel} maxFontSizeMultiplier={1.6}>Trạng thái</Text>
+          {STATUS_FILTERS.map(item => (
+            <Row
+              key={item.key}
+              label={item.label}
+              value={String(statusCounts[item.key] || 0)}
+              onPress={() => setFilter(prev => ({ ...prev, status: item.key }))}
+              right={filter.status === item.key ? <AppIcon name="check-circle" size={18} color={colors.success} /> : null}
+            />
+          ))}
+        </View>
+
+        <View style={styles.sheetSection}>
+          <Text style={styles.sheetLabel} maxFontSizeMultiplier={1.6}>Mô hình</Text>
           <Row
-            label="Tất cả model"
+            label="Tất cả mô hình"
             value={String(allLogs.length)}
             onPress={() => setFilter(prev => ({ ...prev, modelId: 'all' }))}
             right={filter.modelId === 'all' ? <AppIcon name="check-circle" size={18} color={colors.success} /> : null}
@@ -255,10 +322,13 @@ export function LogsScreen({ navigation }) {
       >
         {detail ? (
           <View style={styles.detail}>
-            <Row label="Model" value={modelName(detail.modelId)} />
+            <Row label="Mô hình thực tế" value={logModelName(detail, state.aiModels)} />
+            <Row label="Mô hình đã chọn" value={detail.requestedModelName || detail.modelId || '—'} />
+            <Row label="Trạng thái" value={logStatusLabel(detail.status)} />
+            <Row label="Token đã dùng" value={formatToken(logTokens(detail))} />
             <Row
               label="Token đã trừ"
-              value={formatToken(Math.abs(detail.amount || 0))}
+              value={formatToken(logCost(detail))}
               right={<TokenIcon size={12} color={colors.danger} />}
               tone="danger"
             />
@@ -266,15 +336,22 @@ export function LogsScreen({ navigation }) {
               label="Thời gian"
               value={`${formatDate(detail.timestamp)} · ${new Date(detail.timestamp).toLocaleTimeString('vi-VN')}`}
             />
+            {detail.latencyMs ? <Row label="Độ trễ" value={`${detail.latencyMs}ms`} /> : null}
             <Row label="Mã lượt gọi" value={String(detail.id).slice(0, 10)} />
             <View style={styles.promptBox}>
               <Text style={styles.promptLabel} maxFontSizeMultiplier={1.5}>Nội dung</Text>
               <Text style={styles.promptText} selectable maxFontSizeMultiplier={1.8}>
-                {detail.description || 'Không có nội dung được lưu.'}
+                {detail.prompt || 'Không có nội dung được lưu.'}
               </Text>
             </View>
+            {detail.error ? (
+              <View style={styles.promptBox}>
+                <Text style={styles.promptLabel} maxFontSizeMultiplier={1.5}>Lỗi</Text>
+                <Text style={styles.promptText} selectable maxFontSizeMultiplier={1.8}>{detail.error}</Text>
+              </View>
+            ) : null}
             <Text style={styles.detailNote} maxFontSizeMultiplier={1.6}>
-              Token đã trừ không hoàn lại. Chi phí tính theo usage thật của nhà cung cấp AI.
+              Token đã trừ không hoàn lại. Chi phí tính theo số token nhà cung cấp AI báo về.
             </Text>
           </View>
         ) : null}
@@ -315,6 +392,7 @@ const styles = StyleSheet.create({
   summaryDivider: { width: 1, height: 28, backgroundColor: colors.border },
   divider: { height: 1, backgroundColor: colors.border, marginLeft: touch.iconButton },
   amount: { ...type.smallStrong, ...type.numeric, color: colors.textDim },
+  amountMuted: { color: colors.textFaint },
   sheetSection: { gap: spacing.md, marginBottom: spacing.xl },
   sheetLabel: { ...type.smallStrong, color: colors.textDim, textTransform: 'uppercase', letterSpacing: 0.4 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },

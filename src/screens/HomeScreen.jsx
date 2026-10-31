@@ -1,12 +1,16 @@
 // screens/HomeScreen.jsx — Home bản gọn
-// Header cố định + shortcut + banner + thống kê model, logs, quota và chi tiêu 7 ngày.
-import React, { useMemo, useState } from 'react';
+// Header cố định + shortcut + banner + thống kê mô hình, lịch sử AI, hạn mức,
+// chi tiêu 7 ngày, khóa API, mô hình phổ biến và gợi ý học nhanh.
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { formatToken, formatRelativeTime } from '../utils/format';
 import { t } from '../i18n';
 import { buildSpendSummary } from '../utils/spend';
+import { logsForUser, logModelName, logCost, logStatusLabel } from '../services/aiLogStore';
+import { loadApiKeys, peekApiKeys } from '../services/apiKeys';
 import { QUESTS } from '../data/quests';
 import { AppDrawer } from '../components/AppDrawer';
 import { DailyRewardModal } from '../components/DailyRewardModal';
@@ -25,6 +29,31 @@ const SHORTCUTS = [
   { key: 'chat', icon: 'message-square', label: 'Trò chuyện', route: 'AIHub' },
 ];
 
+// Gợi ý "Học nhanh": 3 việc người mới nên làm đầu tiên.
+const QUICK_START = [
+  {
+    key: 'chat',
+    icon: 'message-square',
+    title: 'Hỏi AI câu đầu tiên',
+    subtitle: 'Chọn mô hình và bắt đầu trò chuyện',
+    route: 'AIHub',
+  },
+  {
+    key: 'keys',
+    icon: 'key',
+    title: 'Tạo khóa API',
+    subtitle: 'Kết nối AIBox với ứng dụng của bạn',
+    route: 'APIKeys',
+  },
+  {
+    key: 'usage',
+    icon: 'bar-chart-2',
+    title: 'Xem thống kê sử dụng',
+    subtitle: 'Token theo ngày và theo mô hình',
+    route: 'UsageDashboard',
+  },
+];
+
 export function HomeScreen({ navigation }) {
   const {
     state, canClaimDaily, nextDailyReward, questState,
@@ -39,15 +68,39 @@ export function HomeScreen({ navigation }) {
   const claimedQuests = questState?.claimed?.length || 0;
   const unclaimedQuests = Math.max(QUESTS.length - claimedQuests, 0);
 
-  // Lượt gọi AI gần đây lấy từ 3 giao dịch mới nhất.
-  const recentCalls = (user?.transactions || []).filter(t => t.type === 'AI_CALL').slice(0, 3);
+  // Khóa API lưu trên máy theo uid — đọc lại mỗi lần Home được mở để khớp
+  // ngay sau khi tạo/thu hồi khóa ở màn Khóa API.
+  const [apiKeys, setApiKeys] = useState(() => peekApiKeys(user?.id) || []);
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      if (!user?.id) {
+        setApiKeys([]);
+        return undefined;
+      }
+      loadApiKeys(user.id)
+        .then(list => { if (active) setApiKeys(list); })
+        .catch(() => { /* Home vẫn dùng được khi storage lỗi */ });
+      return () => { active = false; };
+    }, [user?.id])
+  );
+
+  // Mọi số liệu AI đều đọc từ store log duy nhất (state.aiLogs) — cùng nguồn
+  // với Logs / Usage / Lịch sử / Profile nên không thể lệch nhau.
+  const aiLogs = useMemo(
+    () => logsForUser(state.aiLogs, user?.id),
+    [state.aiLogs, user?.id]
+  );
+  const recentCalls = aiLogs.slice(0, 3);
 
   // Số liệu 7 ngày + hạn mức tháng cho card "Chi tiêu 7 ngày"
   const spend = useMemo(
-    () => buildSpendSummary(user?.transactions || []),
-    [user?.transactions]
+    () => buildSpendSummary(aiLogs, { aiModels: state.aiModels }),
+    [aiLogs, state.aiModels]
   );
-  const totalRequests = (user?.transactions || []).filter(t => t.type === 'AI_CALL').length;
+  const totalRequests = spend.requests;
+  // Mô hình được dùng nhiều nhất (xếp theo token đã dùng, rồi số lượt).
+  const popularModels = spend.byModel.slice(0, 3);
 
   const deltaText = spend.total === 0
     ? 'Chưa có chi tiêu trong 7 ngày'
@@ -115,7 +168,7 @@ export function HomeScreen({ navigation }) {
               <View style={styles.shortcutIcon}>
                 <AppIcon name={item.icon} size={18} color={colors.accentSoft} />
               </View>
-              <Text style={styles.shortcutLabel} numberOfLines={1} maxFontSizeMultiplier={1.5}>{item.label}</Text>
+              <Text style={styles.shortcutLabel} numberOfLines={2} maxFontSizeMultiplier={1.5}>{item.label}</Text>
             </PressableScale>
           ))}
         </View>
@@ -134,7 +187,7 @@ export function HomeScreen({ navigation }) {
           <StatTile
             icon="layers"
             label="Mô hình"
-            sub={`${state.aiModels.length} model`}
+            sub={`${state.aiModels.length} mô hình`}
             onPress={() => navigation.navigate('ModelCatalog')}
           />
           <StatTile
@@ -172,7 +225,7 @@ export function HomeScreen({ navigation }) {
             </View>
             <View style={styles.spendDivider} />
             <Text style={styles.spendMeta} numberOfLines={1}>
-              Đã dùng {formatToken(spend.total)} token · {spend.requests} lượt gọi
+              Đã dùng {formatToken(spend.total)} token · {spend.windowRequests} lượt gọi
             </Text>
           </View>
         </View>
@@ -190,25 +243,115 @@ export function HomeScreen({ navigation }) {
                 icon="message-square"
                 title={t('home.noRequests')}
                 message="Gọi AI lần đầu để xem lịch sử sử dụng tại đây."
-                actionLabel="Chat ngay"
+                actionLabel="Hỏi AI ngay"
                 onAction={() => navigation.navigate('AIHub')}
               />
-            ) : recentCalls.map((tx, index) => {
-              const model = state.aiModels.find(m => m.id === tx.modelId);
+            ) : recentCalls.map((log, index) => {
+              const cost = logCost(log);
+              const success = log.status === 'success';
               return (
-                <View key={tx.id}>
+                <View key={log.id}>
                   {index > 0 ? <View style={styles.divider} /> : null}
                   <ListRow
-                    icon="zap"
-                    title={model?.name || 'AI model'}
-                    subtitle={`${formatRelativeTime(tx.timestamp)} · ${formatToken(Math.abs(tx.amount))} token`}
-                    right={<Text style={styles.amount}>-{formatToken(Math.abs(tx.amount))}</Text>}
+                    icon={success ? 'zap' : log.status === 'canceled' ? 'square' : 'alert-triangle'}
+                    iconColor={success ? colors.accentSoft : log.status === 'canceled' ? colors.textDim : colors.danger}
+                    title={logModelName(log, state.aiModels)}
+                    subtitle={`${formatRelativeTime(log.timestamp)} · ${logStatusLabel(log.status)} · ${formatToken(cost)} token`}
+                    right={<Text style={[styles.amount, !success && { color: colors.textFaint }]}>{success ? `-${formatToken(cost)}` : '0'}</Text>}
                     chevron={false}
                     onPress={() => navigation.navigate('Logs')}
                   />
                 </View>
               );
             })}
+          </View>
+        </View>
+
+        {/* Khóa API của bạn — đọc từ dịch vụ khóa trên máy, cùng dữ liệu với màn Khóa API */}
+        <View style={styles.section}>
+          <SectionHeader
+            title="Khóa API của bạn"
+            actionLabel="Quản lý"
+            onAction={() => navigation.navigate('APIKeys')}
+          />
+          <View style={styles.card}>
+            {apiKeys.length === 0 ? (
+              <EmptyState
+                compact
+                icon="key"
+                title="Chưa có khóa API"
+                message="Tạo khóa để gọi AIBox từ ứng dụng hoặc máy chủ của bạn."
+                actionLabel="Tạo khóa đầu tiên"
+                onAction={() => navigation.navigate('APIKeys')}
+              />
+            ) : apiKeys.slice(0, 2).map((item, index) => (
+              <View key={item.id}>
+                {index > 0 ? <View style={styles.divider} /> : null}
+                <ListRow
+                  icon="key"
+                  iconColor={item.active ? colors.accentSoft : colors.textFaint}
+                  title={item.name}
+                  subtitle={item.mask}
+                  right={(
+                    <Text style={[styles.keyState, { color: item.active ? colors.success : colors.textFaint }]}>
+                      {item.active ? 'Đang bật' : 'Đang tắt'}
+                    </Text>
+                  )}
+                  onPress={() => navigation.navigate('APIKeys')}
+                  accessibilityHint="Mở quản lý khóa API"
+                />
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Mô hình phổ biến — xếp theo token đã dùng từ store log AI */}
+        <View style={styles.section}>
+          <SectionHeader
+            title="Mô hình phổ biến"
+            actionLabel="Xem tất cả"
+            onAction={() => navigation.navigate('ModelCatalog')}
+          />
+          <View style={styles.card}>
+            {popularModels.length === 0 ? (
+              <EmptyState
+                compact
+                icon="cpu"
+                title="Chưa có mô hình nào được dùng"
+                message="Hỏi AI một câu để biết mô hình nào phù hợp với bạn."
+                actionLabel="Hỏi AI câu đầu tiên"
+                onAction={() => navigation.navigate('AIHub')}
+              />
+            ) : popularModels.map((model, index) => (
+              <View key={model.modelId}>
+                {index > 0 ? <View style={styles.divider} /> : null}
+                <ListRow
+                  icon="cpu"
+                  title={model.model?.name || model.modelName || model.modelId}
+                  subtitle={`${model.count} lượt gọi · ${formatToken(model.cost)} token`}
+                  onPress={() => navigation.navigate('ModelCatalog')}
+                  accessibilityHint="Mở danh sách mô hình"
+                />
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Học nhanh — 3 việc nên làm đầu tiên */}
+        <View style={styles.section}>
+          <SectionHeader title="Học nhanh" />
+          <View style={styles.card}>
+            {QUICK_START.map((item, index) => (
+              <View key={item.key}>
+                {index > 0 ? <View style={styles.divider} /> : null}
+                <ListRow
+                  icon={item.icon}
+                  title={item.title}
+                  subtitle={item.subtitle}
+                  onPress={() => navigation.navigate(item.route)}
+                />
+              </View>
+            ))}
           </View>
         </View>
       </ScrollView>
@@ -300,7 +443,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  shortcutLabel: { ...type.small, fontWeight: '600', color: colors.text },
+  shortcutLabel: { ...type.small, fontWeight: '600', color: colors.text, textAlign: 'center' },
   tileRow: { flexDirection: 'row', gap: 10 },
   spendCard: {
     backgroundColor: colors.surface,
@@ -329,4 +472,5 @@ const styles = StyleSheet.create({
   },
   divider: { height: 1, backgroundColor: colors.border, marginLeft: layout.gutter },
   amount: { ...type.smallStrong, ...type.numeric, color: colors.textDim },
+  keyState: { ...type.small, fontWeight: '600' },
 });

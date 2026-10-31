@@ -59,6 +59,8 @@ const vi = {
   'nav.play': 'Giải trí',
   'nav.taixiu': 'Tài xỉu',
   'nav.usage': 'Thống kê sử dụng',
+  'nav.logs': 'Lịch sử AI',
+  'nav.apiKeys': 'Khóa API',
   'nav.topup': 'Nạp token',
   'nav.quests': 'Nhiệm vụ',
   'nav.aiSettings': 'Cài đặt AI',
@@ -75,12 +77,12 @@ const vi = {
 
   // ── Home ──
   'home.spend7d': 'Chi tiêu 7 ngày',
-  'home.recentRequests': 'Yêu cầu gần đây',
-  'home.noRequests': 'Chưa có yêu cầu nào',
+  'home.recentRequests': 'Lượt gọi gần đây',
+  'home.noRequests': 'Chưa có lượt gọi nào',
 
   // ── AI Hub / Logs ──
   'aihub.suggest': 'Thử một trong các câu này',
-  'logs.noMatch': 'Không có request khớp bộ lọc',
+  'logs.noMatch': 'Không có lượt gọi khớp bộ lọc',
   'logs.clearFilter': 'Xoá bộ lọc',
 
   // ── Onboarding (lần mở app đầu tiên) ──
@@ -90,11 +92,11 @@ const vi = {
   'onboard.step': 'Bước {current}/{total}',
   'onboard.hint': 'Chuyển sang bước tiếp theo',
   'onboard.s1Title': 'Hỏi AI bằng token',
-  'onboard.s1Desc': 'Chat với nhiều model AI trong một chỗ. Mỗi câu trả lời trừ đúng số token đã dùng.',
+  'onboard.s1Desc': 'Trò chuyện với nhiều mô hình AI trong một chỗ. Mỗi câu trả lời trừ đúng số token đã dùng.',
   'onboard.s2Title': 'Ví token minh bạch',
-  'onboard.s2Desc': 'Xem số dư, chi tiêu 7 ngày và lịch sử request ngay trên Home. Nạp thêm chỉ 1 chạm.',
+  'onboard.s2Desc': 'Xem số dư, chi tiêu 7 ngày và lịch sử lượt gọi ngay trên Trang chủ. Nạp thêm chỉ 1 chạm.',
   'onboard.s3Title': 'Dữ liệu ở lại trên máy',
-  'onboard.s3Desc': 'Lịch sử chat lưu theo tài khoản Google của bạn; API key luôn được che trong danh sách.',
+  'onboard.s3Desc': 'Lịch sử trò chuyện lưu theo tài khoản Google của bạn; khóa API luôn được che trong danh sách.',
 };
 
 const en = {
@@ -133,6 +135,8 @@ const en = {
   'nav.play': 'Play',
   'nav.taixiu': 'Tai Xiu',
   'nav.usage': 'Usage / Billing',
+  'nav.logs': 'AI call logs',
+  'nav.apiKeys': 'API Keys',
   'nav.topup': 'Top up',
   'nav.quests': 'Quests',
   'nav.aiSettings': 'AI settings',

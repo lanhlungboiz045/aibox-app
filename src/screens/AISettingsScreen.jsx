@@ -53,9 +53,9 @@ export function AISettingsScreen({ navigation }) {
       Alert.alert(
         'Đã lưu cấu hình AI',
         status.mode === 'live'
-          ? `Đang ở chế độ LIVE.\nModel: ${status.model}`
-            + (status.allowsEmptyKey && !status.hasKey ? '\nKhông cần API key với nhà cung cấp này.' : '')
-          : 'Chưa đủ Base URL / API key nên app vẫn dùng câu trả lời mô phỏng.'
+          ? `Đang gọi AI thật.\nMô hình: ${status.model}`
+            + (status.allowsEmptyKey && !status.hasKey ? '\nKhông cần khóa API với nhà cung cấp này.' : '')
+          : 'Chưa đủ địa chỉ API / khóa API nên ứng dụng vẫn dùng câu trả lời mô phỏng.'
       );
     } catch (error) {
       Alert.alert(
@@ -94,7 +94,7 @@ export function AISettingsScreen({ navigation }) {
     if (saving || testing) return;
     Alert.alert(
       'Xoá cấu hình trong app',
-      'Cấu hình sẽ quay về giá trị trong .env (hoặc chế độ mock nếu .env trống).',
+      'Cấu hình sẽ quay về giá trị mặc định của ứng dụng (hoặc chế độ mô phỏng nếu chưa có).',
       [
         { text: 'Huỷ', style: 'cancel' },
         {
@@ -135,19 +135,19 @@ export function AISettingsScreen({ navigation }) {
       <View style={[styles.statusCard, live ? styles.statusLive : styles.statusMock]}>
         <View style={styles.statusRow}>
           <View style={[styles.statusDot, { backgroundColor: live ? colors.success : colors.warning }]} />
-          <Text style={styles.statusTitle}>{live ? 'LIVE — gọi AI thật' : 'MOCK — câu trả lời mô phỏng'}</Text>
+          <Text style={styles.statusTitle}>{live ? 'Đang gọi AI thật' : 'Đang trả lời mô phỏng'}</Text>
         </View>
-        <Text style={styles.statusLine}>Base URL: {aiConfig?.baseUrl || '(chưa có)'}</Text>
-        <Text style={styles.statusLine}>Model mặc định: {aiConfig?.model || '(chưa có)'}</Text>
+        <Text style={styles.statusLine}>Địa chỉ API: {aiConfig?.baseUrl || '(chưa có)'}</Text>
+        <Text style={styles.statusLine}>Mô hình mặc định: {aiConfig?.model || '(chưa có)'}</Text>
         <Text style={styles.statusLine}>
-          API key: {aiConfig?.hasKey
+          Khóa API: {aiConfig?.hasKey
             ? aiConfig.maskedKey
-            : (aiConfig?.allowsEmptyKey ? 'không cần key' : '(chưa có)')}
-          {aiConfig?.local ? ' · kết nối LAN' : ''}
+            : (aiConfig?.allowsEmptyKey ? 'không cần khóa' : '(chưa có)')}
+          {aiConfig?.local ? ' · kết nối mạng nội bộ' : ''}
           {!aiConfig?.local && aiConfig?.keyless ? ' · miễn phí, không cần đăng ký' : ''}
         </Text>
         <Text style={styles.statusLine}>
-          Nguồn: {aiConfig?.customized ? 'lưu trong app' : 'file .env'}
+          Nguồn: {aiConfig?.customized ? 'lưu trong ứng dụng' : 'cấu hình mặc định'}
         </Text>
       </View>
 
@@ -174,7 +174,7 @@ export function AISettingsScreen({ navigation }) {
 
       {/* Form */}
       <View style={styles.form}>
-        <Text style={styles.label}>Base URL</Text>
+        <Text style={styles.label}>Địa chỉ API</Text>
         <TextInput
           style={styles.input}
           value={baseUrl}
@@ -184,11 +184,11 @@ export function AISettingsScreen({ navigation }) {
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
-          accessibilityLabel="Base URL của nhà cung cấp AI"
+          accessibilityLabel="Địa chỉ API của nhà cung cấp AI"
         />
-        <Text style={styles.help}>Phải là endpoint chuẩn OpenAI, thường kết thúc bằng /v1</Text>
+        <Text style={styles.help}>Địa chỉ phải theo chuẩn OpenAI, thường kết thúc bằng /v1</Text>
 
-        <Text style={styles.label}>API key</Text>
+        <Text style={styles.label}>Khóa API</Text>
         <View style={styles.keyRow}>
           <TextInput
             style={[styles.input, { flex: 1 }]}
@@ -199,11 +199,11 @@ export function AISettingsScreen({ navigation }) {
             autoCapitalize="none"
             autoCorrect={false}
             secureTextEntry={!showKey}
-            accessibilityLabel="API key"
+            accessibilityLabel="Khóa API"
           />
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel={showKey ? 'Ẩn API key' : 'Hiện API key'}
+            accessibilityLabel={showKey ? 'Ẩn khóa API' : 'Hiện khóa API'}
             accessibilityState={{ selected: showKey }}
             style={styles.eyeBtn}
             onPress={() => setShowKey(v => !v)}
@@ -212,10 +212,10 @@ export function AISettingsScreen({ navigation }) {
           </TouchableOpacity>
         </View>
         <Text style={styles.help}>
-          Pollinations và Ollama/LM Studio (LAN) không cần key — để trống vẫn gọi được.
+          Pollinations và Ollama/LM Studio (mạng nội bộ) không cần khóa — để trống vẫn gọi được.
         </Text>
 
-        <Text style={styles.label}>Model mặc định</Text>
+        <Text style={styles.label}>Mô hình mặc định</Text>
         <TextInput
           style={styles.input}
           value={model}
@@ -224,20 +224,20 @@ export function AISettingsScreen({ navigation }) {
           placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
           autoCorrect={false}
-          accessibilityLabel="Model AI mặc định"
+          accessibilityLabel="Mô hình AI mặc định"
         />
 
         <View style={styles.switchRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.switchLabel}>Ép dùng model mặc định</Text>
+            <Text style={styles.switchLabel}>Ép dùng mô hình mặc định</Text>
             <Text style={styles.help}>
-              Bật: mọi model trong app đều gọi bằng model ở trên (an toàn với gateway 1 model).
-              Tắt: map theo tên model đã chọn.
+              Bật: mọi mô hình trong ứng dụng đều gọi bằng mô hình ở trên (an toàn với cổng chỉ có 1 mô hình).
+              Tắt: dùng theo tên mô hình đã chọn.
             </Text>
           </View>
           <Switch
-            accessibilityLabel="Ép dùng model mặc định"
-            accessibilityHint="Bật để mọi model trong ứng dụng dùng cấu hình model mặc định"
+            accessibilityLabel="Ép dùng mô hình mặc định"
+            accessibilityHint="Bật để mọi mô hình trong ứng dụng dùng cấu hình mô hình mặc định"
             value={forceModel}
             onValueChange={setForceModel}
             trackColor={{ false: colors.surfaceAlt, true: colors.accentBorder }}
@@ -254,7 +254,7 @@ export function AISettingsScreen({ navigation }) {
           </Text>
           {result.ok ? (
             <>
-              <Text style={styles.resultText}>Model phản hồi: {result.model}</Text>
+              <Text style={styles.resultText}>Mô hình phản hồi: {result.model}</Text>
               <Text style={styles.resultText}>Trả lời thử: {result.text || '(rỗng)'}</Text>
             </>
           ) : (
@@ -269,16 +269,16 @@ export function AISettingsScreen({ navigation }) {
         <Button label="Lưu cấu hình" style={styles.actionButton} onPress={handleSave} loading={saving} disabled={saving || testing} />
       </View>
 
-      <Button label="Xoá cấu hình trong app" variant="secondary" fullWidth onPress={handleReset} disabled={saving || testing} />
+      <Button label="Xoá cấu hình trong ứng dụng" variant="secondary" fullWidth onPress={handleReset} disabled={saving || testing} />
 
       <View style={styles.warnBox}>
         <View style={styles.noticeTitle}><AppIcon name="zap" size={16} color={colors.warning} /><Text style={styles.warnTitle}>Gợi ý nhanh</Text></View>
         <Text style={styles.warnText}>
-          • Muốn thử ngay không cần đăng ký: chọn preset Pollinations (keyless).{'\n'}
-          • Gemini có free tier: aistudio.google.com/apikey{'\n'}
-          • Groq free tier: console.groq.com/keys{'\n'}
-          • Không có key: giữ nguyên mock, app vẫn demo đủ luồng.{'\n'}
-          • Dùng Ollama trên máy tính: điện thoại phải cùng Wi-Fi, Base URL là
+          • Muốn thử ngay không cần đăng ký: chọn nhanh Pollinations (không cần khóa).{'\n'}
+          • Gemini có gói miễn phí: aistudio.google.com/apikey{'\n'}
+          • Groq có gói miễn phí: console.groq.com/keys{'\n'}
+          • Chưa có khóa: ứng dụng vẫn trả lời mô phỏng để bạn trải nghiệm đủ luồng.{'\n'}
+          • Dùng Ollama trên máy tính: điện thoại phải cùng Wi-Fi, địa chỉ dạng
           http://IP-LAN:11434/v1 (không dùng localhost).
         </Text>
       </View>

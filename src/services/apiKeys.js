@@ -28,20 +28,24 @@ function enqueue(task) {
   return writeQueue;
 }
 
-// Key dạng aibox_sk_ + 32 ký tự base36 (đủ dài để không trùng trong demo)
+// Định dạng khóa hiển thị cho người dùng: sk-aibox-<32 ký tự>
+export const API_KEY_PREFIX = 'sk-aibox-';
+
 export function generateApiKey() {
   let body = '';
   while (body.length < 32) {
     body += Math.random().toString(36).slice(2);
   }
-  return `aibox_sk_${body.slice(0, 32)}`;
+  return `${API_KEY_PREFIX}${body.slice(0, 32)}`;
 }
 
-// Che key khi hiển thị: giữ tiền tố + 4 ký tự cuối
+// Che khóa khi hiển thị: giữ tiền tố + 4 ký tự cuối.
+// Khóa cũ (aibox_sk_...) vẫn che đúng nhờ nhánh dự phòng.
 export function maskApiKey(key) {
   const raw = String(key || '');
-  if (raw.length <= 8) return '••••';
-  return `${raw.slice(0, 8)}••••${raw.slice(-4)}`;
+  if (raw.length <= 12) return '••••';
+  const prefix = raw.startsWith(API_KEY_PREFIX) ? API_KEY_PREFIX : raw.slice(0, 9);
+  return `${prefix}••••${raw.slice(-4)}`;
 }
 
 function sanitize(entry) {
@@ -52,7 +56,7 @@ function sanitize(entry) {
   const createdAt = typeof entry.createdAt === 'string' ? entry.createdAt : new Date().toISOString();
   return {
     id: String(entry.id || generateId()),
-    name: String(entry.name || 'API key').slice(0, 40),
+    name: String(entry.name || 'Khóa API').slice(0, 40),
     key,
     mask: maskApiKey(key),
     createdAt,
@@ -102,14 +106,14 @@ export async function createApiKey(uid, { name, monthlyLimit } = {}) {
   const current = await loadApiKeys(uid);
   if (current.length >= MAX_API_KEYS) {
     throw Object.assign(
-      new Error(`Tối đa ${MAX_API_KEYS} key. Xoá bớt key cũ rồi tạo lại.`),
+      new Error(`Tối đa ${MAX_API_KEYS} khóa. Xoá bớt khóa cũ rồi tạo lại.`),
       { code: 'LIMIT' }
     );
   }
 
   const entry = sanitize({
     id: generateId(),
-    name: String(name || '').trim().slice(0, 40) || 'Key chưa đặt tên',
+    name: String(name || '').trim().slice(0, 40) || 'Khóa chưa đặt tên',
     key: generateApiKey(),
     createdAt: new Date().toISOString(),
     active: true,

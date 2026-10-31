@@ -8,6 +8,7 @@ import { AppIcon } from './ui/AppIcon';
 import { TokenIcon } from './ui/TokenIcon';
 import { PressableScale } from './ui/PressableScale';
 import { formatTokenShort } from '../utils/format';
+import { capabilityLabel } from '../utils/modelLabels';
 import { colors, layout, radius, spacing, type, touch } from '../theme/tokens';
 
 export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
@@ -27,7 +28,7 @@ export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityHint="Mở cuộc trò chuyện với model này"
+      accessibilityHint="Mở cuộc trò chuyện với mô hình này"
     >
       <View style={[styles.stripe, { backgroundColor: accent }]} />
       <View style={styles.content}>
@@ -55,7 +56,7 @@ export function AIModelCard({ model, onPress, compact, historyCount = 0 }) {
           <View style={styles.capWrap}>
             {capabilities.slice(0, 3).map(cap => (
               <View key={cap} style={styles.capTag}>
-                <Text style={styles.capText} numberOfLines={1} maxFontSizeMultiplier={1.5}>{cap}</Text>
+                <Text style={styles.capText} numberOfLines={1} maxFontSizeMultiplier={1.5}>{capabilityLabel(cap)}</Text>
               </View>
             ))}
           </View>

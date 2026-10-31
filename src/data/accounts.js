@@ -21,7 +21,7 @@ export const ROLE_COLORS = {
 export const PROVIDER_LABELS = {
   google: 'Google',
   email: 'Email / mật khẩu',
-  demo: 'Chế độ demo (Expo Go)',
+  demo: 'Chế độ mô phỏng',
 };
 
 export const STARTING_BALANCE = 10000;

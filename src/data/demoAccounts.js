@@ -3,14 +3,14 @@ export const DEMO_ACCOUNTS = [
     id: 'demo-admin',
     email: 'admin@aibox.local',
     password: 'Admin123!',
-    username: 'Demo Admin',
+    username: 'Quản trị viên mẫu',
     role: 'admin',
   },
   {
     id: 'demo-user',
     email: 'user@aibox.local',
     password: 'User123!',
-    username: 'Demo User',
+    username: 'Người dùng mẫu',
     role: 'user',
   },
 ];

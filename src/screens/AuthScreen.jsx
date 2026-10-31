@@ -1,4 +1,4 @@
-// screens/AuthScreen.jsx — Email/password Firebase auth and dev role samples.
+// screens/AuthScreen.jsx — Đăng nhập email/mật khẩu và tài khoản mẫu
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator,
@@ -7,9 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { AppIcon } from '../components/ui/AppIcon';
 import {
-  firebaseConfig,
   isFirebaseConfigured,
-  missingFirebaseFields,
   GOOGLE_WEB_CLIENT_ID,
 } from '../config/firebase';
 import { isGoogleSignInNativeAvailable } from '../services/auth';
@@ -110,7 +108,7 @@ export function AuthScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Đăng nhập để tiếp tục</Text>
         <Text style={styles.cardSub}>
-          Đăng nhập hoặc tạo tài khoản bằng email và mật khẩu. Email/mật khẩu cần được bật trong Firebase Authentication.
+          Đăng nhập hoặc tạo tài khoản bằng email và mật khẩu.
         </Text>
 
         <Text style={styles.inputLabel}>Email</Text>
@@ -119,7 +117,7 @@ export function AuthScreen() {
           style={styles.input}
           value={email}
           onChangeText={setEmail}
-          placeholder="ban@example.com"
+          placeholder="ban@email.com"
           placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
           autoComplete="email"
@@ -197,40 +195,10 @@ export function AuthScreen() {
 
         {!canSignIn && (
           <View style={styles.setupBox}>
-            <Text style={styles.setupTitle}>
-              {missingFirebaseFields.length > 0
-                ? 'Chưa điền config Firebase (.env)'
-                : !GOOGLE_WEB_CLIENT_ID
-                  ? 'Google Sign-In chưa được cấu hình'
-                : 'Expo Go không hỗ trợ Google Sign-In'}
+            <Text style={styles.setupTitle}>Đăng nhập Google chưa khả dụng</Text>
+            <Text style={styles.setupText}>
+              Bạn vẫn có thể đăng nhập hoặc tạo tài khoản bằng email và mật khẩu ở trên.
             </Text>
-            {missingFirebaseFields.length > 0 ? (
-              <>
-                <Text style={styles.setupText}>
-                  Thiếu: {missingFirebaseFields.join(', ')}
-                </Text>
-                <Text style={styles.setupText}>
-                  1. Firebase Console → Project settings → Your apps → Web app{'\n'}
-                  2. Copy 6 giá trị firebaseConfig vào .env{'\n'}
-                  3. Restart Metro: npx expo start -c
-                </Text>
-              </>
-            ) : !GOOGLE_WEB_CLIENT_ID ? (
-              <Text style={styles.setupText}>
-                Email/mật khẩu vẫn dùng được nếu Firebase đã cấu hình và bật provider Email/Password.{'\n\n'}
-                Để bật Google: Firebase Console → Authentication → bật provider Google{'\n'}
-                2. Copy "Web SDK configuration → Web client ID"{'\n'}
-                3. Thêm vào .env: EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=...{'\n'}
-                4. Restart Metro: npx expo start -c
-              </Text>
-            ) : (
-              <Text style={styles.setupText}>
-                Đang chạy trong Expo Go — app thiếu module native nên không đăng nhập được.
-                {'\n\n'}Khi cần đăng nhập Google thật, build dev client:
-                {'\n'}  npx expo run:android
-                {'\n'}rồi mở app "AIBox" đã cài trên điện thoại.
-              </Text>
-            )}
           </View>
         )}
 
@@ -253,22 +221,20 @@ export function AuthScreen() {
                 <AppIcon name="chevron-right" size={16} color={colors.textDim} />
               </TouchableOpacity>
             ))}
-            <Text style={styles.demoNote}>Tài khoản mẫu lưu ví riêng trên thiết bị, không phải tài khoản Firebase thật.</Text>
+            <Text style={styles.demoNote}>Tài khoản mẫu lưu ví riêng trên thiết bị này.</Text>
           </View>
         )}
 
         <Text style={styles.terms}>
-          Bằng việc đăng nhập, bạn đồng ý AIBox là nền tảng giải trí: token là credit nội bộ,
+          Bằng việc đăng nhập, bạn đồng ý AIBox là nền tảng giải trí: token là điểm nội bộ,
           không phải tiền thật.
         </Text>
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Firebase project: {firebaseConfig.projectId || '(chưa điền .env)'}
-        </Text>
+        <Text style={styles.footerText}>AIBox · Ví token nội bộ</Text>
         <Text style={styles.footerHint}>
-          Đăng nhập email/mật khẩu dùng Firebase Authentication. Google Sign-In cần dev build.
+          Token dùng để gọi AI và chơi Tài Xỉu, không đổi được thành tiền thật.
         </Text>
       </View>
     </ScrollView>

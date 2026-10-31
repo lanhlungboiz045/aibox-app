@@ -62,7 +62,7 @@ export function QuestsScreen({ navigation }) {
         </View>
         <View style={styles.summaryCard}>
           <Text style={[styles.summaryValue, { color: colors.success }]}>{formatToken(earnedFromQuests)}</Text>
-          <Text style={styles.summaryLabel}>Đã kiếm từ quest</Text>
+          <Text style={styles.summaryLabel}>Đã kiếm từ nhiệm vụ</Text>
         </View>
       </View>
 

@@ -23,15 +23,15 @@ import { t } from '../i18n';
 // Nhân 10 so với bản cũ để một gói dùng được nhiều lượt (Starter ≈ 10–20 câu),
 // giá và tỉ lệ bonus giữ nguyên nên kinh tế token không đổi.
 const PACKAGES = [
-  { id: 'p1', tokens: 10000, bonus: 0, price: '29.000đ', label: 'Starter' },
-  { id: 'p2', tokens: 50000, bonus: 5000, price: '129.000đ', label: 'Pro' },
-  { id: 'p3', tokens: 100000, bonus: 15000, price: '249.000đ', label: 'Team' },
-  { id: 'p4', tokens: 500000, bonus: 100000, price: '999.000đ', label: 'Enterprise' },
+  { id: 'p1', tokens: 10000, bonus: 0, price: '29.000đ', label: 'Khởi đầu' },
+  { id: 'p2', tokens: 50000, bonus: 5000, price: '129.000đ', label: 'Phổ biến' },
+  { id: 'p3', tokens: 100000, bonus: 15000, price: '249.000đ', label: 'Nhóm' },
+  { id: 'p4', tokens: 500000, bonus: 100000, price: '999.000đ', label: 'Doanh nghiệp' },
 ];
 
-// Thông tin chuyển khoản mô phỏng (đồ án) — không phải tài khoản thật
+// Thông tin chuyển khoản mô phỏng — không phải tài khoản thật
 const BANK = {
-  bank: 'Vietcombank (demo)',
+  bank: 'Vietcombank (mô phỏng)',
   account: '0123 456 789 012',
   holder: 'CONG TY AIBOX',
 };
@@ -161,7 +161,7 @@ export function CreditsTopupScreen({ navigation }) {
           onPress={openPayment}
         />
         <Text style={styles.payNote} maxFontSizeMultiplier={1.6}>
-          Thanh toán mô phỏng cho đồ án — không phát sinh giao dịch thật.
+          Thanh toán mô phỏng — không phát sinh giao dịch thật.
         </Text>
 
         <View style={styles.sectionHeader}>
@@ -246,7 +246,7 @@ export function CreditsTopupScreen({ navigation }) {
               <Text style={styles.amountLabel} maxFontSizeMultiplier={1.5}>Số tiền cần chuyển</Text>
               <Text style={styles.amountValue} maxFontSizeMultiplier={1.5}>{order?.amount}</Text>
               <Text style={styles.amountNote} maxFontSizeMultiplier={1.6}>
-                Nhận {formatToken(order?.tokens || 0)} token (đã gồm bonus) · ≈ {chatsRange(order?.tokens || 0)} câu hỏi AI
+                Nhận {formatToken(order?.tokens || 0)} token (đã gồm thưởng) · ≈ {chatsRange(order?.tokens || 0)} câu hỏi AI
               </Text>
             </View>
 
@@ -255,7 +255,7 @@ export function CreditsTopupScreen({ navigation }) {
               <AppIcon name="grid" size={28} color={colors.textFaint} />
               <Text style={styles.qrTitle} maxFontSizeMultiplier={1.6}>QR chuyển khoản</Text>
               <Text style={styles.qrHint} maxFontSizeMultiplier={1.6}>
-                Bản demo chưa nối cổng thanh toán. Dùng thông tin bên dưới để mô phỏng.
+                Bản mô phỏng chưa nối cổng thanh toán. Dùng thông tin bên dưới để thử.
               </Text>
             </View>
 

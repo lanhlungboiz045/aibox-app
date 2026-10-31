@@ -1,5 +1,5 @@
 // screens/ProfileScreen.jsx — Hồ sơ người dùng (Firebase Auth + Firestore)
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, TextInput, Image,
 } from 'react-native';
@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { ROLE_LABELS, ROLE_COLORS, PROVIDER_LABELS, AVATARS } from '../data/accounts';
 import { formatToken, formatDate } from '../utils/format';
+import { logsForUser, summarizeAILogs } from '../services/aiLogStore';
 import { colors, centeredContent, touch, spacing } from '../theme/tokens';
 import { AppIcon } from '../components/ui/AppIcon';
 import { AppHeader, Button, TokenIcon } from '../components/ui';
@@ -42,6 +43,14 @@ export function ProfileScreen({ navigation }) {
   const [saving, setSaving] = useState(false);
 
   const user = state.user;
+
+  // Số liệu AI đọc từ store log duy nhất — khớp với Home / Logs / Usage.
+  const aiLogs = useMemo(
+    () => logsForUser(state.aiLogs, user?.id),
+    [state.aiLogs, user?.id]
+  );
+  const aiSummary = useMemo(() => summarizeAILogs(aiLogs), [aiLogs]);
+
   if (!user) return null;
 
   const isAdmin = user.role === 'admin';
@@ -49,7 +58,7 @@ export function ProfileScreen({ navigation }) {
   const taiXiuTxs = user.transactions.filter(t => t.type === 'TAIXIU');
   const wins = taiXiuTxs.filter(t => t.amount > 0).length;
   const winRate = taiXiuTxs.length > 0 ? Math.round((wins / taiXiuTxs.length) * 100) : 0;
-  const aiCalls = user.transactions.filter(t => t.type === 'AI_CALL').length;
+  const aiCalls = aiSummary.requests;
   const transfers = user.transactions.filter(t => t.type === 'TRANSFER_OUT').length;
 
   const claimedQuests = questState?.claimed?.length || 0;
@@ -74,7 +83,7 @@ export function ProfileScreen({ navigation }) {
       if (result.ok) {
         // Firestore lỗi thì thay đổi vẫn được giữ trên máy, chỉ cảnh báo đồng bộ
         if (result.syncError) {
-          Alert.alert('Đã lưu trên máy', `Chưa đồng bộ được lên Firestore:\n${result.syncError}`);
+          Alert.alert('Đã lưu trên máy', `Chưa đồng bộ được lên máy chủ:\n${result.syncError}`);
         }
       } else {
         Alert.alert('Không lưu được', result.error || 'Không thể cập nhật hồ sơ.');
@@ -90,8 +99,8 @@ export function ProfileScreen({ navigation }) {
   };
 
   const handleReset = () => {
-    Alert.alert('Reset token', 'Bạn có chắc muốn reset về 10,000 token? Lịch sử giao dịch của tài khoản này sẽ bị xóa.',
-      [{ text: 'Hủy', style: 'cancel' }, { text: 'Reset', style: 'destructive', onPress: () => { resetToken(); Alert.alert('Đã reset', 'Token đã về 10,000.'); } }]);
+    Alert.alert('Đặt lại token', 'Bạn có chắc muốn đặt lại về 10.000 token? Lịch sử giao dịch của tài khoản này sẽ bị xoá.',
+      [{ text: 'Huỷ', style: 'cancel' }, { text: 'Đặt lại', style: 'destructive', onPress: () => { resetToken(); Alert.alert('Đã đặt lại', 'Số dư đã về 10.000 token.'); } }]);
   };
 
   const handleSignOut = () => {
@@ -144,7 +153,7 @@ export function ProfileScreen({ navigation }) {
         <View style={styles.primaryStat}>
           <Text style={styles.primaryStatLabel}>Đã dùng cho AI</Text>
           <View style={styles.primaryStatValueRow}>
-            <Text style={styles.primaryStatValue}>{formatToken(user.totalSpentOnAI)}</Text>
+            <Text style={styles.primaryStatValue}>{formatToken(aiSummary.cost)}</Text>
             <TokenIcon size={12} color={colors.textDim} />
           </View>
         </View>
@@ -215,7 +224,7 @@ export function ProfileScreen({ navigation }) {
       {state.profileSync && (
         <View style={styles.syncWarn}>
           <Text style={styles.syncWarnText}>
-            Chưa đồng bộ được hồ sơ với Firestore: {state.profileSync}
+            Chưa đồng bộ được hồ sơ: {state.profileSync}
           </Text>
         </View>
       )}
@@ -261,12 +270,12 @@ export function ProfileScreen({ navigation }) {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Công cụ</Text>
-        {link('info', 'Về bản demo', () => navigation.navigate('DemoAbout'), { hint: 'Thông tin về dữ liệu và các tính năng thử nghiệm' })}
+        {link('info', 'Về AIBox', () => navigation.navigate('DemoAbout'), { hint: 'Thông tin về dữ liệu và cách sử dụng' })}
         {isAdmin && link('cpu', 'Cấu hình AI', () => navigation.navigate('AISettings'), {
           hint: aiConfig?.mode === 'live'
-            ? `LIVE · ${aiConfig.model}`
-            : 'Chưa có API key · đang trả lời mô phỏng',
-          badge: aiConfig?.mode === 'live' ? 'LIVE' : 'MOCK',
+            ? `Trực tiếp · ${aiConfig.model}`
+            : 'Chưa có khóa API · đang trả lời mô phỏng',
+          badge: aiConfig?.mode === 'live' ? 'Trực tiếp' : 'Mô phỏng',
         })}
         {link('target', 'Nhiệm vụ ngày', () => navigation.navigate('Quests'), { hint: `${claimedQuests} nhiệm vụ đã nhận hôm nay` })}
         {link('list', 'Lịch sử giao dịch', () => navigation.navigate('Transactions'), { hint: 'Xem biến động token của bạn' })}
@@ -280,11 +289,11 @@ export function ProfileScreen({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tài khoản</Text>
         {link('log-out', 'Đăng xuất', handleSignOut, { danger: true, hint: 'Đăng xuất khỏi Google trên thiết bị này' })}
-        {link('refresh-cw', 'Reset token (demo)', handleReset, { danger: true, hint: 'Chỉ reset ví của tài khoản hiện tại' })}
+        {link('refresh-cw', 'Đặt lại token', handleReset, { danger: true, hint: 'Chỉ đặt lại ví của tài khoản hiện tại' })}
       </View>
 
       <View style={styles.disclaimer}>
-        <Text style={styles.disclaimerText}>AIBox cung cấp công cụ AI và trò chơi Tài Xỉu. Token là credit nội bộ, không có giá trị tiền tệ và không thể đổi thành tiền thật.</Text>
+        <Text style={styles.disclaimerText}>AIBox cung cấp công cụ AI và trò chơi Tài Xỉu. Token là điểm nội bộ, không có giá trị tiền tệ và không thể đổi thành tiền thật.</Text>
       </View>
     </ScrollView>
   );
