@@ -12,7 +12,7 @@
 //   bị nhúng thẳng vào bundle → ai có APK đều đọc được. Đây là cách chấp nhận
 //   được cho đồ án/demo, KHÔNG dùng cho production.
 // - Production: đặt key ở server, app gọi proxy của bạn (server giữ key, kiểm
-//   tra quota/user) thay vì gọi thẳng nhà cung cấp AI từ thiết bị.
+//   tra hạn mức/user) thay vì gọi thẳng nhà cung cấp AI từ thiết bị.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -187,7 +187,7 @@ function describeHttpError(status, data, raw) {
     404: 'Không tìm thấy địa chỉ hoặc mô hình (HTTP 404). Địa chỉ API thường phải kết thúc bằng /v1.',
     413: 'Prompt quá dài (HTTP 413). Hãy rút ngắn câu hỏi.',
     422: 'Tham số gửi lên không hợp lệ (HTTP 422).',
-    429: 'Bị giới hạn tốc độ hoặc hết quota (HTTP 429). Chờ vài giây rồi thử lại.',
+    429: 'Bị giới hạn tốc độ hoặc hết hạn mức (HTTP 429). Chờ vài giây rồi thử lại.',
   };
   let text = map[status];
   if (!text && status >= 500) text = `Nhà cung cấp AI đang lỗi (HTTP ${status}). Thử lại sau ít phút.`;

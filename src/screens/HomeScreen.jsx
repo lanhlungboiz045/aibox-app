@@ -182,7 +182,7 @@ export function HomeScreen({ navigation }) {
           />
         ) : null}
 
-        {/* 3 ô lớn vừa: Models · Logs · Gói quota */}
+        {/* 3 ô lớn vừa: Models · Logs · Gói token */}
         <View style={styles.tileRow}>
           <StatTile
             icon="layers"

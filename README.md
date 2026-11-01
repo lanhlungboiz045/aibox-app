@@ -328,7 +328,7 @@ và cung cấp `chatsRange(tokens)` để quy đổi token → số câu hỏi A
 ra câu hỏi AI và mức cược tối đa theo số dư; màn Nạp token hiện mỗi gói dùng được bao nhiêu câu.
 
 Gói nạp dùng chung thang giá với màn **Các gói**: 1 token = 1đ giá trị, nạp lẻ **0,9đ/token** →
-10.000 token/9.000đ, 50.000/45.000đ, 100.000/90.000đ, 500.000/450.000đ. Gói quota theo tháng giảm sâu
+10.000 token/9.000đ, 50.000/45.000đ, 100.000/90.000đ, 500.000/450.000đ. Gói token theo tháng giảm sâu
 hơn theo bậc (0,78đ/token ở gói 90K xuống 0,468đ/token ở gói 2 Triệu), nên hai màn không lệch giá.
 Kinh tế token không đổi (1 API token = 1 token app), chỉ đổi đơn vị hiển thị cho dễ hình dung.
 

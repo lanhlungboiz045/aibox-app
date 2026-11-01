@@ -1,8 +1,8 @@
-// screens/PlansScreen.jsx — Bảng giá "Các gói" quota
+// screens/PlansScreen.jsx — Bảng giá "Các gói" token
 //
 // 5 gói theo tháng, mua bằng luồng chuyển khoản sẵn có (PaymentSheet): xác nhận
-// xong quota được cộng thẳng vào số dư token. Giá và quota hiển thị bằng mono
-// theo "The Money Is Monospace Rule"; gói 2 Triệu Quota là gói nổi bật.
+// xong token được cộng thẳng vào ví. Giá và số token hiển thị bằng mono
+// theo "The Money Is Monospace Rule"; gói 2 Triệu Token là gói nổi bật.
 import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,13 +13,13 @@ import { PaymentSheet } from '../components/PaymentSheet';
 import { centeredContent, colors, radius, spacing, type } from '../theme/tokens';
 import { t } from '../i18n';
 
-// quota = số token cộng vào ví sau khi thanh toán (1 quota = 1 token AI).
+// tokens = số token cộng vào ví sau khi thanh toán (1 token = 1đ giá trị).
 const PLANS = [
-  { id: 'q2m', name: '2 Triệu Quota', quota: 2000000, price: '936.000', featured: true },
-  { id: 'q1m', name: '1 Triệu Quota', quota: 1000000, price: '520.000' },
-  { id: 'q400k', name: '400K Quota', quota: 400000, price: '249.600' },
-  { id: 'q180k', name: '180K Quota', quota: 180000, price: '130.000' },
-  { id: 'q90k', name: '90K Quota', quota: 90000, price: '70.200' },
+  { id: 'q2m', name: '2 Triệu Token', tokens: 2000000, price: '936.000', featured: true },
+  { id: 'q1m', name: '1 Triệu Token', tokens: 1000000, price: '520.000' },
+  { id: 'q400k', name: '400K Token', tokens: 400000, price: '249.600' },
+  { id: 'q180k', name: '180K Token', tokens: 180000, price: '130.000' },
+  { id: 'q90k', name: '90K Token', tokens: 90000, price: '70.200' },
 ];
 
 export function PlansScreen({ navigation }) {
@@ -31,8 +31,8 @@ export function PlansScreen({ navigation }) {
     setOrder({
       code: `AIBOX${Date.now().toString().slice(-6)}`,
       amount: `${plan.price}đ`,
-      tokens: plan.quota,
-      label: plan.name,
+      tokens: plan.tokens,
+      label: 'Gói tháng',
     });
     setPayOpen(true);
   };
@@ -42,7 +42,7 @@ export function PlansScreen({ navigation }) {
       <AppHeader
         navigation={navigation}
         title={t('screen.plans')}
-        subtitle="Quota AI theo tháng"
+        subtitle="Gói token theo tháng"
       />
 
       <ScrollView
@@ -50,7 +50,7 @@ export function PlansScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.lead} maxFontSizeMultiplier={1.6}>
-          Chọn gói theo tháng. Quota cộng vào số dư token ngay sau khi xác nhận chuyển khoản.
+          Chọn gói theo tháng. Token cộng vào ví ngay sau khi xác nhận chuyển khoản.
         </Text>
 
         <View style={styles.list}>
@@ -75,7 +75,7 @@ export function PlansScreen({ navigation }) {
 }
 
 function PlanCard({ plan, onBuy }) {
-  const { name, quota, price, featured } = plan;
+  const { name, tokens, price, featured } = plan;
 
   return (
     <View style={[styles.card, featured && styles.cardFeatured]}>
@@ -89,20 +89,20 @@ function PlanCard({ plan, onBuy }) {
       </View>
 
       <Text style={styles.desc} maxFontSizeMultiplier={1.6}>
-        Tổng được {formatToken(quota)} vnđ, không giới hạn rpm/rpd
+        Dùng cho mọi mô hình AI, không giới hạn số lượt gọi
       </Text>
 
       <View style={styles.priceRow}>
-        <Text style={styles.price} maxFontSizeMultiplier={1.6}>{price}</Text>
+        <Text style={styles.price} maxFontSizeMultiplier={1.6}>{price}đ</Text>
         <Text style={styles.period} maxFontSizeMultiplier={1.5}>/tháng</Text>
       </View>
 
       <View style={styles.meta}>
         <Text style={styles.total} maxFontSizeMultiplier={1.5}>
-          Tổng quota: {formatToken(quota)} đ
+          {formatToken(tokens)} token
         </Text>
         <Text style={styles.chats} maxFontSizeMultiplier={1.5}>
-          ≈ {chatsRange(quota)} câu hỏi AI
+          ≈ {chatsRange(tokens)} câu hỏi AI
         </Text>
       </View>
 

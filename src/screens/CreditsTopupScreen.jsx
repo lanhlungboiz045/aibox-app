@@ -18,9 +18,9 @@ import { centeredContent, colors, radius, spacing, type } from '../theme/tokens'
 import { t } from '../i18n';
 
 // Nạp lẻ dùng chung thang giá với màn Các gói: 1 token = 1đ giá trị,
-// nạp lẻ 0,9đ/token (giảm 10%), gói quota giảm sâu hơn theo bậc (0,78 → 0,468đ).
+// nạp lẻ 0,9đ/token (giảm 10%), gói token giảm sâu hơn theo bậc (0,78 → 0,468đ).
 // Nhờ vậy hai màn không còn lệch giá: nạp 500.000 token = 450.000đ,
-// còn gói 2 Triệu Quota chỉ 936.000đ.
+// còn gói 2 Triệu Token chỉ 936.000đ.
 const PACKAGES = [
   { id: 'p1', tokens: 10000, price: '9.000đ', label: 'Khởi đầu' },
   { id: 'p2', tokens: 50000, price: '45.000đ', label: 'Phổ biến' },
@@ -62,7 +62,7 @@ export function CreditsTopupScreen({ navigation }) {
           <View style={styles.balanceTop}>
             <Text style={styles.balanceLabel} maxFontSizeMultiplier={1.5}>Số dư hiện tại</Text>
             <View style={styles.balancePill}>
-              <Text style={styles.balancePillText} maxFontSizeMultiplier={1.5}>Đã nạp {formatToken(totalTopup)}</Text>
+              <Text style={styles.balancePillText} maxFontSizeMultiplier={1.5}>Đã nạp {formatToken(totalTopup)} token</Text>
             </View>
           </View>
           <View style={styles.balanceValueRow}>
@@ -72,8 +72,8 @@ export function CreditsTopupScreen({ navigation }) {
             <TokenIcon size={18} color={colors.accentSoft} />
           </View>
           <Text style={styles.balanceHint} maxFontSizeMultiplier={1.6}>
-            1 token = 1 token AI xử lý · nạp lẻ 0,9đ/token. Mỗi lượt chat tốn ~{formatToken(TOKENS_PER_CHAT_MIN)}–{formatToken(TOKENS_PER_CHAT_MAX)} token;
-            gói {PACKAGES[0].label} ≈ {chatsRange(PACKAGES[0].tokens)} câu hỏi AI. Mua gói quota để rẻ hơn (từ 0,78đ/token).
+            Giá gốc 1đ/token, nạp lẻ 0,9đ/token. Mỗi lượt chat tốn ~{formatToken(TOKENS_PER_CHAT_MIN)}–{formatToken(TOKENS_PER_CHAT_MAX)} token;
+            gói {formatToken(PACKAGES[0].tokens)} token ≈ {chatsRange(PACKAGES[0].tokens)} câu hỏi AI. Mua gói token để rẻ hơn (từ 0,78đ/token).
           </Text>
         </View>
 
@@ -120,7 +120,7 @@ export function CreditsTopupScreen({ navigation }) {
           onPress={openPayment}
         />
         <Button
-          label="Xem các gói quota theo tháng"
+          label="Xem các gói token theo tháng"
           icon="package"
           variant="ghost"
           fullWidth
