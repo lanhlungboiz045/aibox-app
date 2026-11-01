@@ -11,6 +11,16 @@ cd aibox-app
 npm install
 ```
 
+Kiểm tra chất lượng (không cần thiết bị/emulator):
+
+```bash
+npm run lint   # ESLint theo eslint-config-expo
+npm test       # Jest cho util thuần + reducer + i18n
+npm run check  # chạy cả hai
+```
+
+CI chạy lint + test trên mọi push/PR vào `main` (`.github/workflows/ci.yml`).
+
 Tạo file `.env` từ mẫu:
 
 ```bash
@@ -55,6 +65,9 @@ cp .env.example .env
    - Firestore Database → Rules → dán nội dung `firestore.rules` → Publish.
    - ⚠️ Sửa danh sách `adminEmails()` trong `firestore.rules` cho khớp `.env`
      (Rules chạy trên server nên không đọc được biến `EXPO_PUBLIC_*`).
+   - Quyền admin yêu cầu `request.auth.token.email_verified == true`: email/password
+     tự đăng ký (chưa xác thực) không thể tự phong admin bằng cách trùng email admin.
+     Tài khoản Google luôn có email đã xác thực.
    - Chưa deploy rules thì app vẫn đăng nhập được nhưng sẽ hiện cảnh báo
      "Chưa đồng bộ được hồ sơ với Firestore" và mọi user đều là `user`.
 
@@ -251,9 +264,10 @@ ngang. Các `ScrollView horizontal` (hàng chip) cố ý **không** áp để v�
 chỉ thoát. Dải offline dùng `accessibilityRole="alert"`.
 
 **Đa ngôn ngữ.** `src/i18n/index.js` chứa 2 từ điển `vi`/`en` và hàm `t(key, vars)` (nội suy `{name}`),
-`useI18n()` cho component. Đặt `EXPO_PUBLIC_LANG=en` để chạy bản tiếng Anh (đổi cần restart Metro). Hiện đã
-áp cho drawer, tiêu đề các màn chính, các trạng thái lỗi/offline dùng chung và một số nhãn ở Home/AI Hub/Logs;
-phần copy còn lại trong thân màn hình vẫn là tiếng Việt và chuyển dần sang `t()` theo từng màn.
+`useI18n()` cho component. Đặt `EXPO_PUBLIC_LANG=en` để chạy bản tiếng Anh (đổi cần restart Metro). Phạm vi
+hiện tại: drawer, tiêu đề các màn chính, trạng thái lỗi/offline dùng chung, Onboarding và một số nhãn ở
+Home/AI Hub/Logs; phần copy còn lại trong thân màn hình vẫn là tiếng Việt và chuyển dần sang `t()` theo từng
+màn. `__tests__/i18n.test.js` chặn drift: 2 bản dịch phải đủ cùng bộ key, không rỗng và khớp placeholder.
 
 ## 5.5. Onboarding, trạng thái rỗng & micro-interaction
 
@@ -347,13 +361,14 @@ mô phỏng, phạm vi phân tích quản trị và các bước cần thiết t
 
 ```
 aibox-app/
+  __tests__/      (utils/, context/ — Jest + jest-expo)
   src/
-    components/   (UI components .jsx, ui/ cho UI kit, Onboarding.jsx, Die.jsx — mặt xúc xắc)
+    components/   (UI components .jsx, ui/ cho UI kit, ErrorBoundary.jsx, Onboarding.jsx, Die.jsx)
     screens/      (screens .jsx, admin/ cho CMS, TaiXiuScreen.jsx — game Tài xỉu)
     data/         (mockData.js, accounts.js, quests.js)
     config/       (firebase.js — init Auth/Firestore, ai.js — preset AI gateway, đọc .env)
     services/     (auth.js — Google sign-in, users.js — Firestore users/{uid}, ai.js — gọi AI thật)
-    context/      (AppContext.jsx — global state + AsyncStorage)
+    context/      (AppContext.jsx — provider/side-effect, appReducer.js — state thuần + sanitize)
     hooks/        (useNetworkStatus.js — mạng, useReduceMotion.js — giảm chuyển động, useAppDrawer.js — mở/đóng drawer)
     theme/        (palettes.js — bảng màu sáng/tối, tokens.js — spacing/type/colors)
     i18n/         (index.js — từ điển vi/en + t()/useI18n)
@@ -361,6 +376,8 @@ aibox-app/
     navigation/   (AppNavigator.jsx)
   App.js
   firestore.rules
+  .eslintrc.js
+  .github/workflows/ci.yml
   .env.example
   app.json
   package.json
@@ -376,6 +393,7 @@ aibox-app/
 - AsyncStorage (ví token, giao dịch, thông báo và quests theo uid)
 - `@react-native-community/netinfo` (trạng thái mạng), `expo-haptics`, `expo-clipboard`
 - React Native SVG (charts), theme sáng/tối (theo hệ điều hành hoặc `EXPO_PUBLIC_THEME`)
+- Jest (`jest-expo`) + ESLint (`eslint-config-expo`), CI bằng GitHub Actions
 
 ## Disclaimer
 

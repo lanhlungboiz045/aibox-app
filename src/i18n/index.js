@@ -175,8 +175,9 @@ const en = {
   'onboard.s3Desc': 'Chat history is stored per Google account and API keys are always masked in the list.',
 };
 
-const DICTS = { vi, en };
-const dict = DICTS[LANG];
+// Export để test kiểm tra 2 bản dịch luôn đủ key và khớp placeholder.
+export const dictionaries = { vi, en };
+const dict = dictionaries[LANG];
 
 /**
  * Dịch 1 key. Nội suy dạng {name}.

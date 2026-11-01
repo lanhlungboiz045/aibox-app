@@ -30,7 +30,7 @@ import {
 export function isGoogleSignInNativeAvailable() {
   try {
     return Boolean(TurboModuleRegistry.get('RNGoogleSignin'));
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -42,7 +42,7 @@ function loadGoogleSignin() {
   if (cachedModule !== undefined) return cachedModule;
   try {
     cachedModule = require('@react-native-google-signin/google-signin');
-  } catch (e) {
+  } catch {
     cachedModule = null;
   }
   return cachedModule;
@@ -210,7 +210,7 @@ export async function signOutGoogle() {
   if (mod) {
     try {
       await mod.GoogleSignin.signOut();
-    } catch (e) {
+    } catch {
       // Không đăng nhập bằng GoogleSignin (ví dụ phiên cũ / Expo Go) → bỏ qua
     }
   }

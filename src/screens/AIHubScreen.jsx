@@ -18,7 +18,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { AIModelCard } from '../components/AIModelCard';
-import { AIProviderLogo } from '../components/AIProviderLogo';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { ChatBubble } from '../components/ChatBubble';
 import {
@@ -195,6 +194,8 @@ export function AIHubScreen() {
       const m = state.aiModels.find(x => x.id === mid);
       if (m) openModel(m);
     }
+    // Chỉ chạy lại khi param đổi; openModel/aiModels đọc qua closure là đủ.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.params?.modelId, route.params?.ts]);
 
   // Nạp lại số tin nhắn đã lưu mỗi khi quay lại màn hình
@@ -248,6 +249,8 @@ export function AIHubScreen() {
     });
 
     return () => { cancelled = true; };
+    // selectedModel là object mới mỗi render → chỉ phụ thuộc id để không nạp lại liên tục.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedModel?.id, uid, historyReloadKey]);
 
   // Mọi thay đổi tin nhắn → ghi lại (bỏ qua lúc đang nạp để không ghi đè)
@@ -272,6 +275,8 @@ export function AIHubScreen() {
         return { ...prev, [modelId]: count };
       });
     });
+    // Cùng lý do: chỉ cần id của model, không cần object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, loadedModelId, selectedModel?.id, uid]);
 
   const typeFilters = [

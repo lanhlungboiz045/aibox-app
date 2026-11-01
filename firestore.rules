@@ -27,7 +27,11 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email in adminEmails();
+      // Bắt buộc email đã xác thực: nếu không, kẻ xấu có thể đăng ký
+      // email/password trùng email admin (chưa verify) để tự phong admin.
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in adminEmails();
     }
 
     match /users/{uid} {
@@ -42,7 +46,7 @@ service cloud.firestore {
         && request.resource.data.status == 'active'
         && (
           request.resource.data.role == 'user'
-          || (request.resource.data.role == 'admin' && request.auth.token.email in adminEmails())
+          || (request.resource.data.role == 'admin' && isAdmin())
         );
 
       // Cập nhật: user chỉ sửa field hồ sơ, admin sửa mọi thứ

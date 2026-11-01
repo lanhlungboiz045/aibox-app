@@ -15,7 +15,7 @@ function shortDay(key) {
 export function BarChart({ data = [], height = 140, formatValue = value => String(value) }) {
   const [activeIndex, setActiveIndex] = useState(null);
 
-  const safeData = Array.isArray(data) ? data : [];
+  const safeData = useMemo(() => (Array.isArray(data) ? data : []), [data]);
   const max = useMemo(
     () => Math.max(...safeData.map(item => Math.max(0, Number(item.value) || 0)), 1),
     [safeData]

@@ -181,7 +181,7 @@ export async function listUserProfiles() {
     );
     const users = snap.docs.map(item => ({ id: item.id, ...item.data() }));
     return { users, error: null };
-  } catch (error) {
+  } catch {
     // orderBy cần index nếu collection lớn → fallback đọc không sort
     try {
       const snap = await getDocs(query(collection(db, USERS_COLLECTION), limit(MAX_DIRECTORY)));

@@ -12,10 +12,11 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useApp, MAX_TRANSACTIONS } from '../context/AppContext';
+import { useApp } from '../context/AppContext';
+import { MAX_TRANSACTIONS } from '../context/appReducer';
 import { Die } from '../components/Die';
 import {
-  AppIcon, AppHeader, BottomSheet, Button, IconButton, useToast,
+  AppIcon, AppHeader, BottomSheet, Button, useToast,
 } from '../components/ui';
 import { AppDrawer } from '../components/AppDrawer';
 import { useAppDrawer } from '../hooks/useAppDrawer';

@@ -1,14 +1,14 @@
 // screens/admin/AdminRiskScreen.jsx — Theo dõi dòng tiền & phát hiện rửa token
 // Heuristic (demo): tốc độ chuyển, tỷ lệ xả ví, dòng tiền 2 chiều, giao dịch quá lớn.
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { ROLE_LABELS } from '../../data/accounts';
 import { formatToken, formatRelativeTime } from '../../utils/format';
 import { logCost } from '../../services/aiLogStore';
 import { AppHeader } from '../../components/ui';
-import { colors, centeredContent, touch } from '../../theme/tokens';
+import { colors, centeredContent } from '../../theme/tokens';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

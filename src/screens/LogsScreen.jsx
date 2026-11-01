@@ -15,7 +15,7 @@ import { copyText } from '../utils/clipboard';
 import {
   AppHeader, BottomSheet, Button, Chip, EmptyState, FadeIn, IconButton, ListRow, Row, AppIcon, TokenIcon, useToast,
 } from '../components/ui';
-import { centeredContent, colors, layout, radius, spacing, touch, type } from '../theme/tokens';
+import { centeredContent, colors, radius, spacing, touch, type } from '../theme/tokens';
 import { t } from '../i18n';
 
 const RANGES = [

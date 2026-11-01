@@ -1,13 +1,13 @@
 // screens/QuestsScreen.jsx — Nhiệm vụ ngày + daily reward (gamification)
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { QUESTS, getQuestProgress, QUEST_TOTAL_REWARD } from '../data/quests';
 import { formatToken } from '../utils/format';
 import { AppIcon } from '../components/ui/AppIcon';
 import { AppHeader, Button } from '../components/ui';
-import { colors, centeredContent, touch } from '../theme/tokens';
+import { colors, centeredContent } from '../theme/tokens';
 
 export function QuestsScreen({ navigation }) {
   const {

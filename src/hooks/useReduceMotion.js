@@ -14,7 +14,6 @@ import { useEffect, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 
 let current = false; // false = chưa phát hiện người dùng cần giảm chuyển động
-let known = false; // đã đọc được giá trị lần đầu chưa
 let started = false;
 const subscribers = new Set();
 
@@ -22,7 +21,6 @@ function apply(value) {
   const next = Boolean(value);
   const changed = next !== current;
   current = next;
-  known = true;
   if (changed) subscribers.forEach((fn) => fn(next));
 }
 
@@ -32,7 +30,7 @@ function ensureLoaded() {
   // Thiếu API (bản RN cũ) → coi như không giảm chuyển động, không throw
   AccessibilityInfo.isReduceMotionEnabled?.()
     .then(apply)
-    .catch(() => { known = true; });
+    .catch(() => {});
   // Người dùng đổi cài đặt trong lúc app đang mở
   AccessibilityInfo.addEventListener?.('reduceMotionChanged', apply);
 }
@@ -41,12 +39,6 @@ function ensureLoaded() {
 export function getReduceMotion() {
   ensureLoaded();
   return current;
-}
-
-/** true khi đã đọc được giá trị lần đầu (dùng để tránh nháy nội dung ẩn). */
-export function isReduceMotionKnown() {
-  ensureLoaded();
-  return known;
 }
 
 /** Hook: true khi nên giảm chuyển động. */

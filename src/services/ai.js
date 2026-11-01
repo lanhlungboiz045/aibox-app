@@ -6,6 +6,13 @@
 //
 // Cấu hình lấy theo thứ tự ưu tiên: giá trị lưu trong app (AsyncStorage)
 // → .env → mặc định. Không có cấu hình thì trả mode 'mock' để app vẫn demo được.
+//
+// BẢO MẬT (đọc trước khi deploy):
+// - API key lưu AsyncStorage là plaintext trên máy, và biến EXPO_PUBLIC_AI_API_KEY
+//   bị nhúng thẳng vào bundle → ai có APK đều đọc được. Đây là cách chấp nhận
+//   được cho đồ án/demo, KHÔNG dùng cho production.
+// - Production: đặt key ở server, app gọi proxy của bạn (server giữ key, kiểm
+//   tra quota/user) thay vì gọi thẳng nhà cung cấp AI từ thiết bị.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {

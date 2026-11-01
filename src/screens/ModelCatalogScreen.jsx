@@ -5,7 +5,6 @@ import React, { useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, FlatList, Modal,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { AppHeader, AppIcon, Button } from '../components/ui';
 import { AIProviderLogo } from '../components/AIProviderLogo';
@@ -21,7 +20,6 @@ const TYPE_FILTERS = [
 ];
 
 export function ModelCatalogScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
   const { state } = useApp();
   const [search, setSearch] = useState('');
   const [provider, setProvider] = useState('all');

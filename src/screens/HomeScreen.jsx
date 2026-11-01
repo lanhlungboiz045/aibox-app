@@ -2,7 +2,7 @@
 // Header cố định + shortcut + banner + thống kê mô hình, lịch sử AI, hạn mức,
 // chi tiêu 7 ngày, khóa API, mô hình phổ biến và gợi ý học nhanh.
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';

@@ -7,6 +7,7 @@ import { AppProvider, useApp } from './src/context/AppContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { Skeleton, ToastProvider } from './src/components/ui';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { Onboarding, useOnboardingSeen } from './src/components/Onboarding';
 import { colors, isDark, layout, radius, spacing, type } from './src/theme/tokens';
 
@@ -93,7 +94,9 @@ export default function App() {
       <ToastProvider>
         <AppProvider>
           <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.bg} />
-          <Root />
+          <ErrorBoundary>
+            <Root />
+          </ErrorBoundary>
         </AppProvider>
       </ToastProvider>
     </SafeAreaProvider>

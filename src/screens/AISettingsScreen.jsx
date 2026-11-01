@@ -11,7 +11,7 @@ import { AI_PRESETS } from '../config/ai';
 import { getAISettings } from '../services/ai';
 import { AppIcon } from '../components/ui/AppIcon';
 import { AppHeader, Button } from '../components/ui';
-import { colors, centeredContent, touch } from '../theme/tokens';
+import { colors, centeredContent, touch, spacing, layout, radius, type } from '../theme/tokens';
 
 export function AISettingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -126,7 +126,7 @@ export function AISettingsScreen({ navigation }) {
     <ScrollView
       style={styles.container}
       stickyHeaderIndices={[0]}
-      contentContainerStyle={[centeredContent, { paddingBottom: insets.bottom + 32 }]}
+      contentContainerStyle={[centeredContent, { paddingBottom: insets.bottom + spacing.xxxl }]}
       keyboardShouldPersistTaps="handled"
     >
       <AppHeader navigation={navigation} title="Cấu hình AI" />
@@ -288,48 +288,106 @@ export function AISettingsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 10 },
-  backBtn: { color: colors.accentSoft, fontSize: 14, fontWeight: '600', minHeight: touch.min, textAlignVertical: 'center', paddingVertical: 8 },
-  headerTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
-  statusCard: { marginHorizontal: 16, borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 16 },
+  statusCard: {
+    marginHorizontal: layout.gutter,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
   statusLive: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
   statusMock: { backgroundColor: colors.warningDim, borderColor: colors.warningBorder },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
-  statusTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
-  statusLine: { color: colors.textDim, fontSize: 12, marginTop: 2 },
-  sectionTitle: { color: colors.text, fontSize: 14, fontWeight: '700', marginHorizontal: 16, marginBottom: 8 },
-  presetRow: { paddingHorizontal: 16, gap: 8 },
-  presetChip: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center', minWidth: 78, minHeight: touch.min },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  statusDot: { width: spacing.sm, height: spacing.sm, borderRadius: spacing.xs },
+  statusTitle: { ...type.bodyStrong, color: colors.text },
+  statusLine: { ...type.small, color: colors.textDim, marginTop: spacing.xs },
+  sectionTitle: {
+    ...type.bodyStrong,
+    color: colors.text,
+    marginHorizontal: layout.gutter,
+    marginBottom: spacing.sm,
+  },
+  presetRow: { paddingHorizontal: layout.gutter, gap: spacing.sm },
+  presetChip: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    minWidth: 78,
+    minHeight: touch.min,
+  },
   presetChipActive: { borderColor: colors.accent, backgroundColor: colors.accentDim },
-  presetName: { color: colors.textDim, fontSize: 12, fontWeight: '600' },
+  presetName: { ...type.smallStrong, color: colors.textDim },
   presetNameActive: { color: colors.text },
-  presetHint: { color: colors.textFaint, fontSize: 12, marginHorizontal: 16, marginTop: 8, lineHeight: 15 },
-  form: { marginHorizontal: 16, marginTop: 12 },
-  label: { color: colors.textDim, fontSize: 12, fontWeight: '600', marginTop: 14, marginBottom: 6 },
-  input: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, color: colors.text, fontSize: 13, paddingHorizontal: 12, paddingVertical: 11, minHeight: touch.min },
-  keyRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  eyeBtn: { backgroundColor: colors.surfaceAlt, borderRadius: 8, borderWidth: 1, borderColor: colors.borderSoft, paddingHorizontal: 12, minHeight: touch.min, justifyContent: 'center' },
-  eyeText: { color: colors.accentSoft, fontSize: 12, fontWeight: '600' },
-  help: { color: colors.textFaint, fontSize: 12, marginTop: 6, lineHeight: 15 },
-  switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16 },
-  switchLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
-  resultBox: { marginHorizontal: 16, marginTop: 16, borderRadius: 10, borderWidth: 1, padding: 12 },
+  presetHint: {
+    ...type.small,
+    color: colors.textFaint,
+    marginHorizontal: layout.gutter,
+    marginTop: spacing.sm,
+  },
+  form: { marginHorizontal: layout.gutter, marginTop: spacing.md },
+  label: {
+    ...type.smallStrong,
+    color: colors.textDim,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  input: {
+    ...type.body,
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    color: colors.text,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    minHeight: touch.min,
+  },
+  keyRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
+  eyeBtn: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.xs,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    paddingHorizontal: spacing.md,
+    minHeight: touch.min,
+    justifyContent: 'center',
+  },
+  eyeText: { ...type.smallStrong, color: colors.accentSoft },
+  help: { ...type.small, color: colors.textFaint, marginTop: spacing.sm },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.lg },
+  switchLabel: { ...type.bodyStrong, color: colors.text },
+  resultBox: {
+    marginHorizontal: layout.gutter,
+    marginTop: spacing.lg,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    padding: spacing.md,
+  },
   resultOk: { backgroundColor: colors.successDim, borderColor: colors.successBorder },
   resultErr: { backgroundColor: colors.dangerDim, borderColor: colors.dangerBorder },
-  resultTitle: { fontSize: 13, fontWeight: '700', marginBottom: 6 },
-  resultText: { color: colors.textDim, fontSize: 12, lineHeight: 17 },
-  actions: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginTop: 18 },
-  testBtn: { flex: 1, backgroundColor: colors.surfaceAlt, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, minHeight: touch.min, justifyContent: 'center', alignItems: 'center' },
-  testBtnText: { color: colors.accentSoft, fontSize: 13, fontWeight: '700' },
-  saveBtn: { flex: 1, backgroundColor: colors.accentStrong, borderRadius: 10, minHeight: touch.min, justifyContent: 'center', alignItems: 'center' },
-  saveBtnText: { color: colors.onAccent, fontSize: 13, fontWeight: '700' },
-  btnDisabled: { opacity: 0.6 },
-  resetBtn: { alignItems: 'center', marginTop: 14, paddingVertical: 10, minHeight: touch.min },
-  resetBtnText: { color: colors.textDim, fontSize: 12, textDecorationLine: 'underline' },
-  warnBox: { backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.borderSoft, marginHorizontal: 16, marginTop: 16, padding: 12 },
-  noticeTitle: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  warnTitle: { color: colors.warning, fontSize: 12, fontWeight: '700' },
-  buttonContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  warnText: { color: colors.textDim, fontSize: 12, lineHeight: 17 },
+  resultTitle: { ...type.smallStrong, marginBottom: spacing.sm },
+  resultText: { ...type.small, color: colors.textDim },
+  actions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginHorizontal: layout.gutter,
+    marginTop: spacing.lg,
+  },
+  actionButton: { flex: 1 },
+  warnBox: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    marginHorizontal: layout.gutter,
+    marginTop: spacing.lg,
+    padding: spacing.md,
+  },
+  noticeTitle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  warnTitle: { ...type.smallStrong, color: colors.warning },
+  warnText: { ...type.small, color: colors.textDim },
 });

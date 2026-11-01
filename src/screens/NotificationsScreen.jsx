@@ -14,7 +14,7 @@ const TYPE_META = {
 
 export function NotificationsScreen({ navigation }) {
   const {
-    state, notifications, unreadNotifications, markNotificationsRead,
+    notifications, unreadNotifications, markNotificationsRead,
     canClaimDaily, nextDailyReward,
   } = useApp();
   const insets = useSafeAreaInsets();

@@ -2,15 +2,7 @@
 // Mọi lời gọi đều "fire and forget": không await, không làm chậm thao tác.
 import * as Haptics from 'expo-haptics';
 
-let enabled = true;
-
-// Cho phép tắt haptic (ví dụ khi người dùng bật "giảm chuyển động" hoặc màn hình test)
-export function setHapticsEnabled(value) {
-  enabled = Boolean(value);
-}
-
 async function run(fn) {
-  if (!enabled) return;
   try {
     await fn();
   } catch {

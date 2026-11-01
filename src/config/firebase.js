@@ -14,8 +14,9 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   initializeAuth,
   getAuth,
+  // firebase/auth bản React Native có export này; ESLint chỉ đọc type web nên báo thiếu.
+  // eslint-disable-next-line import/named
   getReactNativePersistence,
-  GoogleAuthProvider,
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -71,7 +72,7 @@ if (isFirebaseConfigured) {
       auth = initializeAuth(app, {
         persistence: getReactNativePersistence(AsyncStorage),
       });
-    } catch (e) {
+    } catch {
       auth = getAuth(app);
     }
   } else {
@@ -87,8 +88,5 @@ if (isFirebaseConfigured) {
   firestore = getFirestore(app);
 }
 
-export const firebaseApp = app;
 export const authInstance = auth;
 export const db = firestore;
-
-export const googleAuthProvider = new GoogleAuthProvider();

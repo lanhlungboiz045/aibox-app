@@ -9,7 +9,6 @@
 // Không import react-native → test được bằng Node.
 export const TOKENS_PER_CHAT_MIN = 500;
 export const TOKENS_PER_CHAT_MAX = 1000;
-export const TOKENS_PER_CHAT_TYPICAL = 750;
 
 // Làm tròn "đẹp" theo độ lớn: <10 giữ 1 số lẻ, ≥10 làm tròn đơn vị,
 // ≥100 làm tròn chục và thêm dấu chấm ngăn cách nghìn (kiểu Việt Nam).
@@ -36,9 +35,4 @@ export function chatsRange(tokens) {
   const min = pretty(Math.floor((value / TOKENS_PER_CHAT_MAX) * 10) / 10);
   const max = pretty(Math.ceil((value / TOKENS_PER_CHAT_MIN) * 10) / 10);
   return min === max ? min : `${min}–${max}`;
-}
-
-// Câu mô tả đầy đủ, dùng chung cho màn chơi và màn nạp
-export function chatsHint(tokens) {
-  return `≈ ${chatsRange(tokens)} câu hỏi AI (mỗi câu ~${group(TOKENS_PER_CHAT_MIN)}–${group(TOKENS_PER_CHAT_MAX)} token)`;
 }

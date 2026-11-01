@@ -70,14 +70,6 @@ export const centeredContent = {
   alignSelf: 'center' };
 
 // ───────────────────────── Cỡ chữ ─────────────────────────
-export const typeScale = {
-  caption: 12,
-  body: 14,
-  subtitle: 16,
-  section: 18,
-  h1: 24,
-  display: 32 };
-
 // Style object dùng trực tiếp trong StyleSheet
 export const type = {
   display: { fontSize: 32, lineHeight: 38, fontWeight: '800', letterSpacing: -0.6, fontVariant: ['tabular-nums'] },
@@ -101,7 +93,3 @@ export const motion = {
   toast: 2600,
   undo: 5000, // snackbar "Hoàn tác"
 };
-
-// Header màn hình con (back + title + hành động phải) dùng chung
-export const headerStyles = {
-  minHeight: layout.headerHeight };

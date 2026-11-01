@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { formatToken } from '../../utils/format';
 import { logCost } from '../../services/aiLogStore';
-import { AppIcon } from '../../components/ui/AppIcon';
 import { AppHeader } from '../../components/ui';
 import { AIProviderLogo } from '../../components/AIProviderLogo';
 import { colors, centeredContent, touch } from '../../theme/tokens';
