@@ -1,8 +1,15 @@
-// components/ui/AppIcon.jsx — Bọc @expo/vector-icons (Feather gần style lucide)
-// Dùng 1 chỗ để đổi bộ icon về sau mà không sửa toàn bộ màn hình.
+// components/ui/AppIcon.jsx — Bộ icon dùng chung (Feather, vẽ bằng SVG)
+//
+// Trước đây file này bọc @expo/vector-icons (font Feather tải lúc chạy). Nếu font
+// không nạp được (bản release thiếu asset, expo-font lỗi trên máy thật...) thì
+// icon biến thành ô trống mà app không báo lỗi. Vẽ trực tiếp bằng react-native-svg
+// loại bỏ hoàn toàn phụ thuộc đó: icon luôn hiện, không cần chờ font.
+//
+// Dữ liệu path nằm ở featherPaths.js (tự sinh từ feather-icons 4.29.2, MIT).
 import React from 'react';
-import { Feather } from '@expo/vector-icons';
+import Svg, { Path } from 'react-native-svg';
 import { colors } from '../../theme/tokens';
+import { FEATHER_PATHS } from './featherPaths';
 
 const LEGACY_ICON_NAMES = {
   '🤖': 'cpu',
@@ -72,5 +79,29 @@ const LEGACY_ICON_NAMES = {
 
 export function AppIcon({ name, size = 20, color = colors.accentSoft, style }) {
   const iconName = LEGACY_ICON_NAMES[name] || name || 'circle';
-  return <Feather name={iconName} size={size} color={color} style={style} />;
+  const paths = FEATHER_PATHS[iconName] || FEATHER_PATHS.circle;
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      style={style}
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      {paths.map(d => (
+        <Path
+          key={d}
+          d={d}
+          fill="none"
+          stroke={color}
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
+    </Svg>
+  );
 }

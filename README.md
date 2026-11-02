@@ -406,7 +406,7 @@ aibox-app/
 - React Navigation (stack + drawer, **không bottom tab**)
 - AsyncStorage (ví token, giao dịch, thông báo và quests theo uid)
 - `@react-native-community/netinfo` (trạng thái mạng), `expo-haptics`, `expo-clipboard`
-- React Native SVG (charts), theme sáng/tối (theo hệ điều hành hoặc `EXPO_PUBLIC_THEME`)
+- React Native SVG (charts **và toàn bộ icon** — `AppIcon` vẽ path Feather bằng SVG, không phụ thuộc font tải lúc chạy), theme sáng/tối (theo hệ điều hành hoặc `EXPO_PUBLIC_THEME`)
 - Jest (`jest-expo`) + ESLint (`eslint-config-expo`), CI bằng GitHub Actions
 
 ## Disclaimer

@@ -102,9 +102,10 @@ export function QuestsScreen({ navigation }) {
       </View>
 
       <View style={styles.tip}>
-        <Text style={styles.tipTitle}>
-          <AppIcon name="zap" size={14} color={colors.accentSoft} /> Cách hoàn thành nhanh
-        </Text>
+        <View style={styles.tipTitleRow}>
+          <AppIcon name="zap" size={14} color={colors.accentSoft} />
+          <Text style={styles.tipTitle}>Cách hoàn thành nhanh</Text>
+        </View>
         <Text style={styles.tipText}>
           · Chat AI 3 lần ở tab AI Hub{'\n'}
           · Chơi Tài Xỉu 2 ván{'\n'}
@@ -137,6 +138,7 @@ const styles = StyleSheet.create({
   progressTrack: { height: 5, borderRadius: 3, backgroundColor: colors.surfaceAlt, marginTop: 10, overflow: 'hidden' },
   progressFill: { height: 5, borderRadius: 3, backgroundColor: colors.accentStrong },
   tip: { marginHorizontal: 16, marginTop: 8, backgroundColor: colors.accentDim, borderRadius: 10, padding: 14, borderWidth: 1, borderColor: colors.accentDim },
-  tipTitle: { color: colors.accentSoft, fontSize: 12, fontWeight: '700', marginBottom: 6 },
+  tipTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
+  tipTitle: { color: colors.accentSoft, fontSize: 12, fontWeight: '700' },
   tipText: { color: colors.textDim, fontSize: 12, lineHeight: 18 },
 });
