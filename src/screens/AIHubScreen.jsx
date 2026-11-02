@@ -396,7 +396,7 @@ export function AIHubScreen() {
       // Không ghi lỗi vào lịch sử: bỏ tin nhắn vừa gửi, trả text để sửa/gửi lại
       setMessages(prev => prev.filter(m => m.id !== userMsg.id));
       setInput(prev => (prev.trim() ? prev : draft));
-      setSendError({ message: res.error || 'Không gọi được AI.', prompt: draft });
+      setSendError({ message: res.error || 'Không gọi được AI.', prompt: draft, action: res.action });
       return;
     }
 
@@ -605,6 +605,20 @@ export function AIHubScreen() {
                   message={sendError.message}
                   onRetry={() => handleSend(sendError.prompt)}
                 />
+                {sendError.action === 'ai-settings' ? (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    onPress={() => {
+                      setSendError(null);
+                      navigation.navigate('AISettings');
+                    }}
+                    style={styles.errorDismiss}
+                    hitSlop={touch.hitSlop}
+                    accessibilityLabel="Mở cấu hình AI"
+                  >
+                    <Text style={styles.errorActionText} maxFontSizeMultiplier={1.6}>Mở cấu hình AI</Text>
+                  </TouchableOpacity>
+                ) : null}
                 <TouchableOpacity
                   accessibilityRole="button"
                   onPress={() => setSendError(null)}
@@ -908,6 +922,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   errorDismissText: { ...type.smallStrong, color: colors.textDim },
+  errorActionText: { ...type.smallStrong, color: colors.accentSoft },
 
   // ── Chat: nhập & gửi ──
   inputBar: {

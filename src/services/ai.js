@@ -185,13 +185,22 @@ function extractText(data) {
 }
 
 // Dịch lỗi HTTP sang tiếng Việt, kèm message gốc của nhà cung cấp
-function describeHttpError(status, data, raw) {
+// options.keyless: đang gọi cổng miễn phí (Pollinations) — lỗi 402/429 ở đó là
+// giới hạn tần suất chứ không phải hết tiền.
+function describeHttpError(status, data, raw, { keyless = false } = {}) {
   const providerMsg = String(
     (data && data.error && (data.error.message || data.error.code))
     || (data && data.message)
     || raw
     || ''
   ).slice(0, 300);
+
+  if (keyless && (status === 402 || status === 429)) {
+    return 'Cổng miễn phí đang giới hạn tần suất (khoảng 1 câu mỗi 45 giây). '
+      + 'Chờ vài chục giây rồi thử lại, hoặc vào Hồ sơ → Cấu hình AI để nhập khóa riêng '
+      + '(Gemini, OpenAI…) và chat không bị chặn nữa.'
+      + (providerMsg ? `\n${providerMsg}` : '');
+  }
 
   const map = {
     400: 'Yêu cầu không hợp lệ (HTTP 400) — có thể sai tên mô hình hoặc tham số.',
@@ -264,13 +273,16 @@ async function requestOnce({ baseUrl, apiKey, model, messages, temperature, maxT
     if (Array.isArray(data)) data = data[0] || null;
 
     if (!res.ok) {
+      const keyless = isKeylessBaseUrl(baseUrl);
       return {
         ok: false,
         status: res.status,
         latencyMs,
         model,
         code: (data && data.error && (data.error.code || data.error.type)) || '',
-        error: describeHttpError(res.status, data, ''),
+        error: describeHttpError(res.status, data, '', { keyless }),
+        // Lỗi do khóa/hạn mức → màn chat hiện nút mở Cấu hình AI
+        action: [401, 402, 403, 429].includes(res.status) ? 'ai-settings' : undefined,
       };
     }
 
@@ -351,6 +363,7 @@ export async function chatComplete({
     return {
       ok: false,
       mode: 'mock',
+      action: 'ai-settings',
       error: 'Chưa cấu hình AI. Vào Hồ sơ → Cấu hình AI để chọn nhà cung cấp (ví dụ Pollinations miễn phí, không cần khóa).',
     };
   }

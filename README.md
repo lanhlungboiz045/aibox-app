@@ -165,7 +165,7 @@ local theo UID Firebase để giữ ví riêng.
 4. **Daily Reward / Nhiệm vụ** — nhận token hằng ngày và hoàn thành nhiệm vụ AI, Tài Xỉu, chuyển token
 5. **Thông báo / Profile** — quản lý hồ sơ và hoạt động tài khoản
 6. **Admin CMS** — AI models, người dùng (role/ban trên Firestore), rủi ro dòng tiền
-7. **Cấu hình AI thật** — admin nhập Base URL / API key / model (OpenAI-compatible), test kết nối, lưu trên máy
+7. **Cấu hình AI thật** — mọi tài khoản nhập Base URL / API key / model (OpenAI-compatible), test kết nối, lưu trên máy
 8. **Catalog / Usage Dashboard / Nạp token** — xem danh mục model, thống kê token theo model, nạp credit (mô phỏng)
 
 ## 5.1. Gọi AI thật (OpenAI-compatible)

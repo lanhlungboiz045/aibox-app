@@ -82,10 +82,9 @@ export function AppDrawer({ visible, onClose, navigation }) {
 
   const user = state.user;
   const isAdmin = user?.role === 'admin';
-  const visibleGroups = GROUPS.map(group => ({
-    ...group,
-    items: group.items.filter(item => isAdmin || item.route !== 'AISettings'),
-  })).filter(group => group.items.length > 0);
+  // Cấu hình AI mở cho mọi người: APK phát ra không kèm khóa, ai cũng cần
+  // nhập khóa riêng để chat ổn định thay vì dựa vào cổng miễn phí.
+  const visibleGroups = GROUPS;
 
   const go = (route) => {
     onClose();

@@ -478,7 +478,13 @@ export function AppProvider({ children }) {
         latencyMs: result.latencyMs,
         error: result.error,
       });
-      return { ok: false, mode: result.mode || 'live', error: result.error };
+      return {
+        ok: false,
+        mode: result.mode || 'live',
+        error: result.error,
+        // 'ai-settings' → màn chat hiện nút mở Cấu hình AI
+        action: result.action,
+      };
     }
 
     // Trừ token theo usage thật của API (fallback ước lượng nếu gateway không trả)

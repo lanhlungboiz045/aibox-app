@@ -33,7 +33,6 @@ const AdminHomeRoute = props => <RoleGate {...props} screen={AdminHomeScreen} al
 const AdminAIModelsRoute = props => <RoleGate {...props} screen={AdminAIModelsScreen} allowedRoles={['admin']} />;
 const AdminUsersRoute = props => <RoleGate {...props} screen={AdminUsersScreen} allowedRoles={['admin']} />;
 const AdminRiskRoute = props => <RoleGate {...props} screen={AdminRiskScreen} allowedRoles={['admin']} />;
-const AISettingsRoute = props => <RoleGate {...props} screen={AISettingsScreen} allowedRoles={['admin']} />;
 
 export function AppNavigator() {
   const { state } = useApp();
@@ -51,7 +50,7 @@ export function AppNavigator() {
       <Stack.Screen name="UsageDashboard" component={UsageDashboardScreen} />
       <Stack.Screen name="CreditsTopup" component={CreditsTopupScreen} />
       <Stack.Screen name="Plans" component={PlansScreen} />
-      <Stack.Screen name="AISettings" component={AISettingsRoute} />
+      <Stack.Screen name="AISettings" component={AISettingsScreen} />
       <Stack.Screen name="APIKeys" component={APIKeysScreen} />
       <Stack.Screen name="Logs" component={LogsScreen} />
       <Stack.Screen name="Transactions" component={TransactionsScreen} />
