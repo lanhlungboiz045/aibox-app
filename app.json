@@ -28,6 +28,15 @@
     "plugins": [
       "expo-navigation-bar",
       "@react-native-google-signin/google-signin"
-    ]
+    ],
+    "extra": {
+      "expo-navigation-bar": {
+        "backgroundColor": "#0F1115",
+        "barStyle": "light"
+      },
+      "eas": {
+        "projectId": "9b089d03-1933-44c7-8ec0-b7bb18ca762a"
+      }
+    }
   }
 }
