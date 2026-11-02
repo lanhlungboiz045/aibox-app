@@ -126,6 +126,22 @@ export function resolveModel(appModelId, cfg = getAISettings()) {
   return APP_MODEL_MAP[appModelId] || appModelId || fallback;
 }
 
+const GEMINI_HOST = 'generativelanguage.googleapis.com';
+
+// Khi model đang chọn quá tải (503) hoặc hết hạn mức theo model (429), Gemini
+// vẫn còn các model nhẹ khác. Thử lần lượt để người dùng không phải tự sửa
+// cấu hình giữa lúc chat. Chỉ dùng cho endpoint Google — không gửi tên model
+// Gemini sang nhà cung cấp khác.
+const GEMINI_FALLBACK_MODELS = [
+  'gemini-flash-lite-latest',
+  'gemini-3.5-flash-lite',
+  'gemini-3-flash-preview',
+];
+
+function isGeminiBaseUrl(baseUrl) {
+  return hostOf(baseUrl).includes(GEMINI_HOST);
+}
+
 // Ghép lịch sử chat + prompt mới thành messages của OpenAI API
 export function buildChatMessages({ history = [], prompt = '', systemPrompt, limit = 10 } = {}) {
   const cfg = getAISettings();
@@ -213,6 +229,9 @@ function describeHttpError(status, data, raw, { keyless = false } = {}) {
     429: 'Bị giới hạn tốc độ hoặc hết hạn mức (HTTP 429). Chờ vài giây rồi thử lại.',
   };
   let text = map[status];
+  if (!text && status === 503) {
+    text = 'Mô hình đang quá tải (HTTP 503) — không phải lỗi cấu hình của bạn. Thử lại sau 1–2 phút.';
+  }
   if (!text && status >= 500) text = `Nhà cung cấp AI đang lỗi (HTTP ${status}). Thử lại sau ít phút.`;
   if (!text) text = `Gọi AI thất bại (HTTP ${status}).`;
   return providerMsg ? `${text}\n${providerMsg}` : text;
@@ -281,8 +300,8 @@ async function requestOnce({ baseUrl, apiKey, model, messages, temperature, maxT
         model,
         code: (data && data.error && (data.error.code || data.error.type)) || '',
         error: describeHttpError(res.status, data, '', { keyless }),
-        // Lỗi do khóa/hạn mức → màn chat hiện nút mở Cấu hình AI
-        action: [401, 402, 403, 429].includes(res.status) ? 'ai-settings' : undefined,
+        // Lỗi do khóa/hạn mức/quá tải → màn chat hiện nút mở Cấu hình AI
+        action: [401, 402, 403, 429, 503].includes(res.status) ? 'ai-settings' : undefined,
       };
     }
 
@@ -344,6 +363,19 @@ async function requestOnce({ baseUrl, apiKey, model, messages, temperature, maxT
   }
 }
 
+// Có nên thử model kế tiếp trong chuỗi dự phòng?
+function shouldTryNextModel(result, { allowTransient }) {
+  if (!result) return false;
+  // Mạng hỏng / người dùng dừng / hết thời gian chờ → đổi model không giúp gì
+  if (result.network || result.canceled || result.timeout) return false;
+  // 404: sai tên model; 503: quá tải; 429: hết hạn mức theo từng model
+  if (result.status === 404) return true;
+  if (allowTransient && (result.status === 429 || result.status === 503)) return true;
+  // Model "thinking" ăn hết max_tokens → nội dung rỗng, thử model nhẹ hơn
+  if (result.code === 'EMPTY_LENGTH') return true;
+  return /model/i.test(String(result.code || '')) || /model/i.test(String(result.error || ''));
+}
+
 // Gọi chat completion, tự thử lại bằng model mặc định nếu model chọn bị lỗi
 export async function chatComplete({
   appModelId,
@@ -372,7 +404,17 @@ export async function chatComplete({
   }
 
   const requested = resolveModel(appModelId, cfg);
-  const chain = requested === cfg.model ? [requested] : [requested, cfg.model];
+  // Chuỗi model: model đang gọi → model mặc định (nếu khác) → model dự phòng
+  // của Gemini. Không thêm dự phòng cho nhà cung cấp khác để tránh gửi tên
+  // model không tồn tại.
+  const chain = [];
+  const addModel = (id) => {
+    if (id && !chain.includes(id)) chain.push(id);
+  };
+  addModel(requested);
+  addModel(cfg.model);
+  if (isGeminiBaseUrl(cfg.baseUrl)) GEMINI_FALLBACK_MODELS.forEach(addModel);
+  const allowTransient = chain.length > 1;
 
   let last = null;
   for (let i = 0; i < chain.length; i += 1) {
@@ -387,15 +429,31 @@ export async function chatComplete({
       timeoutMs,
       signal,
     });
-    if (last.ok) return { ...last, mode: 'live' };
+    if (last.ok) {
+      return {
+        ...last,
+        mode: 'live',
+        requestedModel: requested,
+        // Đã phải dùng model khác model người dùng chọn (màn chat báo "dự phòng")
+        fallback: model !== requested,
+      };
+    }
     // Người dùng đã dừng → không thử model dự phòng
     if (last.canceled) return { ...last, mode: 'live' };
+    if (!shouldTryNextModel(last, { allowTransient })) break;
+  }
 
-    // Chỉ thử lại khi nghi lỗi tên model, còn lỗi key/mạng thì dừng luôn
-    const looksLikeModelError = last.status === 404
-      || /model/i.test(String(last.code || ''))
-      || /model/i.test(String(last.error || ''));
-    if (!looksLikeModelError) break;
+  // Mọi model đều quá tải: nói rõ đây là lỗi tạm thời của nhà cung cấp và
+  // gợi ý đổi model, thay vì để nguyên câu tiếng Anh khó hiểu.
+  if (last && last.status === 503) {
+    const tried = chain.length > 1 ? ' Đã thử các mô hình dự phòng nhưng chưa được.' : '';
+    last = {
+      ...last,
+      action: 'ai-settings',
+      error: `Mô hình đang quá tải (HTTP 503).${tried} `
+        + 'Đây là lỗi tạm thời từ máy chủ AI, không phải cấu hình của bạn. '
+        + 'Thử lại sau 1–2 phút, hoặc mở Cấu hình AI để chọn mô hình khác.',
+    };
   }
 
   return { ...(last || {}), ok: false, mode: 'live' };

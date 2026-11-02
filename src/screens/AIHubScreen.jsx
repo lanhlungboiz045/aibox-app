@@ -415,6 +415,7 @@ export function AIHubScreen() {
       latencyMs: res.latencyMs,
       usage: res.usage,
       cost: res.cost || 0,
+      fallback: res.fallback,
     });
   };
 
@@ -504,6 +505,7 @@ export function AIHubScreen() {
     const metaLabel = lastMeta
       ? [
         lastMeta.mode === 'live' ? 'Trực tiếp' : 'Trả lời mô phỏng',
+        lastMeta.fallback ? 'mô hình dự phòng' : null,
         lastMeta.latencyMs ? `${lastMeta.latencyMs}ms` : null,
       ].filter(Boolean).join(' · ')
       : null;

@@ -512,6 +512,9 @@ export function AppProvider({ children }) {
       usage: result.usage,
       cost: charged,
       latencyMs: result.latencyMs,
+      // Đã dùng model dự phòng vì model chính quá tải
+      fallback: Boolean(result.fallback),
+      requestedModel: result.requestedModel,
     };
   }, []);
 

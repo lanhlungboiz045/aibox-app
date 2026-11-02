@@ -219,6 +219,12 @@ nhánh Pollinations. Người dùng muốn nhà cung cấp riêng thì vào **Pr
 Chi tiết code: `src/config/ai.js` (preset, model map), `src/services/ai.js`
 (fetch + timeout + map lỗi tiếng Việt + test kết nối), `src/screens/AISettingsScreen.jsx`.
 
+Khi dùng Google Gemini, app tự thử **model dự phòng** nếu model đang chọn trả 503 (quá tải)
+hoặc 429 (hết hạn mức theo model): `gemini-flash-lite-latest` → `gemini-3.5-flash-lite` →
+`gemini-3-flash-preview`. Người dùng không phải sửa cấu hình giữa lúc chat; thanh meta ghi
+"mô hình dự phòng" khi trường hợp này xảy ra. Nếu mọi model đều quá tải, app báo rõ đây là
+lỗi tạm thời của máy chủ AI kèm nút mở Cấu hình AI.
+
 ⚠️ **Bảo mật:** API key nằm trên thiết bị (AsyncStorage) và biến `EXPO_PUBLIC_*` nằm trong
 bundle → chỉ phù hợp đồ án/demo. Triển khai thật phải đặt key ở backend/proxy, app gọi server của bạn.
 
