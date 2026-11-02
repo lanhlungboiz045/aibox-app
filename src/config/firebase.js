@@ -21,15 +21,15 @@ import {
 import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const env = process.env;
-
+// LƯU Ý: phải truy cập trực tiếp process.env.EXPO_PUBLIC_* (không gán
+// `const env = process.env`), vì Expo chỉ inline biến khi thấy đúng cú pháp này.
 export const firebaseConfig = {
-  apiKey: env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
-  authDomain: env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-  projectId: env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
-  storageBucket: env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
 };
 
 // 3 field này là tối thiểu để Firebase Auth/Firestore chạy được
@@ -46,11 +46,11 @@ export const missingFirebaseFields = [
 ].filter(([, value]) => !value).map(([name]) => name);
 
 // Web client ID của Google OAuth (bắt buộc để lấy idToken cho Firebase)
-export const GOOGLE_WEB_CLIENT_ID = env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
+export const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
 
 // Danh sách email được cấp role admin ngay lần đăng nhập đầu tiên
 // (nhớ khai báo lại y hệt trong firestore.rules → adminEmails())
-export const ADMIN_EMAILS = String(env.EXPO_PUBLIC_ADMIN_EMAILS || '')
+export const ADMIN_EMAILS = String(process.env.EXPO_PUBLIC_ADMIN_EMAILS || '')
   .split(',')
   .map(email => email.trim().toLowerCase())
   .filter(Boolean);

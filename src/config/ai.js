@@ -13,8 +13,6 @@
 // Người dùng còn sửa được ngay trong app (Profile → Cấu hình AI) và lưu vào
 // AsyncStorage — tiện test trên điện thoại mà không phải build lại.
 
-const env = process.env;
-
 // Bộ cấu hình mẫu: bấm 1 nút là điền Base URL + model gợi ý
 export const AI_PRESETS = [
   {
@@ -89,14 +87,15 @@ export const DEFAULT_SYSTEM_PROMPT =
   'Bạn là trợ lý AI trong ứng dụng AIBox. Trả lời bằng tiếng Việt, '
   + 'ngắn gọn, có cấu trúc, thân thiện. Không hứa hẹn lợi nhuận hoặc đưa ra cam kết tài chính.';
 
-// Cấu hình đọc từ .env (dùng làm default, có thể bị override trong app)
+// Cấu hình đọc từ .env (dùng làm default, có thể bị override trong app).
+// Phải truy cập trực tiếp process.env.EXPO_PUBLIC_* để Expo inline giá trị.
 export const envAIConfig = {
-  baseUrl: String(env.EXPO_PUBLIC_AI_BASE_URL || '').trim(),
-  apiKey: String(env.EXPO_PUBLIC_AI_API_KEY || '').trim(),
-  model: String(env.EXPO_PUBLIC_AI_MODEL || 'gpt-4o-mini').trim(),
+  baseUrl: String(process.env.EXPO_PUBLIC_AI_BASE_URL || '').trim(),
+  apiKey: String(process.env.EXPO_PUBLIC_AI_API_KEY || '').trim(),
+  model: String(process.env.EXPO_PUBLIC_AI_MODEL || 'gpt-4o-mini').trim(),
   // true (mặc định): mọi model trong app đều gọi bằng model ở trên
-  forceModel: String(env.EXPO_PUBLIC_AI_FORCE_MODEL || 'true').trim() !== 'false',
-  systemPrompt: String(env.EXPO_PUBLIC_AI_SYSTEM_PROMPT || '').trim() || DEFAULT_SYSTEM_PROMPT,
+  forceModel: String(process.env.EXPO_PUBLIC_AI_FORCE_MODEL || 'true').trim() !== 'false',
+  systemPrompt: String(process.env.EXPO_PUBLIC_AI_SYSTEM_PROMPT || '').trim() || DEFAULT_SYSTEM_PROMPT,
 };
 
 // Map model trong app → model thật của nhà cung cấp (chỉ dùng khi forceModel = false)
