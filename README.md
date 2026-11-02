@@ -200,7 +200,21 @@ EXPO_PUBLIC_AI_FORCE_MODEL=true
 ```
 
 Đổi `.env` phải restart Metro với `-c` (biến `EXPO_PUBLIC_*` được nhúng lúc bundle).
-Để trống → app tự dùng câu trả lời **MOCK** (vẫn demo đủ luồng, có nhãn MOCK).
+Để trống API key → app **tự chuyển sang cổng miễn phí Pollinations** (không cần khóa) nên
+người tải APK vẫn chat được với AI thật. Chỉ khi mất mạng/không gọi được endpoint nào thì app
+mới trả câu trả lời mẫu để không chặn luồng demo.
+
+Ma trận chọn nguồn AI của app (`src/config/ai.js → resolveAIConfig`):
+
+| Cấu hình | Kết quả |
+|---|---|
+| Base URL + API key | Gọi đúng nhà cung cấp đó |
+| Base URL cần khóa nhưng key trống | Tự dùng Pollinations, **không** gửi key sang nơi khác |
+| Pollinations / Ollama LAN (không cần khóa) | Dùng đúng địa chỉ đó |
+| Không có gì | Pollinations |
+
+Riêng `EXPO_PUBLIC_*` không được nhúng vào `eas.json` cho khóa AI: bản EAS vì thế rơi vào
+nhánh Pollinations. Người dùng muốn nhà cung cấp riêng thì vào **Profile → Cấu hình AI** nhập key.
 
 Chi tiết code: `src/config/ai.js` (preset, model map), `src/services/ai.js`
 (fetch + timeout + map lỗi tiếng Việt + test kết nối), `src/screens/AISettingsScreen.jsx`.

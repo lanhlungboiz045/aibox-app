@@ -14,7 +14,8 @@
         "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "aibox-b5110.firebasestorage.app",
         "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "573093495558",
         "EXPO_PUBLIC_FIREBASE_APP_ID": "1:573093495558:web:5ca94eef1c479c26f0d487",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "573093495558-t0oj1seen8l8l252jilhc9f63f38dlh9.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "573093495558-t0oj1seen8l8l252jilhc9f63f38dlh9.apps.googleusercontent.com",
+        "EXPO_PUBLIC_ADMIN_EMAILS": "doanduong236@gmail.com"
       }
     },
     "preview": {
@@ -26,7 +27,8 @@
         "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "aibox-b5110.firebasestorage.app",
         "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "573093495558",
         "EXPO_PUBLIC_FIREBASE_APP_ID": "1:573093495558:web:5ca94eef1c479c26f0d487",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "573093495558-t0oj1seen8l8l252jilhc9f63f38dlh9.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "573093495558-t0oj1seen8l8l252jilhc9f63f38dlh9.apps.googleusercontent.com",
+        "EXPO_PUBLIC_ADMIN_EMAILS": "doanduong236@gmail.com"
       }
     },
     "production": {
@@ -38,7 +40,8 @@
         "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "aibox-b5110.firebasestorage.app",
         "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "573093495558",
         "EXPO_PUBLIC_FIREBASE_APP_ID": "1:573093495558:web:5ca94eef1c479c26f0d487",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "573093495558-t0oj1seen8l8l252jilhc9f63f38dlh9.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "573093495558-t0oj1seen8l8l252jilhc9f63f38dlh9.apps.googleusercontent.com",
+        "EXPO_PUBLIC_ADMIN_EMAILS": "doanduong236@gmail.com"
       }
     }
   },

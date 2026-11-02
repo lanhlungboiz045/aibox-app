@@ -271,11 +271,11 @@ export function ProfileScreen({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Công cụ</Text>
         {link('info', 'Về AIBox', () => navigation.navigate('DemoAbout'), { hint: 'Thông tin về dữ liệu và cách sử dụng' })}
-        {isAdmin && link('cpu', 'Cấu hình AI', () => navigation.navigate('AISettings'), {
-          hint: aiConfig?.mode === 'live'
-            ? `Trực tiếp · ${aiConfig.model}`
-            : 'Chưa có khóa API · đang trả lời mô phỏng',
-          badge: aiConfig?.mode === 'live' ? 'Trực tiếp' : 'Mô phỏng',
+        {link('cpu', 'Cấu hình AI', () => navigation.navigate('AISettings'), {
+          hint: aiConfig?.mode !== 'live'
+            ? 'Chưa gọi được AI · kiểm tra mạng hoặc nhập khóa riêng'
+            : (aiConfig?.fallback ? `Cổng miễn phí · ${aiConfig.model}` : `Trực tiếp · ${aiConfig.model}`),
+          badge: aiConfig?.mode !== 'live' ? 'Mô phỏng' : (aiConfig?.fallback ? 'Miễn phí' : 'Trực tiếp'),
         })}
         {link('target', 'Nhiệm vụ ngày', () => navigation.navigate('Quests'), { hint: `${claimedQuests} nhiệm vụ đã nhận hôm nay` })}
         {link('list', 'Lịch sử giao dịch', () => navigation.navigate('Transactions'), { hint: 'Xem biến động token của bạn' })}

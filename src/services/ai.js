@@ -5,7 +5,9 @@
 //   r.ok ? r.text : r.error
 //
 // Cấu hình lấy theo thứ tự ưu tiên: giá trị lưu trong app (AsyncStorage)
-// → .env → mặc định. Không có cấu hình thì trả mode 'mock' để app vẫn demo được.
+// → .env → cổng miễn phí (xem KEYLESS_FALLBACK trong config/ai.js).
+// Nhờ vậy bản APK phát cho người khác vẫn gọi AI thật dù không kèm khóa;
+// mode 'mock' chỉ còn là lưới an toàn cuối cùng khi không gọi được mạng.
 //
 // BẢO MẬT (đọc trước khi deploy):
 // - API key lưu AsyncStorage là plaintext trên máy, và biến EXPO_PUBLIC_AI_API_KEY
@@ -18,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   APP_MODEL_MAP,
   DEFAULT_SYSTEM_PROMPT,
+  KEYLESS_FALLBACK,
   allowsEmptyApiKey,
   envAIConfig,
   isAIConfigured,
@@ -33,14 +36,23 @@ let runtime = null;
 
 function normalize(raw = {}) {
   const useRaw = raw && typeof raw === 'object' ? raw : {};
+  const baseUrl = String(useRaw.baseUrl ?? envAIConfig.baseUrl ?? '').trim().replace(/\/+$/, '');
+  const apiKey = String(useRaw.apiKey ?? envAIConfig.apiKey ?? '').trim();
+  const model = String(useRaw.model ?? envAIConfig.model ?? 'gpt-4o-mini').trim();
+  // Cấu hình đã lưu nhưng thiếu khóa (đổi máy, khóa bị xoá...) → vẫn dùng được
+  // bằng cổng miễn phí, tránh rơi về câu trả lời mẫu.
+  const fallback = !baseUrl || (!apiKey && !allowsEmptyApiKey(baseUrl));
   return {
-    baseUrl: String(useRaw.baseUrl ?? envAIConfig.baseUrl ?? '').trim().replace(/\/+$/, ''),
-    apiKey: String(useRaw.apiKey ?? envAIConfig.apiKey ?? '').trim(),
-    model: String(useRaw.model ?? envAIConfig.model ?? 'gpt-4o-mini').trim(),
+    baseUrl: fallback ? KEYLESS_FALLBACK.baseUrl : baseUrl,
+    apiKey: fallback ? '' : apiKey,
+    model: fallback ? KEYLESS_FALLBACK.model : (model || 'gpt-4o-mini'),
     forceModel: useRaw.forceModel === undefined ? envAIConfig.forceModel : Boolean(useRaw.forceModel),
     systemPrompt: String(useRaw.systemPrompt ?? envAIConfig.systemPrompt ?? DEFAULT_SYSTEM_PROMPT).trim()
       || DEFAULT_SYSTEM_PROMPT,
-    customized: Boolean(useRaw.customized),
+    // Chỉ coi là cấu hình riêng khi người dùng đã lưu và cấu hình đó dùng được
+    customized: Boolean(useRaw.customized) && !fallback,
+    // Đang chạy bằng cổng dự phòng (không phải do người dùng chọn)
+    fallback: fallback || (!useRaw.customized && Boolean(envAIConfig.fallback)),
   };
 }
 
@@ -96,6 +108,8 @@ export function getAIStatus() {
     customized: cfg.customized,
     local: isLocalBaseUrl(cfg.baseUrl),
     keyless: isKeylessBaseUrl(cfg.baseUrl),
+    // Đang tự dùng cổng miễn phí vì bản build không kèm khóa AI
+    fallback: Boolean(cfg.fallback),
     // Được phép để trống key (local LAN hoặc gateway keyless)
     allowsEmptyKey: allowsEmptyApiKey(cfg.baseUrl),
   };

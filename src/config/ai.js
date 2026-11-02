@@ -87,17 +87,6 @@ export const DEFAULT_SYSTEM_PROMPT =
   'Bạn là trợ lý AI trong ứng dụng AIBox. Trả lời bằng tiếng Việt, '
   + 'ngắn gọn, có cấu trúc, thân thiện. Không hứa hẹn lợi nhuận hoặc đưa ra cam kết tài chính.';
 
-// Cấu hình đọc từ .env (dùng làm default, có thể bị override trong app).
-// Phải truy cập trực tiếp process.env.EXPO_PUBLIC_* để Expo inline giá trị.
-export const envAIConfig = {
-  baseUrl: String(process.env.EXPO_PUBLIC_AI_BASE_URL || '').trim(),
-  apiKey: String(process.env.EXPO_PUBLIC_AI_API_KEY || '').trim(),
-  model: String(process.env.EXPO_PUBLIC_AI_MODEL || 'gpt-4o-mini').trim(),
-  // true (mặc định): mọi model trong app đều gọi bằng model ở trên
-  forceModel: String(process.env.EXPO_PUBLIC_AI_FORCE_MODEL || 'true').trim() !== 'false',
-  systemPrompt: String(process.env.EXPO_PUBLIC_AI_SYSTEM_PROMPT || '').trim() || DEFAULT_SYSTEM_PROMPT,
-};
-
 // Map model trong app → model thật của nhà cung cấp (chỉ dùng khi forceModel = false)
 export const APP_MODEL_MAP = {
   'gpt-4o': 'gpt-4o',
@@ -128,6 +117,52 @@ export function isKeylessBaseUrl(baseUrl) {
 export function allowsEmptyApiKey(baseUrl) {
   return isLocalBaseUrl(baseUrl) || isKeylessBaseUrl(baseUrl);
 }
+
+// Cổng miễn phí, không cần khóa. Dùng làm phương án dự phòng khi bản build
+// không kèm khóa AI (ví dụ APK phát cho người khác) — nhờ vậy app vẫn trả lời
+// thật thay vì câu trả lời mẫu.
+export const KEYLESS_FALLBACK = {
+  baseUrl: 'https://text.pollinations.ai/openai',
+  model: 'openai',
+};
+
+// Dựng cấu hình từ các giá trị env (hàm thuần để test được).
+// Điều kiện dùng cổng dự phòng: chưa có địa chỉ API, hoặc địa chỉ cần khóa
+// nhưng khóa đang trống. Khi đó KHÔNG gửi khóa của nhà cung cấp này sang
+// máy chủ khác.
+export function resolveAIConfig({
+  baseUrl = '',
+  apiKey = '',
+  model = '',
+  forceModel = true,
+  systemPrompt = '',
+} = {}) {
+  const cleanBaseUrl = String(baseUrl || '').trim().replace(/\/+$/, '');
+  const cleanKey = String(apiKey || '').trim();
+  const cleanModel = String(model || '').trim();
+  const fallback = !cleanBaseUrl || (!cleanKey && !allowsEmptyApiKey(cleanBaseUrl));
+
+  return {
+    baseUrl: fallback ? KEYLESS_FALLBACK.baseUrl : cleanBaseUrl,
+    apiKey: fallback ? '' : cleanKey,
+    model: fallback ? KEYLESS_FALLBACK.model : (cleanModel || 'gpt-4o-mini'),
+    // true (mặc định): mọi model trong app đều gọi bằng model ở trên
+    forceModel: forceModel !== false,
+    systemPrompt: String(systemPrompt || '').trim() || DEFAULT_SYSTEM_PROMPT,
+    // Đang dùng cổng dự phòng chứ không phải cấu hình người dùng tự nhập
+    fallback,
+  };
+}
+
+// Cấu hình đọc từ .env (dùng làm default, có thể bị override trong app).
+// Phải truy cập trực tiếp process.env.EXPO_PUBLIC_* để Expo inline giá trị.
+export const envAIConfig = resolveAIConfig({
+  baseUrl: process.env.EXPO_PUBLIC_AI_BASE_URL,
+  apiKey: process.env.EXPO_PUBLIC_AI_API_KEY,
+  model: process.env.EXPO_PUBLIC_AI_MODEL,
+  forceModel: String(process.env.EXPO_PUBLIC_AI_FORCE_MODEL || 'true').trim() !== 'false',
+  systemPrompt: process.env.EXPO_PUBLIC_AI_SYSTEM_PROMPT,
+});
 
 // Đủ điều kiện gọi thật chưa?
 export function isAIConfigured(config) {

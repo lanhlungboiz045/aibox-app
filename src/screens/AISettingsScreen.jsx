@@ -53,8 +53,10 @@ export function AISettingsScreen({ navigation }) {
       Alert.alert(
         'Đã lưu cấu hình AI',
         status.mode === 'live'
-          ? `Đang gọi AI thật.\nMô hình: ${status.model}`
-            + (status.allowsEmptyKey && !status.hasKey ? '\nKhông cần khóa API với nhà cung cấp này.' : '')
+          ? (status.fallback
+            ? `Chưa có khóa API nên ứng dụng dùng cổng miễn phí.\nMô hình: ${status.model}`
+            : `Đang gọi AI thật.\nMô hình: ${status.model}`
+              + (status.allowsEmptyKey && !status.hasKey ? '\nKhông cần khóa API với nhà cung cấp này.' : ''))
           : 'Chưa đủ địa chỉ API / khóa API nên ứng dụng vẫn dùng câu trả lời mô phỏng.'
       );
     } catch (error) {
@@ -94,7 +96,7 @@ export function AISettingsScreen({ navigation }) {
     if (saving || testing) return;
     Alert.alert(
       'Xoá cấu hình trong app',
-      'Cấu hình sẽ quay về giá trị mặc định của ứng dụng (hoặc chế độ mô phỏng nếu chưa có).',
+      'Cấu hình sẽ quay về giá trị mặc định của ứng dụng (cổng miễn phí nếu chưa có khóa).',
       [
         { text: 'Huỷ', style: 'cancel' },
         {
@@ -149,6 +151,12 @@ export function AISettingsScreen({ navigation }) {
         <Text style={styles.statusLine}>
           Nguồn: {aiConfig?.customized ? 'lưu trong ứng dụng' : 'cấu hình mặc định'}
         </Text>
+        {aiConfig?.fallback && (
+          <Text style={styles.statusNote}>
+            Bản cài này không kèm khóa AI nên đang dùng cổng miễn phí. Nhập khóa của bạn bên dưới
+            để dùng nhà cung cấp riêng.
+          </Text>
+        )}
       </View>
 
       {/* Preset nhà cung cấp */}
@@ -301,6 +309,7 @@ const styles = StyleSheet.create({
   statusDot: { width: spacing.sm, height: spacing.sm, borderRadius: spacing.xs },
   statusTitle: { ...type.bodyStrong, color: colors.text },
   statusLine: { ...type.small, color: colors.textDim, marginTop: spacing.xs },
+  statusNote: { ...type.small, color: colors.textFaint, marginTop: spacing.sm, lineHeight: 18 },
   sectionTitle: {
     ...type.bodyStrong,
     color: colors.text,
